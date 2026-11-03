@@ -1,0 +1,17 @@
+{
+  "name": "rememberthemilk",
+  "version": "0.1.0",
+  "description": "Connects Claude Code to Remember The Milk's hosted MCP server (unofficial).",
+  "author": {
+    "name": "ledhed2222"
+  },
+  "repository": "https://github.com/ledhed2222/rememberthemilk-claude-plugin",
+  "license": "MIT",
+  "keywords": [
+    "rememberthemilk",
+    "tasks",
+    "todo",
+    "mcp"
+  ],
+  "privacyPolicyUrl": "https://www.rememberthemilk.com/help/privacy.rtm"
+}

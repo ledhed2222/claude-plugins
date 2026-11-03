@@ -1,0 +1,11 @@
+{
+  "name": "rememberthemilk",
+  "owner": { "name": "ledhed2222" },
+  "plugins": [
+    {
+      "name": "rememberthemilk",
+      "source": "./",
+      "description": "Connects Claude Code to Remember The Milk's hosted MCP server (unofficial)."
+    }
+  ]
+}

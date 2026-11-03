@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rememberthemilk": {
+      "type": "http",
+      "url": "https://www.rememberthemilk.com/mcp"
+    }
+  }
+}
