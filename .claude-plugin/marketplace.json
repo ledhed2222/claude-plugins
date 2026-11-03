@@ -1,6 +1,9 @@
 {
   "name": "rememberthemilk",
-  "owner": { "name": "ledhed2222" },
+  "owner": {
+    "name": "ledhed2222"
+  },
+  "description": "Unofficial marketplace for the Remember The Milk MCP plugin.",
   "plugins": [
     {
       "name": "rememberthemilk",

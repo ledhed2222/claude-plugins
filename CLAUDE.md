@@ -14,7 +14,7 @@ Plugin and marketplace are both named `rememberthemilk`, so the install id is `r
 
 ## Checks
 
-- `claude plugin validate .` before every commit. The only expected warning is the missing icon.
+- `claude plugin validate .` before every commit. Expected warnings: the missing icon, and CLAUDE.md at the plugin root (it is repo docs, not plugin context).
 - Test from disk without installing: `claude --plugin-dir .`, then `/mcp` to sign in.
 - Bump `version` in `plugin.json` on any change that should reach existing installs.
 
