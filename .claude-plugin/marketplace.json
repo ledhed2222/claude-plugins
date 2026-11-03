@@ -1,13 +1,13 @@
 {
-  "name": "rememberthemilk",
+  "name": "ledhed2222",
   "owner": {
     "name": "ledhed2222"
   },
-  "description": "Unofficial marketplace for the Remember The Milk MCP plugin.",
+  "description": "ledhed2222's Claude Code plugins.",
   "plugins": [
     {
       "name": "rememberthemilk",
-      "source": "./",
+      "source": "./plugins/rememberthemilk",
       "description": "Connects Claude Code to Remember The Milk's hosted MCP server (unofficial)."
     }
   ]
