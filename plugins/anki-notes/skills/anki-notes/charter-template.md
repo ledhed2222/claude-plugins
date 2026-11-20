@@ -14,6 +14,6 @@ Automatic (whenever Claude teaches something in scope) or Ask (propose cards and
 - `02 <name>`: ...
 
 ## Conventions
-Only what differs from the skill's defaults for this subject: what earns a card, note types and direction, context cues, whether answers go stale, sources. Start any rule that overrides the skill with "Overrides:".
+Only what differs from the skill's defaults for this subject: what earns a card, note types (what goes in each field, and when a note moves from one type to another), direction, context cues, whether answers go stale, sources. Start any rule that overrides the skill with "Overrides:".
 
 Tags: `<prefix>::<area>::<topic>`.
