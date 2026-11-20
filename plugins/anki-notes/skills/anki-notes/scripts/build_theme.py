@@ -110,18 +110,18 @@ def css(theme):
 {faces}.card {{
   --bg: {lt["bg"]}; --text: {lt["text"]}; --accent: {lt["accent"]}; --rule: {lt["rule"]};
   background: var(--bg); color: var(--text);
-  font-family: {font_stack(body, SYSTEM)};
+  --body-font: {font_stack(body, SYSTEM)}; font-family: var(--body-font);
   font-size: 20px; line-height: 1.6; text-align: left;
   max-width: 38em; margin: 0 auto; padding: 1.25em;
 }}
 .card.nightMode, .card.night_mode, .night_mode .card {{
   --bg: {nt["bg"]}; --text: {nt["text"]}; --accent: {nt["accent"]}; --rule: {nt["rule"]};
 }}
-.deck-label {{ font-family: {font_stack(accent, "inherit")}; font-size: 14px; color: var(--accent); margin-bottom: 1em; }}
+.deck-label {{ font-family: {font_stack(accent, "var(--body-font)")}; font-size: 14px; color: var(--accent); margin-bottom: 1em; }}
 {stages}hr#answer {{ border: 0; border-top: 1px solid var(--rule); margin: 1em 0; }}
 .answer b, .answer strong, .cloze {{ color: var(--accent); font-weight: 600; }}
 .answer[data-tags~="rescued"]::before {{
-  content: "rescued"; display: table; font-family: {font_stack(accent, "inherit")};
+  content: "rescued"; display: table; font-family: {font_stack(accent, "var(--body-font)")};
   font-size: 12px; color: var(--accent); border: 1px solid var(--accent);
   border-radius: 999px; padding: 0 .6em; margin-bottom: .6em;
 }}
