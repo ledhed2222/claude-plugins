@@ -7,9 +7,11 @@ theme.json:
 {
   "deck": "Spanish",
   "mood": "warm, unhurried",                  // the user's words, kept as a CSS comment
+  "subsets": ["latin"],                       // alphabets the deck's text uses: latin, latin-ext,
+                                              // cyrillic, cyrillic-ext, greek, vietnamese
   "fonts": {                                  // null = the system font
-    "body":   {"family": "Source Sans 3"},   // any Google Fonts family (OFL); fetched from npm
-    "accent": {"family": "Fraunces", "weight": 400}
+    "body":   {"family": "Literata", "weights": [400, 700], "italic": true},  // defaults: [400, 700], false
+    "accent": {"family": "Fraunces", "weights": [400]}                         // defaults: [400], false
   },
   "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
   "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"},
@@ -22,11 +24,13 @@ Writes to <out dir>:
                 fills them as before and Change Note Type keeps review history
   theme.css     the stylesheet (also inside models.json)
   preview.html  a sample note, front and back, in light and night mode
-  _<family>.woff2  each font, fetched from npm by fetch_font.py (next to preview.html, so
-                the preview shows it); media.json lists them for store_media_file(path=...)
+  _<family>-<subset>-<weight>[-italic].woff2
+                each font file, fetched from npm by fetch_font.py (next to preview.html,
+                so the preview shows it); media.json lists them for store_media_file(path=...)
 
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
-background in either mode, or the spec is malformed. Standard library only.
+background in either mode, if a font lacks one of the deck's subsets, a weight
+or italic, if a font can't be fetched, or if the spec is malformed. Standard library only.
 """
 import asyncio
 import json
@@ -34,7 +38,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
-from fetch_font import fetch_font, slug  # noqa: E402
+from fetch_font import FontError, fetch_font  # noqa: E402
 
 MIN_CONTRAST = 4.5
 SYSTEM = '-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
@@ -78,22 +82,33 @@ def font_stack(font, fallback):
     return f'"{font["family"]}", {fallback}' if font else fallback
 
 
-def font_file(font):
-    return f"_{slug(font['family'])}.woff2"  # leading _ keeps Anki's Check Media from deleting it
+DEFAULT_WEIGHTS = {"body": [400, 700], "accent": [400]}
 
 
 def used_fonts(theme):
+    """(role, family, weights, italic) for each font the theme names; a family used twice is fetched once."""
     fonts = theme.get("fonts") or {}
-    return [f for f in (fonts.get("body"), fonts.get("accent")) if f and f.get("family")]
+    out = []
+    for role in ("body", "accent"):
+        f = fonts.get(role)
+        if f and f.get("family"):
+            out.append((role, f["family"], f.get("weights") or DEFAULT_WEIGHTS[role], bool(f.get("italic"))))
+    return out
 
 
-def css(theme):
+def font_faces(files):
+    return "".join(
+        f'@font-face {{ font-family: "{f["family"]}"; src: url("{f["filename"]}") format("woff2"); '
+        f'font-weight: {f["weight"]}; font-style: {f["style"]}; font-display: swap; '
+        + (f'unicode-range: {f["unicode_range"]}; ' if f.get("unicode_range") else "") + "}\n"
+        for f in files)
+
+
+def css(theme, files=()):
     fonts = theme.get("fonts") or {}
     body, accent = fonts.get("body"), fonts.get("accent")
     lt, nt = theme["light"], theme["night"]
-    faces = "".join(
-        f'@font-face {{ font-family: "{f["family"]}"; src: url("{font_file(f)}"); font-weight: {f.get("weight", 400)}; font-display: swap; }}\n'
-        for f in (body, accent) if f)
+    faces = font_faces(files)
     stages = "".join(
         f'.deck-label[data-deck*="::{n:02d} "]::before {{ content: "{"●" * n}{"○" * max(0, 3 - n)} "; }}\n'
         for n in range(1, 10))
@@ -182,20 +197,20 @@ async def main():
         sys.exit("not legible enough:\n  " + "\n  ".join(problems))
     out = sys.argv[2]
     await asyncio.to_thread(os.makedirs, out, exist_ok=True)
-    stylesheet = css(theme)
+    subsets = theme.get("subsets") or ["latin"]
+    wanted = {}
+    for _, family, weights, italic in used_fonts(theme):
+        w, it = wanted.get(family, (set(), False))
+        wanted[family] = (w | set(weights), it or italic)
+    try:
+        fetched = await asyncio.gather(*(fetch_font(fam, out, subsets, sorted(w), it) for fam, (w, it) in wanted.items()))
+    except FontError as e:
+        sys.exit(f"font problem: {e}. Pick another family (check it with fetch_font.py --info) or set it to null.")
+    files = [f for group in fetched for f in group]
+    media = [{"filename": f["filename"], "path": f["path"]} for f in files]
+    stylesheet = css(theme, files)
     sample = theme.get("sample") or {"stage": "01 Basics", "front": "Which eval step costs more: inference or scoring?",
                                       "back": "<b>Inference.</b>", "tags": ["rescued"]}
-    media = []
-
-    async def get(font):
-        dest = os.path.join(out, font_file(font))
-        try:
-            await fetch_font(font["family"], dest, font.get("weight", 400))
-            media.append({"filename": font_file(font), "path": os.path.abspath(dest)})
-        except (RuntimeError, ValueError, OSError, asyncio.TimeoutError) as e:
-            print(f"warning: no font file for {font['family']} ({e}); the theme falls back to the system font")
-
-    await asyncio.gather(*(get(f) for f in used_fonts(theme)))
     await asyncio.gather(
         asyncio.to_thread(_write, os.path.join(out, "media.json"), json.dumps(media, indent=1)),
         asyncio.to_thread(_write, os.path.join(out, "theme.css"), stylesheet),
