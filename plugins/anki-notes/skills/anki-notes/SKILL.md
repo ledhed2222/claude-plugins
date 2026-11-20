@@ -1,6 +1,6 @@
 ---
 name: anki-notes
-description: Turn something just taught into atomic Anki flashcards in the right subject deck. Use whenever the user says "add this to anki", "make a card", "flashcard this", and whenever you teach a concept in a subject that has an Anki deck charter. Today that is AI engineering (evals, metrics, LLMs, grounding, extraction, RAG, agents, tooling), where cards are added automatically, including at the end of each step of a walkthrough. Also use it when told an Anki inbox has queued cards.
+description: Turn something just taught into atomic Anki flashcards in the right subject deck. Use whenever the user says "add this to anki", "make a card", "flashcard this", and whenever you teach a concept in a subject that has an Anki deck charter. Today that is AI engineering (evals, metrics, LLMs, grounding, extraction, RAG, agents, tooling), where cards are added automatically, including at the end of each step of a walkthrough. Also use it when told to empty the Anki inbox.
 ---
 
 # Anki notes
@@ -89,14 +89,16 @@ Edits to existing cards (`update_note_fields`) keep review history. Never delete
 
 ## The Anki inbox
 
-A Remember The Milk list named **Anki inbox** queues cards drafted where Anki can't be reached.
+A Claude Docs doc titled **Anki inbox** queues cards drafted where Anki can't be reached. Find it in the user's artifacts by that title; if there is none, create it with that title, one line saying what it is for, and a `## Queued cards` heading. Use the docs tools as their guide says.
 
-**Queue** when the Anki tools are missing or fail. Draft each card exactly as you would add it, then add one task per card to that list:
-- **Name:** `<deck>: <front, shortened>`.
-- **Note:** the card as JSON, `{"deck": "AI Engineering", "stage": "02 Eval basics", "model": "Basic", "fields": {"Front": "...", "Back": "..."}, "tags": ["..."]}`. Leave `stage` null if you can't tell; it is decided when the card is added.
+**Queue** when the Anki tools are missing or fail. Draft each card exactly as you would add it, then append one ```json code block per card to the end of the doc:
 
-Without the deck's charter you can't check overlap or prerequisites, so only queue what clearly passes the rules above, and only in a subject the user has a deck for (or asked for). Report in one line: "Queued 2 cards in the Anki inbox." If Remember The Milk isn't available either, give the drafts in chat and say they weren't saved anywhere.
+```json
+{"deck": "AI Engineering", "stage": "02 Eval basics", "model": "Basic", "fields": {"Front": "...", "Back": "..."}, "tags": ["..."]}
+```
 
-**Empty the inbox** when the Anki tools work: in Claude Code, a session-start hook says when Anki is open. List the incomplete tasks in the list (`list:"Anki inbox"`). For each, read its note and add the card through the normal steps above, which are the overlap, prerequisite and stage checks the queuing session couldn't do. Complete the task once the card is added, or once you've dropped it as a duplicate. Then sync and report in one line what was added, dropped, and left queued.
+Leave `stage` null if you can't tell; it is decided when the card is added. Without the deck's charter you can't check overlap or prerequisites, so only queue what clearly passes the rules above, and only in a subject the user has a deck for (or asked for). Report in one line: "Queued 2 cards in the Anki inbox." If the doc can't be reached either, give the drafts in chat and say they weren't saved anywhere.
+
+**Empty the inbox** when the Anki tools work: in Claude Code, a session-start hook says when Anki is open. Read the doc and take each json code block under "Queued cards". Add each card through the normal steps above, which are the overlap, prerequisite and stage checks the queuing session couldn't do. Delete its code block once the card is added, or once you've dropped it as a duplicate; leave anything you couldn't parse and say so. Then sync and report in one line what was added, dropped, and left queued.
 
 If neither Anki nor the inbox is reachable, say so in one line and keep teaching. Don't block the lesson on it.
