@@ -29,7 +29,7 @@ Most rejected cards failed here, not on wording. Every candidate must pass all f
 - **Worth memorizing:** the user would want it on recall a year from now. Not trivia (the names of OCR preprocessing steps), not one project's process decision (feed a stage stored upstream outputs; give each agent a page count it owns).
 - **Not obvious:** if it reduces to common sense ("don't bias the authors", "label with the same category list the system uses", "each sender's workflow decides whether it scans"), skip it.
 - **Standard vocabulary only:** never make a card whose answer or premise is a term coined during the session ("noise floor", "truth-leak check", "answer-key category", "rename table"). If the lesson is real, state it in plain words; if it only makes sense with the coined term, it isn't general knowledge.
-- **Answerable from the question:** someone who learned the idea must be able to produce the answer without guessing what the author had in mind. "Which role finds the most defects?" has an open answer space; name the options in the question or drop the card.
+- **Answerable from the question:** someone who learned the idea must be able to produce the answer without guessing what the author had in mind. "Which role finds the most defects?" has an open answer space; name the options in the question or drop the card. And only one answer may be right: if someone who knows the topic could give a different answer that is also correct, add the context that rules it out.
 
 ## Prerequisites come first
 
@@ -37,6 +37,7 @@ The user learns these topics from the cards, so a card may only use a concept th
 
 - List every term it relies on (confusion matrix, few-shot, class balance, ROC curve, F-beta...). For each one, find the card that introduces it, in the same or an earlier stage. If there isn't one, write that card first.
 - Introduce a concept with the plain questions a newcomer would ask, each its own card: **What is X? What problem does it solve? Why is it built this way** (e.g. why F1 uses a harmonic mean)? Cards about edge cases and tradeoffs come after those.
+- **No lone cards.** A concept that earns a card usually gets two or three, each from a different angle: what it is, why it works that way, how it differs from its nearest neighbor, when you'd reach for it. One isolated card is easy to forget and hard to use. Be strict about which concepts get in, not about how many angles each one gets.
 
 ## Writing the front
 
@@ -68,11 +69,20 @@ Bad → good:
 | Cloze: A {{c1::noise floor}} is how much outputs differ across {{c2::reruns}}… (coined term) | Q: You rerun an unchanged eval and the score moves 3 points. A prompt change then gains 2. What can you conclude? A: **Nothing yet: the gain is within run-to-run variation.** |
 | Q: An automated check fails when a gold value appears on an input page. What is it called? A: A truth-leak check. | Drop it: the name is session jargon, and the lesson (don't put answers in the input) is obvious. |
 
+## Last checks before adding
+
+Run every draft through these. They come from the spaced-repetition literature rather than from the user's reviews of real cards, so the rules above win if the two ever disagree.
+
+- **Make it take effort.** No yes/no questions: rewrite them as what, why or which. The front must not hint at its answer: no option that is obviously the right one, no word from the answer in the question, no cloze whose visible text gives the blank away. Paired relationships like the threshold example above are the exception, since recalling both halves together is the point.
+- **Lists: one item per card.** Never ask for a whole set ("Name the four…"). For a short fixed list, write one Cloze note with a blank per item, in the same order every time; if the items left visible give a blank away, use separate notes. For an open-ended set, ask for one example, or for the property the members share. For a procedure, card the decision points (when to take a step, and why), not the sequence of steps.
+- **Separate near neighbors.** When step 2 turns up a card on a similar concept (precision next to recall, few-shot next to fine-tuning), the two will get confused in review. Put the distinguishing feature in the new card's front, or add a `type::contrast` card that names both.
+- **Stamp what can go stale.** If the answer depends on a date, a model or library version, a vendor, a benchmark result or a single paper, say so in the question ("As of 2026, …", "In the original RAG paper, …") and tag the source. Better still, card the durable principle behind it and leave the number out.
+
 ## Steps
 
 Cards are only written to Anki from Claude Code, through the `anki` MCP server of the `ankimcp@ledhed2222` plugin, which talks to the AnkiMCP add-on (AnkiWeb code `124672614`) inside a running Anki. When those tools aren't available (another Claude app, or Anki is closed), queue the cards instead: see "The Anki inbox" below.
 
-1. **Read the charter** of the subject deck, and draft the cards against it and the rules above.
+1. **Read the charter** of the subject deck. Then restate what was just taught as a few one-point sentences, and draft cards so that each one tests exactly one of them, against the charter and the rules above. A point you can't state in one sentence needs splitting before it becomes a card.
 2. **Check the deck** for overlap and prerequisites: `find_notes` with `deck:"<subject>"` plus key terms, `include_first_field: true`. Drop drafts that repeat a card; write any missing prerequisite card first.
 3. **Pick the stage**: the earliest stage subdeck that already teaches everything the card relies on. If no stage fits, propose a new one to the user instead of guessing.
 4. **Add** with `add_notes`, one call per stage and note type.
@@ -83,7 +93,7 @@ Cards are only written to Anki from Claude Code, through the `anki` MCP server o
 6. **Sync**: `sync()`, then poll `sync(job_id)` until it reports `success`. If it ends in `conflict`, never pick a direction yourself; cancel and tell the user.
 7. **Report** in one line: how many were added, to which deck and stage, their fronts in short form, and whether the sync succeeded.
 
-For a bulk restructure (re-reviewing or rebuilding a whole stage), write the stage as a plan file and run `python3 -I <this skill dir>/scripts/apply_stage.py <plan.json>` (a dry run; add `--apply`, then run it with `--sync`). Its docstring has the plan format. Show the user the plan for review first, as a file with the current text of every card it touches.
+For a bulk restructure (re-reviewing or rebuilding a whole stage), write the stage as a plan file and run `python3 -I <this skill dir>/scripts/apply_stage.py <plan.json>` (a dry run; add `--apply`, then run it with `--sync`). Its docstring has the plan format. Show the user the plan for review first, as a file with the current text of every card it touches. Start a stage rebuild with its leeches (`find_notes` with the stage's deck plus `tag:leech`): Anki tags cards the user keeps failing, and those usually break a rule here rather than the user's memory. In the plan, name the rule each rewrite fixes.
 
 Edits to existing cards (`update_note_fields`) keep review history. Never delete notes yourself: tag them `to-delete` with `tag_add` and tell the user, who deletes them in the browser.
 
