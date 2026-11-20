@@ -1,6 +1,6 @@
 ---
 name: anki-notes
-description: Turn something just taught into atomic Anki flashcards in the right subject deck. Use whenever the user says "add this to anki", "make a card", "flashcard this", and whenever you teach a concept in a subject that has an Anki deck charter. Today that is AI engineering (evals, metrics, LLMs, grounding, extraction, RAG, agents, tooling), where cards are added automatically, including at the end of each step of a walkthrough. Also use it when told to empty the Anki inbox.
+description: Turn something just taught into atomic Anki flashcards in the right subject deck. Use whenever the user says "add this to anki", "make a card", "flashcard this", and whenever you teach a concept in a subject that has an Anki deck charter. Today that is AI engineering (evals, metrics, LLMs, grounding, extraction, RAG, agents, tooling), where cards are added automatically, including at the end of each step of a walkthrough. Also use it to set up a deck for a new subject, to write or change a deck's charter, and when told to empty the Anki inbox.
 ---
 
 # Anki notes
@@ -11,10 +11,10 @@ Turn what was just taught into cards the user can actually study, then add them.
 
 Each subject is a top-level deck (`AI Engineering`, a language, ...), and its rules live in that deck's **charter**: its description in Anki, read with `get_deck_description`. The charter says what is in and out of scope, whether cards are added automatically or only proposed, the stage subdecks, and any card conventions for that subject. **Its rules add to the ones below and win where they conflict.**
 
-- **Pick the subject** by reading the charters of the top-level decks (`list_decks`). If nothing fits, don't guess: propose a new deck and a charter from `charter-template.md` in this skill's directory.
+- **Pick the subject** by reading the charters of the top-level decks (`list_decks`). If nothing fits, don't guess: propose a new deck and its charter.
 - **Adding:** if the charter says Automatic, add cards without asking, including mid-walkthrough. Otherwise end your reply with one line ("2 possible cards for Spanish: … — add them?") and add only on a yes.
 - **Teaching, not doing:** only explanations of a concept in a charter's scope count. Most of what you explain while doing a task (a command, a config fix, a debugging step) is not.
-- **Changing a charter:** show the user the old and new text, and update only on a yes.
+- **Writing or changing a charter:** read `charters.md` in this skill's directory first and follow it. Never save one without showing the user the text (old and new, for a change) and getting a yes.
 
 ## What earns a card
 
@@ -109,6 +109,6 @@ A Claude Docs doc titled **Anki inbox** queues cards drafted where Anki can't be
 
 Leave `stage` null if you can't tell; it is decided when the card is added. Without the deck's charter you can't check overlap or prerequisites, so only queue what clearly passes the rules above, and only in a subject the user has a deck for (or asked for). Report in one line: "Queued 2 cards in the Anki inbox." If the doc can't be reached either, give the drafts in chat and say they weren't saved anywhere.
 
-**Empty the inbox** when the Anki tools work: in Claude Code, a session-start hook says when Anki is open. Read the doc and take each json code block under "Queued cards". Add each card through the normal steps above, which are the overlap, prerequisite and stage checks the queuing session couldn't do. Delete its code block once the card is added, or once you've dropped it as a duplicate; leave anything you couldn't parse and say so. Then sync and report in one line what was added, dropped, and left queued.
+**Empty the inbox** when the Anki tools work: in Claude Code, a session-start hook says when Anki is open. Read the doc and take each json code block under "Queued cards". Handle `charter` and `charter_change` blocks first, as `charters.md` says. Add each card through the normal steps above, which are the overlap, prerequisite and stage checks the queuing session couldn't do. Delete its code block once the card is added, or once you've dropped it as a duplicate; leave anything you couldn't parse and say so. Then sync and report in one line what was added, dropped, and left queued.
 
 If neither Anki nor the inbox is reachable, say so in one line and keep teaching. Don't block the lesson on it.
