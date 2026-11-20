@@ -12,6 +12,24 @@ Read this only when a charter calls for a new note type or a change to one. Whet
 - **Name fields for good.** Templates refer to fields by exact name, accents included.
 - Close void tags in templates: `<br />`, `<hr />`.
 
+## Themes
+
+A theme gives a deck its own look, built from how the user says studying it feels and how they'd like it to feel. The point is enjoyment, which keeps people reviewing; never claim it improves recall. If someone says a subject makes them anxious, design for how they want to feel, not for the anxiety.
+
+A theme is a spec, `theme.json`, and `scripts/build_theme.py` (its docstring has the format) turns it into the stylesheet, two note types and a preview. Never hand-write theme CSS:
+
+- **Note types:** `<Deck> · Basic` and `<Deck> · Cloze`, with exactly the stock fields (Front and Back, Text and Extra). The skill fills them as before, and moving the deck's existing notes onto them (Change Note Type, in the browser, by the user) keeps every review. This is the one case where a note type that only changes looks is worth it.
+- **What it varies:** the background, text, accent and rule colors, in light and night mode, and up to two fonts. Body text uses a plain, legible font (the system font is fine); a font with character goes on the deck label and the highlighted answer. Layout, sizes and spacing stay fixed.
+- **Legibility is enforced:** the script refuses any text or accent color below 4.5:1 contrast against its background in either mode. Pick new colors; don't argue with the check.
+- **Fonts** must be openly licensed (OFL), as `.woff2`, saved to the collection with `store_media_file` under a name starting with `_` (`_fraunces.woff2`) so Anki's Check Media keeps them. They sync to every device, so prefer one or two small files, or none.
+- **Built in:** dots on the deck label for the stage (`●○○` in stage 01), and a small "rescued" badge on the back of a card tagged `rescued`.
+- **Motion** is off unless the user turns it on after seeing it: a 120 ms fade of the answer and a single shimmer on the rescued badge, both off when the device asks for reduced motion. Nothing loops and nothing moves.
+- **Language decks:** suggest Anki's built-in speech, `{{tts es_ES:Field}}` in the template, which reads a field aloud with the device's own voices. It belongs in a note type with a dedicated sentence field, not in the Basic copy.
+
+To pick one: draft two or three `theme.json` files that read the user's words differently (one quieter, one bolder), build each, and show the previews (in Claude Code, `preview.html` from the build; elsewhere, draw the sample cards inline). Ask which they want with the app's question tool, offering "none" too. On a pick, ask whether to turn motion on. On save, `create_model` with each object in the build's `models.json`. If the deck uses note types the user keeps in a repo, the theme goes into that repo's stylesheet instead, and the user applies it.
+
+To change a theme, edit its `theme.json` (its mood and colors are in the comment at the top of the CSS), rebuild, and apply with `update_model_styling` to both note types.
+
 ## Propose before building
 
 Check the design first: write the templates (as `model_templates` returns them) and a sample note to a JSON file and run `python3 -I <this skill dir>/scripts/render_note.py <spec.json>`, or for an existing type `render_note.py <note.json> --model <type>`. It renders every card, fails when a front shows its answer or a back reuses `{{FrontSide}}` under a scripted front that hides it, and can't run JavaScript, so a scripted type still needs a preview in Anki. Show the user the type's name and fields, how many cards each note makes and what each asks, the templates, and one sample note as each of its cards' fronts and backs would show it. Build only on a yes.
