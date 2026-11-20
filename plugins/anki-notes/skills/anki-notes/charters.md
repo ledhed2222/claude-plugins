@@ -32,8 +32,9 @@ Go through these for the subject and write down only the answers that differ fro
 3. **Draft** from `charter-template.md`, against the rules above. Every answer from step 1 must show up in some line of the charter; an answer that changes nothing was a wasted question.
 4. **Choose the note types** (next section).
 5. **Test it before showing it.** Run `python3 -I <this skill dir>/scripts/charter.py lint <draft.md> --deck <subject>` (without `--deck` away from Anki) and fix every error: it checks the sections, `Assumes:`, Adding, stage numbering and descriptions, length, and that the tag prefix is unused. Then pick three things likely to come up: one clearly in, one borderline, one adjacent but out. Decide each from the charter's text alone; if the text doesn't settle the borderline one, tighten Scope or Out of scope. Then write one sample note in the chosen note type under the Conventions and check that it passes every rule in `SKILL.md`.
-6. **Show** the draft, the three test cases and how it decided them, and the sample note as each of its cards would show it. Ask what's left as a second, shorter questionnaire: Automatic or Ask (suggest Ask until the first few batches look right), the note-type choice when there's a real alternative, and anything step 5 left open. Never repeat a round-one question. Revise until the user says yes.
-7. **Save**: a new note type first (as `note-types.md` says), then `create_deck` for the subject and for each stage (`<Subject>::01 <name>`), then `update_deck_description` on the top-level deck with the full text and `is_markdown: true`, then sync as in `SKILL.md`. Report in one line.
+6. **Show** the draft, the three test cases and how it decided them, and the sample note as each of its cards would show it. Ask what's left as a second, shorter questionnaire: Automatic or Ask (suggest Ask until the first few batches look right), the note-type choice when there's a real alternative, anything step 5 left open, and one optional question for the deck's look: **how does studying this make you feel, and how would you like it to feel?** (options like calm, playful, focused, cozy, plus a free answer). Never repeat a round-one question. Revise until the user says yes.
+7. **Pick a look**, as "Themes" in `note-types.md` says: build two or three themes from the answer (or from the subject, if the user skipped it), show each on the sample note, and let the user pick one, or none.
+8. **Save**: the theme's note types and any other new note type first (as `note-types.md` says), then `create_deck` for the subject and for each stage (`<Subject>::01 <name>`), then `update_deck_description` on the top-level deck with the full text and `is_markdown: true`, then sync as in `SKILL.md`. Report in one line.
 
 ## Choosing note types
 
@@ -44,7 +45,7 @@ Basic and Cloze cover most subjects. Look for something better only when the sub
    - Most cards share one shape with several parts (a word, the sentence it appeared in, a gloss, where it came from) that Basic would cram into one Back field.
    - One note should give cards for different skills from the same fields, such as recognizing a word and producing it.
    - A template can derive a view the user would otherwise type twice, such as blanking the word in its own sentence for production and bolding it for recognition. The answer lives in one field, so the two views can't drift apart.
-3. **It isn't worth it when** the cards vary in shape (most technical subjects: Basic plus Cloze is enough), only a handful of cards would use it, or the only gain is looks.
+3. **It isn't worth it when** the cards vary in shape (most technical subjects: Basic plus Cloze is enough), only a handful of cards would use it, or the only gain is looks. The one exception is a deck's theme: copies of Basic and Cloze with the same fields and only new styling (see "Themes" in `note-types.md`).
 4. **Count the costs in the proposal.** The templates need a versioned home (if the user keeps note types in a repo, the change goes there, not into a second copy in Anki). Anki doesn't officially support JavaScript in templates, so a scripted template must be tested on every device the user reviews on. Every way cards come in, this skill included, has to fill the fields right.
 5. **Two types for two levels of one item** (recognition and production) need a default and a test for moving a note up, written in the charter: for example, "default to recognition; move a word to production once you've reached for it and not had it, or keep using the wrong word for it". The user moves a note in Anki's browser (Change Note Type), which keeps its review history but forces a full sync, like a field change (see `note-types.md` for the sync order); so suggest moving notes in batches, and never do it yourself.
 
@@ -65,8 +66,10 @@ Change one when the user asks. Propose a change yourself only when the evidence 
 Without the Anki tools, charters and note types can't be read or saved. Run the questionnaire and draft a new charter the same way, skipping the steps that need Anki (other charters, the collection's note types, existing cards), and once the user approves it, queue it in the Anki inbox as one json block:
 
 ```json
-{"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense"], "description": "<full charter text>"}}
+{"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense"], "description": "<full charter text>", "theme": {"...": "the picked theme.json, or null"}}}
 ```
+
+The theme can still be picked away from Anki: `build_theme.py` needs only Python, and the previews can be drawn inline. Its note types are created when the charter is saved.
 
 A change to an existing charter needs its current text, so queue the request instead, in the user's words:
 
