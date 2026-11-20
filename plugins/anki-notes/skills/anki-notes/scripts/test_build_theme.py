@@ -43,6 +43,11 @@ class ThemeTests(unittest.TestCase):
         self.assertEqual([f["family"] for f in used_fonts(GOOD)], ["Fraunces"])
         self.assertEqual(used_fonts(dict(GOOD, fonts=None)), [])
 
+    def test_no_inherit_in_font_lists(self):
+        # `inherit` is invalid inside a font-family list and silently drops the declaration
+        self.assertNotRegex(css(GOOD), r"font-family:[^;]*inherit")
+        self.assertIn('font-family: "Fraunces", var(--body-font)', css(GOOD))
+
     def test_models_keep_stock_fields(self):
         basic, cloze = models(GOOD, "")
         self.assertEqual(basic["in_order_fields"], ["Front", "Back"])
