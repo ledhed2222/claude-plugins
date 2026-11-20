@@ -1,0 +1,17 @@
+{
+  "name": "ankimcp",
+  "version": "0.1.0",
+  "description": "Connects Claude Code to the AnkiMCP add-on's local MCP server (unofficial).",
+  "author": {
+    "name": "ledhed2222"
+  },
+  "homepage": "https://github.com/ledhed2222/claude-plugins/tree/main/plugins/ankimcp#readme",
+  "repository": "https://github.com/ledhed2222/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "anki",
+    "flashcards",
+    "spaced-repetition",
+    "mcp"
+  ]
+}

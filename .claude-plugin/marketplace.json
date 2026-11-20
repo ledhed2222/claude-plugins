@@ -9,6 +9,11 @@
       "name": "rememberthemilk",
       "source": "./plugins/rememberthemilk",
       "description": "Connects Claude Code to Remember The Milk's hosted MCP server (unofficial)."
+    },
+    {
+      "name": "ankimcp",
+      "source": "./plugins/ankimcp",
+      "description": "Connects Claude Code to the AnkiMCP add-on's local MCP server (unofficial)."
     }
   ]
 }

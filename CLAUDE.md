@@ -27,3 +27,10 @@ Unofficial. Declares Remember The Milk's hosted MCP server (`https://www.remembe
 - Stay clearly unofficial: no Remember The Milk logo, icon or branding that implies affiliation. An icon, if added, must be original art. The only expected validator warning is the missing icon.
 - `privacyPolicyUrl` points at Remember The Milk's policy (https://www.rememberthemilk.com/help/privacy.rtm) because their server handles the data; the plugin itself collects nothing. Keep it that way: no hooks or telemetry.
 - The MCP server requires a Remember The Milk Pro account; its README says so and should keep saying so.
+
+### ankimcp
+
+Unofficial. Declares the MCP server that the [AnkiMCP](https://ankimcp.ai) Anki add-on (AnkiWeb code `124672614`) runs locally at `http://127.0.0.1:3141/` (HTTP transport), so users can enable it from `settings.json` instead of running `claude mcp add` on every machine. The URL comes from AnkiMCP's own client setup docs: https://ankimcp.ai/docs/how-to/connect-mcp-clients/. The server and its tools belong to the add-on; the plugin ships config, not code.
+
+- Stay clearly unofficial: no AnkiMCP or Anki logo or branding. An icon, if added, must be original art.
+- The server only exists while Anki is open with the add-on installed; the README says so and should keep saying so. No `privacyPolicyUrl`: the server is local and the plugin collects nothing. Keep it that way: no hooks or telemetry.
