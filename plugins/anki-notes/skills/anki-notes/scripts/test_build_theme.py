@@ -1,6 +1,6 @@
 import unittest
 
-from build_theme import check, contrast, css, font_file, models, used_fonts
+from build_theme import check, contrast, css, font_faces, models, used_fonts
 
 GOOD = {
     "deck": "Spanish", "mood": "warm",
@@ -33,14 +33,22 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("prefers-reduced-motion: no-preference", moving)
         self.assertNotIn("infinite", moving)
 
-    def test_night_mode_and_fonts(self):
-        out = css(GOOD)
-        self.assertIn(".card.nightMode", out)
-        self.assertIn('url("_fraunces.woff2")', out)
+    def test_night_mode(self):
+        self.assertIn(".card.nightMode", css(GOOD))
 
-    def test_font_file_and_used_fonts(self):
-        self.assertEqual(font_file({"family": "Source Sans 3"}), "_source-sans-3.woff2")
-        self.assertEqual([f["family"] for f in used_fonts(GOOD)], ["Fraunces"])
+    def test_font_faces_carry_unicode_range_weight_style(self):
+        files = [{"family": "Literata", "filename": "_literata-cyrillic-700-italic.woff2", "weight": 700,
+                  "style": "italic", "unicode_range": "U+0400-045F"}]
+        face = font_faces(files)
+        self.assertIn('src: url("_literata-cyrillic-700-italic.woff2") format("woff2")', face)
+        self.assertIn("font-weight: 700; font-style: italic;", face)
+        self.assertIn("unicode-range: U+0400-045F;", face)
+        self.assertIn(face, css(GOOD, files))
+
+    def test_used_fonts_defaults(self):
+        self.assertEqual(used_fonts(GOOD), [("accent", "Fraunces", [400], False)])
+        both = dict(GOOD, fonts={"body": {"family": "Literata", "italic": True}, "accent": None})
+        self.assertEqual(used_fonts(both), [("body", "Literata", [400, 700], True)])
         self.assertEqual(used_fonts(dict(GOOD, fonts=None)), [])
 
     def test_no_inherit_in_font_lists(self):
