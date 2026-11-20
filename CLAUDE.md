@@ -34,3 +34,10 @@ Unofficial. Declares the MCP server that the [AnkiMCP](https://ankimcp.ai) Anki 
 
 - Stay clearly unofficial: no AnkiMCP or Anki logo or branding. An icon, if added, must be original art.
 - The server only exists while Anki is open with the add-on installed; the README says so and should keep saying so. No `privacyPolicyUrl`: the server is local and the plugin collects nothing. Keep it that way: no hooks or telemetry.
+
+### anki-notes
+
+The owner's own skill, not a wrapper around someone else's service. It writes to Anki only through `ankimcp`'s tools and queues to Remember The Milk through `rememberthemilk`'s, so it depends on both plugins without declaring any MCP server itself. Its one hook (`hooks/hooks.json`, SessionStart on `startup`) only checks whether the AnkiMCP add-on answers on `127.0.0.1:3141` and, if so, tells the session to empty the `Anki inbox` list. Keep the hook that cheap and silent when Anki is closed: it runs at the start of every Claude Code session.
+
+- The skill's card rules came from the owner reviewing real cards; subject-specific rules belong in each Anki deck's charter (its description), not in `SKILL.md`.
+- `scripts/apply_stage.py` talks to the add-on's HTTP server directly, so it only works in Claude Code on the machine running Anki.

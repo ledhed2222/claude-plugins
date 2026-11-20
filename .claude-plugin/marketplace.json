@@ -14,6 +14,11 @@
       "name": "ankimcp",
       "source": "./plugins/ankimcp",
       "description": "Connects Claude Code to the AnkiMCP add-on's local MCP server (unofficial)."
+    },
+    {
+      "name": "anki-notes",
+      "source": "./plugins/anki-notes",
+      "description": "Turns what Claude teaches you into staged Anki flashcards, with a Remember The Milk inbox for cards drafted away from Anki."
     }
   ]
 }

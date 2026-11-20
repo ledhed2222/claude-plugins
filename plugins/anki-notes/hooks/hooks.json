@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if curl -s -m 2 -o /dev/null http://127.0.0.1:3141/; then echo 'Anki is open. Once, at the start of this session, check the Remember The Milk list \"Anki inbox\" for incomplete tasks; if there are any, empty it with the anki-notes skill and report in one line. If it is empty, say nothing about it.'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
