@@ -1,10 +1,10 @@
 import unittest
 
-from build_theme import check, contrast, css, models
+from build_theme import check, contrast, css, font_file, models, used_fonts
 
 GOOD = {
     "deck": "Spanish", "mood": "warm",
-    "fonts": {"body": None, "accent": {"family": "Fraunces", "file": "_fraunces.woff2"}},
+    "fonts": {"body": None, "accent": {"family": "Fraunces"}},
     "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
     "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"},
     "motion": False,
@@ -37,6 +37,11 @@ class ThemeTests(unittest.TestCase):
         out = css(GOOD)
         self.assertIn(".card.nightMode", out)
         self.assertIn('url("_fraunces.woff2")', out)
+
+    def test_font_file_and_used_fonts(self):
+        self.assertEqual(font_file({"family": "Source Sans 3"}), "_source-sans-3.woff2")
+        self.assertEqual([f["family"] for f in used_fonts(GOOD)], ["Fraunces"])
+        self.assertEqual(used_fonts(dict(GOOD, fonts=None)), [])
 
     def test_models_keep_stock_fields(self):
         basic, cloze = models(GOOD, "")

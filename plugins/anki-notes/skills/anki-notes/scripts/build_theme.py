@@ -8,8 +8,8 @@ theme.json:
   "deck": "Spanish",
   "mood": "warm, unhurried",                  // the user's words, kept as a CSS comment
   "fonts": {                                  // null = the system font
-    "body":   {"family": "Source Sans 3", "file": "_source-sans-3.woff2"},
-    "accent": {"family": "Fraunces", "file": "_fraunces.woff2"}
+    "body":   {"family": "Source Sans 3"},   // any Google Fonts family (OFL); fetched from npm
+    "accent": {"family": "Fraunces", "weight": 400}
   },
   "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
   "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"},
@@ -22,6 +22,8 @@ Writes to <out dir>:
                 fills them as before and Change Note Type keeps review history
   theme.css     the stylesheet (also inside models.json)
   preview.html  a sample note, front and back, in light and night mode
+  _<family>.woff2  each font, fetched from npm by fetch_font.py (next to preview.html, so
+                the preview shows it); media.json lists them for store_media_file(path=...)
 
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
 background in either mode, or the spec is malformed. Standard library only.
@@ -30,6 +32,9 @@ import asyncio
 import json
 import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
+from fetch_font import fetch_font, slug  # noqa: E402
 
 MIN_CONTRAST = 4.5
 SYSTEM = '-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
@@ -73,12 +78,21 @@ def font_stack(font, fallback):
     return f'"{font["family"]}", {fallback}' if font else fallback
 
 
+def font_file(font):
+    return f"_{slug(font['family'])}.woff2"  # leading _ keeps Anki's Check Media from deleting it
+
+
+def used_fonts(theme):
+    fonts = theme.get("fonts") or {}
+    return [f for f in (fonts.get("body"), fonts.get("accent")) if f and f.get("family")]
+
+
 def css(theme):
     fonts = theme.get("fonts") or {}
     body, accent = fonts.get("body"), fonts.get("accent")
     lt, nt = theme["light"], theme["night"]
     faces = "".join(
-        f'@font-face {{ font-family: "{f["family"]}"; src: url("{f["file"]}"); font-display: swap; }}\n'
+        f'@font-face {{ font-family: "{f["family"]}"; src: url("{font_file(f)}"); font-weight: {f.get("weight", 400)}; font-display: swap; }}\n'
         for f in (body, accent) if f)
     stages = "".join(
         f'.deck-label[data-deck*="::{n:02d} "]::before {{ content: "{"●" * n}{"○" * max(0, 3 - n)} "; }}\n'
@@ -171,7 +185,19 @@ async def main():
     stylesheet = css(theme)
     sample = theme.get("sample") or {"stage": "01 Basics", "front": "Which eval step costs more: inference or scoring?",
                                       "back": "<b>Inference.</b>", "tags": ["rescued"]}
+    media = []
+
+    async def get(font):
+        dest = os.path.join(out, font_file(font))
+        try:
+            await fetch_font(font["family"], dest, font.get("weight", 400))
+            media.append({"filename": font_file(font), "path": os.path.abspath(dest)})
+        except (RuntimeError, ValueError, OSError, asyncio.TimeoutError) as e:
+            print(f"warning: no font file for {font['family']} ({e}); the theme falls back to the system font")
+
+    await asyncio.gather(*(get(f) for f in used_fonts(theme)))
     await asyncio.gather(
+        asyncio.to_thread(_write, os.path.join(out, "media.json"), json.dumps(media, indent=1)),
         asyncio.to_thread(_write, os.path.join(out, "theme.css"), stylesheet),
         asyncio.to_thread(_write, os.path.join(out, "models.json"),
                           json.dumps(models(theme, stylesheet), ensure_ascii=False, indent=1)),
@@ -180,7 +206,7 @@ async def main():
     for mode in MODES:
         p = theme[mode]
         print(f"{mode}: text {contrast(p['text'], p['bg']):.1f}:1, accent {contrast(p['accent'], p['bg']):.1f}:1")
-    print(f"wrote theme.css, models.json, preview.html to {out}")
+    print(f"wrote theme.css, models.json, preview.html, media.json and {len(media)} font file(s) to {out}")
 
 
 if __name__ == "__main__":
