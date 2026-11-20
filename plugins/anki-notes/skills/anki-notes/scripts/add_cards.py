@@ -9,7 +9,6 @@ and does SKILL.md steps 4-6: lint, add per (deck, stage, model), keep the
 batch's order within the stage, sync, stop on a sync conflict.
 
 Intent for whoever picks this up:
-- Reuse call() and sync() from apply_stage.py (move both to a shared client.py).
 - Run lint_cards.lint first and refuse to add on any error.
 - Cards with "stage": null need a stage chosen by Claude first; refuse them.
 - Never delete or overwrite; add_notes only. Duplicates the add-on rejects are
@@ -18,16 +17,18 @@ Intent for whoever picks this up:
   list, this script adds them, and Claude deletes the blocks whose notes were
   reported as added.
 """
-import json
+import asyncio
+import os
 import sys
 from collections import defaultdict
 
-from apply_stage import call, sync
-from lint_cards import lint
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
+from ankimcp_client import AnkiError, Client, read_json  # noqa: E402
+from lint_cards import lint  # noqa: E402
 
 
-def main():
-    cards = json.load(open(sys.argv[1]))
+async def main():
+    cards = await read_json(sys.argv[1])
     apply = "--apply" in sys.argv
 
     errors = [(i, m) for i, c in enumerate(cards, 1) for s, m in lint(c) if s == "error"]
@@ -42,18 +43,22 @@ def main():
     if not apply:
         sys.exit("dry run ok; pass --apply")
 
-    for (deck, stage, model), group in groups.items():
-        full = f"{deck}::{stage}"
-        r = call("add_notes", deck_name=full, model_name=model,
-                 notes=[{"fields": c["fields"], "tags": c["tags"]} for c in group])
-        for c, res in zip(group, r["results"]):
-            print("added" if res.get("note_id") else f"NOT added ({res}):", list(c["fields"].values())[0][:60])
-        # TODO: card_reposition for cards that belong before others in the stage.
-    s = sync()
+    try:
+        async with Client() as anki:
+            # one group at a time: every call writes into the same collection
+            for (deck, stage, model), group in groups.items():
+                r = await anki.call("add_notes", deck_name=f"{deck}::{stage}", model_name=model,
+                                    notes=[{"fields": c["fields"], "tags": c["tags"]} for c in group])
+                for c, res in zip(group, r["results"]):
+                    print("added" if res.get("note_id") else f"NOT added ({res}):", list(c["fields"].values())[0][:60])
+                # TODO: card_reposition for cards that belong before others in the stage.
+            s = await anki.sync()
+    except AnkiError as e:
+        sys.exit(str(e))
     print("sync:", s["status"], s.get("error") or "")
     if s["status"] != "success":
         sys.exit("sync did not succeed; do not pick a direction on a conflict, tell the user")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

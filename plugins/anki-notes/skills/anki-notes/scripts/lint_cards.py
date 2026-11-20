@@ -12,6 +12,7 @@ Findings are "error" (empty fields, broken cloze, missing tags) or "warn"
 cloze exception, so Claude fixes or explains them, never silently ignores).
 Exit 1 on any error, or on any warning with --strict.
 """
+import asyncio
 import json
 import re
 import sys
@@ -81,13 +82,16 @@ def lint(card, prefix=None):
     return out
 
 
-def main():
+async def main():
     args = sys.argv[1:]
     if not args:
         sys.exit(__doc__)
     prefix = args[args.index("--prefix") + 1] if "--prefix" in args else None
     strict = "--strict" in args
-    cards = json.load(open(args[0]))
+    def read():
+        with open(args[0]) as f:
+            return json.load(f)
+    cards = await asyncio.to_thread(read)
     bad = False
     for i, c in enumerate(cards, 1):
         label = text(c.get("fields", {}).get("Front") or c.get("fields", {}).get("Text") or "")[:50]
@@ -99,4 +103,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
