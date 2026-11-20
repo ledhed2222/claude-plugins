@@ -26,6 +26,7 @@ Writes to <out dir>:
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
 background in either mode, or the spec is malformed. Standard library only.
 """
+import asyncio
 import json
 import os
 import sys
@@ -148,24 +149,34 @@ body {{ margin: 0; background: #888; }} .grid {{ display: grid; grid-template-co
 """
 
 
-def main():
+def _read_json(path):
+    with open(path) as f:
+        return json.load(f)
+
+
+def _write(path, text):
+    with open(path, "w") as f:
+        f.write(text)
+
+
+async def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
-    theme = json.load(open(sys.argv[1]))
+    theme = await asyncio.to_thread(_read_json, sys.argv[1])
     problems = check(theme)
     if problems:
         sys.exit("not legible enough:\n  " + "\n  ".join(problems))
     out = sys.argv[2]
-    os.makedirs(out, exist_ok=True)
+    await asyncio.to_thread(os.makedirs, out, exist_ok=True)
     stylesheet = css(theme)
     sample = theme.get("sample") or {"stage": "01 Basics", "front": "Which eval step costs more: inference or scoring?",
                                       "back": "<b>Inference.</b>", "tags": ["rescued"]}
-    with open(os.path.join(out, "theme.css"), "w") as f:
-        f.write(stylesheet)
-    with open(os.path.join(out, "models.json"), "w") as f:
-        json.dump(models(theme, stylesheet), f, ensure_ascii=False, indent=1)
-    with open(os.path.join(out, "preview.html"), "w") as f:
-        f.write(preview(theme, stylesheet, sample))
+    await asyncio.gather(
+        asyncio.to_thread(_write, os.path.join(out, "theme.css"), stylesheet),
+        asyncio.to_thread(_write, os.path.join(out, "models.json"),
+                          json.dumps(models(theme, stylesheet), ensure_ascii=False, indent=1)),
+        asyncio.to_thread(_write, os.path.join(out, "preview.html"), preview(theme, stylesheet, sample)),
+    )
     for mode in MODES:
         p = theme[mode]
         print(f"{mode}: text {contrast(p['text'], p['bg']):.1f}:1, accent {contrast(p['accent'], p['bg']):.1f}:1")
@@ -173,4 +184,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
