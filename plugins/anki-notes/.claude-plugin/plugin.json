@@ -13,5 +13,8 @@
     "flashcards",
     "spaced-repetition",
     "learning"
+  ],
+  "dependencies": [
+    "ankimcp"
   ]
 }

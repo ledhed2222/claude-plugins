@@ -26,13 +26,14 @@ You need:
 
 - [Anki](https://apps.ankiweb.net) 25.07 or newer, with the [AnkiMCP](https://ankimcp.ai) add-on (Tools → Add-ons → Get Add-ons, code `124672614`).
 
-In Claude Code, install two plugins from this marketplace:
+In Claude Code:
 
 ```
 /plugin marketplace add ledhed2222/claude-plugins
-/plugin install ankimcp@ledhed2222
 /plugin install anki-notes@ledhed2222
 ```
+
+That also installs [ankimcp](../ankimcp), which connects Claude Code to the AnkiMCP add-on.
 
 In claude.ai (web, desktop chat, mobile), add the same marketplace under **Customize → Plugins** and install `anki-notes`. There the skill can only queue cards; it can't reach Anki.
 

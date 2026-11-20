@@ -37,7 +37,7 @@ Unofficial. Declares the MCP server that the [AnkiMCP](https://ankimcp.ai) Anki 
 
 ### anki-notes
 
-The owner's own skill, not a wrapper around someone else's service. It writes to Anki only through `ankimcp`'s tools and queues to a Claude Docs doc titled `Anki inbox` through the built-in docs tools, so it depends on `ankimcp` without declaring any MCP server itself. Its one hook (`hooks/hooks.json`, SessionStart on `startup`) only checks whether the AnkiMCP add-on answers on `127.0.0.1:3141` and, if so, tells the session to empty the `Anki inbox` doc. Keep the hook that cheap and silent when Anki is closed: it runs at the start of every Claude Code session.
+The owner's own skill, not a wrapper around someone else's service. It writes to Anki only through `ankimcp`'s tools and queues to a Claude Docs doc titled `Anki inbox` through the built-in docs tools, so it declares `ankimcp` in `dependencies` (installed with it) rather than an MCP server of its own. Its one hook (`hooks/hooks.json`, SessionStart on `startup`) only checks whether the AnkiMCP add-on answers on `127.0.0.1:3141` and, if so, tells the session to empty the `Anki inbox` doc. Keep the hook that cheap and silent when Anki is closed: it runs at the start of every Claude Code session.
 
 - The skill's card rules came from the owner reviewing real cards; subject-specific rules belong in each Anki deck's charter (its description), not in `SKILL.md`.
 - `scripts/apply_stage.py` talks to the add-on's HTTP server directly, so it only works in Claude Code on the machine running Anki.
