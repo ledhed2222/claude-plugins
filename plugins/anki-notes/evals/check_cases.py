@@ -18,6 +18,7 @@ agent mock quotes on its own line) has the keys _shapes.json lists for its tool.
 
 Exit 1 on any problem.
 """
+import asyncio
 import json
 import re
 import sys
@@ -104,20 +105,24 @@ def check_shape(label, reply, shape):
     return out
 
 
-def main():
-    tools = json.loads((SHARED / "_tools.json").read_text())
+async def main():
+    tools_text, shapes_text = await asyncio.gather(*(asyncio.to_thread((SHARED / f).read_text) for f in ("_tools.json", "_shapes.json")))
+    tools = json.loads(tools_text)
     known = {t["name"] for t in (tools["tools"] if isinstance(tools, dict) else tools)}
-    shapes = json.loads((SHARED / "_shapes.json").read_text())["tools"]
+    shapes = json.loads(shapes_text)["tools"]
     mocked = {p.stem for p in SHARED.glob("*.md")}
     problems = [f"mocks/anki/{t}.md: {t} is not in _tools.json" for t in sorted(mocked - known)]
 
     cases = sorted(p.parent for p in HERE.glob("*/prompt.md"))
-    for case in cases:
-        problems += [f"{case.name}: {m}" for m in check_case(case, mocked, known)]
-    for mock in sorted(HERE.glob("**/mocks/anki/*.md")):
-        if mock.stem in shapes:
-            for label, reply in replies(mock):
-                problems += check_shape(label, reply, shapes[mock.stem])
+    mocks = [m for m in sorted(HERE.glob("**/mocks/anki/*.md")) if m.stem in shapes]
+    # every case and mock is read in its own thread; results keep their sorted order
+    found = await asyncio.gather(*(asyncio.to_thread(check_case, c, mocked, known) for c in cases),
+                                 *(asyncio.to_thread(replies, m) for m in mocks))
+    for case, msgs in zip(cases, found):
+        problems += [f"{case.name}: {m}" for m in msgs]
+    for mock, reps in zip(mocks, found[len(cases):]):
+        for label, reply in reps:
+            problems += check_shape(label, reply, shapes[mock.stem])
 
     for p in problems:
         print(p)
@@ -126,4 +131,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

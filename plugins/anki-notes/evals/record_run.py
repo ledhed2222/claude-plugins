@@ -17,8 +17,8 @@ each case: overall on the cases both have, and every case whose score changed.
 A case runs 3 times, so a move of 0.33 or less on one case is often noise;
 re-run it before acting on it. --check validates the file (CI).
 """
+import asyncio
 import json
-import subprocess
 import sys
 from pathlib import Path
 
@@ -28,16 +28,26 @@ FIELDS = {"started": str, "commit": str, "claude": str, "cost_usd": (int, float)
           "arms": str, "runs_per_case": int, "scores": dict, "note": str}
 
 
-def load():
-    if not HISTORY.exists():
+async def load():
+    try:
+        text = await asyncio.to_thread(HISTORY.read_text)
+    except FileNotFoundError:
         return []
-    return [json.loads(l) for l in HISTORY.read_text().splitlines() if l.strip()]
+    return [json.loads(l) for l in text.splitlines() if l.strip()]
 
 
-def head_commit():
-    git = ["git", "-C", str(HERE)]
-    sha = subprocess.run(git + ["rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-    dirty = subprocess.run(git + ["status", "--porcelain", "--", str(HERE.parent)], capture_output=True, text=True).stdout.strip()
+async def git(*args):
+    proc = await asyncio.create_subprocess_exec("git", "-C", str(HERE), *args,
+                                                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    out, err = await proc.communicate()
+    return proc.returncode, out.decode().strip(), err.decode().strip()
+
+
+async def head_commit():
+    (code, sha, err), (_, dirty, _) = await asyncio.gather(
+        git("rev-parse", "--short", "HEAD"), git("status", "--porcelain", "--", str(HERE.parent)))
+    if code:
+        sys.exit(f"git rev-parse failed: {err}")
     return sha + ("-dirty" if dirty else "")
 
 
@@ -102,34 +112,41 @@ def check(history):
     return problems
 
 
-def read_result(path):
-    return json.loads(Path(path).read_text())
+async def read_result(path):
+    return json.loads(await asyncio.to_thread(Path(path).read_text))
 
 
-def main():
+async def given(value):
+    return value
+
+
+async def main():
     args = sys.argv[1:]
     if args == ["--check"]:
-        problems = check(load())
-        print("\n".join(problems) or f"{len(load())} runs recorded")
+        history = await load()
+        problems = check(history)
+        print("\n".join(problems) or f"{len(history)} runs recorded")
         sys.exit(1 if problems else 0)
     if not args or args[0] not in ("add", "diff"):
         sys.exit(__doc__)
-    history = load()
     opt = lambda name: args[args.index(name) + 1] if name in args else None  # noqa: E731
     if args[0] == "add":
         if len(args) < 2:
             sys.exit(__doc__)
-        new = entry(read_result(args[1]), opt("--commit") or head_commit(), opt("--note") or "")
+        commit = given(opt("--commit")) if opt("--commit") else head_commit()
+        history, result, commit = await asyncio.gather(load(), read_result(args[1]), commit)
+        new = entry(result, commit, opt("--note") or "")
         if any(h["started"] == new["started"] for h in history):
             sys.exit(f"run started {new['started']} is already recorded")
         print("\n".join(diff(new, history)))
         history.append(new)
         history.sort(key=lambda h: h["started"])
-        HISTORY.write_text("".join(json.dumps(h, ensure_ascii=False) + "\n" for h in history))
+        await asyncio.to_thread(HISTORY.write_text, "".join(json.dumps(h, ensure_ascii=False) + "\n" for h in history))
         print(f"recorded run {new['started']} at {new['commit']}")
     else:
-        if len(args) > 1:
-            new, earlier = entry(read_result(args[1]), "this run", ""), history
+        history, result = await asyncio.gather(load(), read_result(args[1]) if len(args) > 1 else given(None))
+        if result is not None:
+            new, earlier = entry(result, "this run", ""), history
         elif history:
             new, earlier = history[-1], history[:-1]
         else:
@@ -138,4 +155,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

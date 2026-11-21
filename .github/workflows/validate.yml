@@ -13,18 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
+      - uses: jdx/mise-action@v5
       - run: npm install -g @anthropic-ai/claude-code
-      - run: |
-          claude plugin validate .
-          for p in plugins/*/; do claude plugin validate "$p"; done
-      - name: anki-notes eval spec is up to date
-        run: python3 -I plugins/anki-notes/evals/gen_spec.py --check
-      - name: anki-notes eval cases follow the rules
-        working-directory: plugins/anki-notes/evals
-        run: python3 -I check_cases.py && python3 -I record_run.py --check && python3 -m unittest test_check_cases test_record_run
-      - name: anki-notes script tests
-        working-directory: plugins/anki-notes/skills/anki-notes/scripts
-        run: python3 -m unittest
+      - run: mise run ci

@@ -6,6 +6,7 @@ Usage: python3 -I gen_spec.py [--check]
 Only the text between the generated markers in SPEC.md is rewritten; the rest
 is hand-written. --check exits 1 instead of writing when SPEC.md is stale (CI).
 """
+import asyncio
 import re
 import sys
 from pathlib import Path
@@ -53,41 +54,44 @@ def describe(meta, body):
     return kind, body.replace("\n", " ")
 
 
-def render():
+def render_case(c):
     out = []
+    meta, prompt = split_frontmatter((c / "prompt.md").read_text())
+    out.append(f"\n### {c.name}\n\n{meta.get('description', '')}\n")
+    out.append("**User message:**\n\n" + "\n".join(f"> {line}" if line else ">" for line in prompt.splitlines()))
+    overrides = sorted(p.stem for p in (c / "mocks" / "anki").glob("*.md")) if (c / "mocks" / "anki").is_dir() else []
+    deck = "the shared mock deck" + (f", with this case's own {', '.join(f'`{o}`' for o in overrides)}" if overrides else "")
+    out.append(f"\n**Deck:** {deck}.\n")
+    out.append("| grader | kind | passes when |\n|---|---|---|")
+    for g in sorted((c / "graders").glob("*.md")):
+        gmeta, gbody = split_frontmatter(g.read_text())
+        kind, rule = describe(gmeta, gbody)
+        # a | ends a table cell even inside backticks
+        rule = rule.replace("|", "\\|")
+        out.append(f"| `{g.stem}` | {kind} | {rule} |")
+    return meta.get("description", ""), out
+
+
+async def render():
     cases = sorted(p for p in HERE.iterdir() if (p / "prompt.md").is_file())
-    out.append("| case | what it checks |\n|---|---|")
-    for c in cases:
-        meta, _ = split_frontmatter((c / "prompt.md").read_text())
-        out.append(f"| [`{c.name}`](#{c.name}) | {meta.get('description', '')} |")
-    for c in cases:
-        meta, prompt = split_frontmatter((c / "prompt.md").read_text())
-        out.append(f"\n### {c.name}\n\n{meta.get('description', '')}\n")
-        out.append("**User message:**\n\n" + "\n".join(f"> {line}" if line else ">" for line in prompt.splitlines()))
-        overrides = sorted(p.stem for p in (c / "mocks" / "anki").glob("*.md")) if (c / "mocks" / "anki").is_dir() else []
-        deck = "the shared mock deck" + (f", with this case's own {', '.join(f'`{o}`' for o in overrides)}" if overrides else "")
-        out.append(f"\n**Deck:** {deck}.\n")
-        out.append("| grader | kind | passes when |\n|---|---|---|")
-        for g in sorted((c / "graders").glob("*.md")):
-            gmeta, gbody = split_frontmatter(g.read_text())
-            kind, rule = describe(gmeta, gbody)
-            # a | ends a table cell even inside backticks
-            rule = rule.replace("|", "\\|")
-            out.append(f"| `{g.stem}` | {kind} | {rule} |")
+    rendered = await asyncio.gather(*(asyncio.to_thread(render_case, c) for c in cases))  # one thread per case, order kept
+    out = ["| case | what it checks |\n|---|---|"]
+    out += [f"| [`{c.name}`](#{c.name}) | {desc} |" for c, (desc, _) in zip(cases, rendered)]
+    out += [line for _, lines in rendered for line in lines]
     return "\n".join(out) + "\n"
 
 
-def main():
-    spec = SPEC.read_text()
+async def main():
+    spec, body = await asyncio.gather(asyncio.to_thread(SPEC.read_text), render())
     head, rest = spec.split(START, 1)
     _, tail = rest.split(END, 1)
-    new = f"{head}{START}\n{render()}{END}{tail}"
+    new = f"{head}{START}\n{body}{END}{tail}"
     if "--check" in sys.argv:
         if new != spec:
             sys.exit("SPEC.md is out of date with the eval cases: run python3 -I plugins/anki-notes/evals/gen_spec.py and commit the result")
         return
-    SPEC.write_text(new)
+    await asyncio.to_thread(SPEC.write_text, new)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

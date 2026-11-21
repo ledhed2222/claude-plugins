@@ -13,7 +13,7 @@ To add a plugin: create `plugins/<name>/`, add an entry to `marketplace.json`, a
 
 ## Checks
 
-- Before every commit: `claude plugin validate .` (marketplace) and `claude plugin validate plugins/<name>` for each changed plugin. CI runs both.
+- Tool versions and tasks are in `mise.toml`; `mise tasks` lists them. Before every commit: `mise run ci` (validates the marketplace and every plugin, then the anki-notes checks and tests). CI runs the same task.
 - Test a plugin from disk without installing: `claude --plugin-dir plugins/<name>`.
 - Bump `version` in a plugin's `plugin.json` on any change that should reach existing installs.
 - Icons are fixed the first time a plugin is submitted to the plugin directory, so add one before submitting.

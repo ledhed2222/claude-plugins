@@ -58,10 +58,8 @@ async def main():
     cards = [(n, c) for n, c in await read_cards(args[0]) if "fields" in c]
     try:
         async with Client() as anki:
-            decks = {}
-            for _, c in cards:
-                if c["deck"] not in decks:
-                    decks[c["deck"]] = await first_fields(anki, c["deck"])
+            names = list(dict.fromkeys(c["deck"] for _, c in cards))
+            decks = dict(zip(names, await asyncio.gather(*(first_fields(anki, d) for d in names))))
     except AnkiError as e:
         sys.exit(str(e))
     for n, c in cards:
