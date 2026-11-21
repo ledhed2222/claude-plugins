@@ -27,6 +27,7 @@ Show the user the type's name and fields, how many cards each note makes and wha
 A change to a note type changes every note of that type. Count them (`find_notes` with `note:"<type>"`), show the old and new templates or fields, and apply only on a yes:
 
 - **Templates and CSS**: `update_model_templates` (patch mode for small edits) and `update_model_styling`.
-- **Renaming a field** (`model_field_rename`) keeps its content and rewrites the templates that use it.
-- **Adding, removing or reordering a field** (`model_field_add`, `model_field_remove`, `model_field_reposition`) forces the next sync to be a full one, which replaces the collection on one side. Before doing it, sync, and ask the user to sync every other device first so no reviews are lost; then make the change and sync, and if Anki asks which side to keep, stop and let the user choose. Removing a field deletes its content from every note.
+- **Renaming a field** (`model_field_rename`) keeps its content and rewrites the templates that use it. It doesn't force a full sync by itself, but if its `will_force_full_sync` comes back true, an earlier change already did: handle the sync as below.
+- **Adding or reordering a field** (`model_field_add`, `model_field_reposition`) forces the next sync to be a full one, which replaces the collection on one side. Before doing it, sync, and ask the user to sync every other device first so no reviews are lost; then make the change and sync, and if Anki asks which side to keep, stop and let the user choose.
+- **Removing a field** deletes its content from every note, and there is no tool for it: the user does it in Anki (Tools → Manage Note Types → Fields), after the same sync-every-device step.
 - **Moving notes to another type** is the user's job, in Anki's browser (Change Note Type), never this skill's.

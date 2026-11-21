@@ -37,7 +37,7 @@ The user learns these topics from the cards, so a card may only use a concept th
 
 - List every term it relies on (confusion matrix, few-shot, class balance, ROC curve, F-beta...). For each one, find the card that introduces it, in the same or an earlier stage. If there isn't one, write that card first.
 - Introduce a concept with the plain questions a newcomer would ask, each its own card: **What is X? What problem does it solve? Why is it built this way** (e.g. why F1 uses a harmonic mean)? Cards about edge cases and tradeoffs come after those.
-- **No lone cards.** A concept that earns a card usually gets two or three, each from a different angle: what it is, why it works that way, how it differs from its nearest neighbor, when you'd reach for it. One isolated card is easy to forget and hard to use. Be strict about which concepts get in, not about how many angles each one gets.
+- **No lone cards.** A concept that earns a card usually gets two or three, each from a different angle: what it is, why it works that way, how it differs from its nearest neighbor, when you'd reach for it. One isolated card is easy to forget and hard to use. Be strict about which concepts get in, not about how many angles each one gets, but each angle must still pass every rule under "What earns a card" on its own; never pad a concept with a weak card.
 
 ## Writing the front
 
@@ -110,6 +110,6 @@ A Claude Docs doc titled **Anki inbox** queues cards drafted where Anki can't be
 
 Leave `stage` null if you can't tell; it is decided when the card is added. Without the deck's charter you can't check overlap or prerequisites, so only queue what clearly passes the rules above, and only in a subject the user has a deck for (or asked for). Report in one line: "Queued 2 cards in the Anki inbox." If the doc can't be reached either, give the drafts in chat and say they weren't saved anywhere.
 
-**Empty the inbox** when the Anki tools work: in Claude Code, a session-start hook says when Anki is open. Read the doc and take each json code block under "Queued cards". Handle `charter` and `charter_change` blocks first, as `charters.md` says. Add each card through the normal steps above, which are the overlap, prerequisite and stage checks the queuing session couldn't do. Delete its code block once the card is added, or once you've dropped it as a duplicate; leave anything you couldn't parse and say so. Then sync and report in one line what was added, dropped, and left queued.
+**Empty the inbox** when the Anki tools work: in Claude Code, a session-start hook says when Anki is open. Read the doc and take each json code block under "Queued cards". Handle `charter` and `charter_change` blocks first, as `charters.md` says. Add each card through the normal steps above, which are the overlap, prerequisite and stage checks the queuing session couldn't do. Delete each card's code block once the card is added, or once you've dropped it as a duplicate, and each charter block once it is saved or applied; leave anything you couldn't parse and say so. Then sync and report in one line what was added, dropped, and left queued.
 
 If neither Anki nor the inbox is reachable, say so in one line and keep teaching. Don't block the lesson on it.

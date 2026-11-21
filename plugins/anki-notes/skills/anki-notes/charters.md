@@ -74,4 +74,4 @@ A change to an existing charter needs its current text, so queue the request ins
 {"charter_change": {"deck": "Spanish", "request": "stop carding regional slang"}}
 ```
 
-When the inbox is emptied, these go before any card. For a queued charter, run the skipped steps; if they change nothing, save it, since the user already approved it, and otherwise show the change first. If the skipped note-type check finds a type that fits, that is a change: ask before switching. A queued change goes through "Changing a charter" from the top.
+When the inbox is emptied, these go before any card. For a queued charter, run the skipped steps; if they change nothing, save it, since the user already approved it, and otherwise show the change first. If the deck already exists or has a description, that is a change too: show the old and new text, as in "Changing a charter", and save only on a yes. If the skipped note-type check finds a type that fits, that is a change: ask before switching. A queued change goes through "Changing a charter" from the top. Delete each charter block from the inbox once it is saved or applied, so it isn't replayed.
