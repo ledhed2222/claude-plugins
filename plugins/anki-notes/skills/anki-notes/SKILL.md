@@ -83,7 +83,7 @@ Cards are only written to Anki from Claude Code, through the `anki` MCP server o
 6. **Sync**: `sync()`, then poll `sync(job_id)` until it reports `success`. If it ends in `conflict`, never pick a direction yourself; cancel and tell the user.
 7. **Report** in one line: how many were added, to which deck and stage, their fronts in short form, and whether the sync succeeded.
 
-For a bulk restructure (re-reviewing or rebuilding a whole stage), write the stage as a plan file and run `python3 -I <this skill dir>/scripts/apply_stage.py <plan.json>` (a dry run; add `--apply`, then run it with `--sync`). Its docstring has the plan format. Show the user the plan for review first, as a file with the current text of every card it touches.
+For a bulk restructure (re-reviewing or rebuilding a whole stage), write the stage as a plan file and run `python3 -I <this skill dir>/scripts/apply_stage.py <plan.json>` (a dry run), then again with `--apply --sync`. Its docstring has the plan format. It unsuspends every card of the notes it places, `keep` ones included, so say so in the plan when a kept note is suspended. If a run fails partway, fix the cause and re-run the same command: notes it already added are recorded beside the plan and not added twice. Show the user the plan for review first, as a file with the current text of every card it touches.
 
 Edits to existing cards (`update_note_fields`) keep review history. Never delete notes yourself: tag them `to-delete` with `tag_add` and tell the user, who deletes them in the browser.
 
