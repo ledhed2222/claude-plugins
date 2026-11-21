@@ -1,0 +1,93 @@
+# pyright: basic
+"""Regenerate the case list in SPEC.md from the eval case files.
+
+Usage: python3 -I gen_spec.py [--check]
+
+Only the text between the generated markers in SPEC.md is rewritten; the rest
+is hand-written. --check exits 1 instead of writing when SPEC.md is stale (CI).
+"""
+import re
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+SPEC = HERE / "SPEC.md"
+START, END = "<!-- generated:start -->", "<!-- generated:end -->"
+
+
+def split_frontmatter(text):
+    m = re.match(r"---\n(.*?)\n---\n?(.*)", text, re.S)
+    if not m:
+        return {}, text.strip()
+    meta = {}
+    for line in m.group(1).splitlines():
+        # top-level `key: value` only; nested blocks (env:) are skipped
+        km = re.match(r"([A-Za-z_]+):\s*(.*)$", line)
+        if km:
+            meta[km.group(1)] = km.group(2).strip().strip('"').strip("'")
+    return meta, m.group(2).strip()
+
+
+def tool_name(full):
+    return full.rsplit("__", 1)[-1]
+
+
+def describe(meta, body):
+    kind = meta.get("type", "?")
+    if kind == "tool_used":
+        tool = f"`{tool_name(meta.get('tool', '?'))}`"
+        if meta.get("max") == "0":
+            return "tool check", f"{tool} is never called"
+        n = meta.get("min", "1")
+        return "tool check", f"{tool} is called at least {'once' if n == '1' else n + ' times'}"
+    if kind == "regex":
+        where = {"mock_calls": "the inputs sent to the mocked Anki tools",
+                 "last_message": "the final reply", "trace": "the whole transcript"}.get(meta.get("target", "last_message"), meta.get("target"))
+        case = " (case-insensitive)" if "i" in meta.get("flags", "") else ""
+        verb = "never contain" if meta.get("match") == "not_contains" else "contain"
+        return "text search", f"{where} {verb} `{meta.get('pattern', '')}`{case}"
+    if kind == "llm":
+        seen = "the final reply" if meta.get("focus", "last_message") == "last_message" else "the transcript"
+        rule = " ".join(line.strip() for line in body.splitlines() if line.strip())
+        return f"LLM judge, reads {seen}", rule
+    return kind, body.replace("\n", " ")
+
+
+def render():
+    out = []
+    cases = sorted(p for p in HERE.iterdir() if (p / "prompt.md").is_file())
+    out.append("| case | what it checks |\n|---|---|")
+    for c in cases:
+        meta, _ = split_frontmatter((c / "prompt.md").read_text())
+        out.append(f"| [`{c.name}`](#{c.name}) | {meta.get('description', '')} |")
+    for c in cases:
+        meta, prompt = split_frontmatter((c / "prompt.md").read_text())
+        out.append(f"\n### {c.name}\n\n{meta.get('description', '')}\n")
+        out.append("**User message:**\n\n" + "\n".join(f"> {line}" if line else ">" for line in prompt.splitlines()))
+        overrides = sorted(p.stem for p in (c / "mocks" / "anki").glob("*.md")) if (c / "mocks" / "anki").is_dir() else []
+        deck = "the shared mock deck" + (f", with this case's own {', '.join(f'`{o}`' for o in overrides)}" if overrides else "")
+        out.append(f"\n**Deck:** {deck}.\n")
+        out.append("| grader | kind | passes when |\n|---|---|---|")
+        for g in sorted((c / "graders").glob("*.md")):
+            gmeta, gbody = split_frontmatter(g.read_text())
+            kind, rule = describe(gmeta, gbody)
+            # a | ends a table cell even inside backticks
+            rule = rule.replace("|", "\\|")
+            out.append(f"| `{g.stem}` | {kind} | {rule} |")
+    return "\n".join(out) + "\n"
+
+
+def main():
+    spec = SPEC.read_text()
+    head, rest = spec.split(START, 1)
+    _, tail = rest.split(END, 1)
+    new = f"{head}{START}\n{render()}{END}{tail}"
+    if "--check" in sys.argv:
+        if new != spec:
+            sys.exit("SPEC.md is out of date with the eval cases: run python3 -I plugins/anki-notes/evals/gen_spec.py and commit the result")
+        return
+    SPEC.write_text(new)
+
+
+if __name__ == "__main__":
+    main()

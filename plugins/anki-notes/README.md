@@ -68,7 +68,7 @@ For a big cleanup, Claude writes the stage as a plan file (every card's current 
 
 ## Evals
 
-`evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals.md) suite: one case per mistake the skill must not make, each run with and without the plugin against a mocked deck, so your real Anki is never touched. From the root of this repo:
+`evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals.md) suite: one case per mistake the skill must not make, each run with and without the plugin against a mocked deck, so your real Anki is never touched. [`evals/SPEC.md`](evals/SPEC.md) lists what each case tests and what counts as passing. From the root of this repo:
 
 ```
 claude plugin eval . --trust-plugin

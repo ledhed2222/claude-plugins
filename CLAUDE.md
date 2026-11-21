@@ -37,8 +37,4 @@ Unofficial. Declares the MCP server that the [AnkiMCP](https://ankimcp.ai) Anki 
 
 ### anki-notes
 
-The owner's own skill, not a wrapper around someone else's service. It writes to Anki only through `ankimcp`'s tools and queues to a Claude Docs doc titled `Anki inbox` through the built-in docs tools, so it declares `ankimcp` in `dependencies` (installed with it) rather than an MCP server of its own. Its one hook (`hooks/hooks.json`, SessionStart on `startup`) only checks whether the AnkiMCP add-on answers on `127.0.0.1:3141` and, if so, tells the session to empty the `Anki inbox` doc. Keep the hook that cheap and silent when Anki is closed: it runs at the start of every Claude Code session.
-
-- The skill's card rules came from the owner reviewing real cards; subject-specific rules belong in each Anki deck's charter (its description), not in `SKILL.md`.
-- `scripts/apply_stage.py` talks to the add-on's HTTP server directly, so it only works in Claude Code on the machine running Anki.
-- Evals live in `plugins/anki-notes/evals/`, one case per directory, each from a failure the owner flagged in a real card review. Run them from the **repo root**: `claude plugin eval . --trust-plugin`. Each case loads `ankimcp` too (`plugins: ["../..", "../../../ankimcp"]`), and the harness only loads plugins under the directory it was pointed at. `evals/mocks/anki/` stands in for the Anki server (`_tools.json` is the real server's `tools/list` for the mocked tools); a case overrides a mock with its own `mocks/anki/<tool>.md`. The SessionStart hook still fires inside eval runs, and reaches a real Anki if one is open on the machine; it only adds a line of context, since the docs tools aren't available there.
+The owner's own skill for turning what Claude teaches into Anki flashcards. It depends on `ankimcp` and has an eval suite; its conventions are in [`plugins/anki-notes/CLAUDE.md`](plugins/anki-notes/CLAUDE.md).
