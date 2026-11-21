@@ -70,6 +70,8 @@ Claude never deletes cards. Cards that should go are tagged `to-delete`; search 
 
 For a big cleanup, Claude writes the stage as a plan file (every card's current text and what will change) for you to review, then applies it with `skills/anki-notes/scripts/apply_stage.py`. This only works in Claude Code with Anki open.
 
+The same folder holds the other checks Claude runs instead of applying rules by eye: a card linter, a duplicate finder, a charter linter and section editor, and a note-type leak check. Adding cards and the duplicate finder need Claude Code with Anki open; the card linter runs anywhere Python does.
+
 ## Evals
 
 `evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals.md) suite: one case per mistake the skill must not make, each run with and without the plugin against a mocked deck, so your real Anki is never touched. [`evals/SPEC.md`](evals/SPEC.md) lists what each case tests and what counts as passing. From the root of this repo:

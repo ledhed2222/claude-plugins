@@ -35,7 +35,7 @@ Every case runs 3 times with the plugin and 3 times without it, on the plain mod
 
 ## Known failures
 
-From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a re-run of 16 cases after fixing the mocks. To fix in later PRs; delete each line once its case passes.
+From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a re-run of 16 cases after fixing the mocks. The scores of every run since are in `history.jsonl`; `record_run.py diff` shows the latest movement. To fix in later PRs; delete each line once its case passes.
 
 **The skill is at fault:**
 
@@ -58,7 +58,6 @@ From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a
 **Fixed in the mocks since that run, so re-check:**
 
 - `charter-overlap` (0.75) never saw the AI Engineering charter: the fixture lookup rejects a deck name with a space. It passed once with an agent mock.
-- `charter-from-inbox` (0.67) got the AI Engineering charter back for the not-yet-created Spanish deck, so a queued charter looked like a change. Unknown decks now get the real not-found error; it passed once.
 
 **Cause unknown:**
 
@@ -73,7 +72,10 @@ From the repo root:
 claude plugin eval . --trust-plugin                    # the whole suite
 claude plugin eval . --trust-plugin --case <name>      # one case
 python3 -I plugins/anki-notes/evals/gen_spec.py        # after changing a case: regenerate the list below
+python3 -I plugins/anki-notes/evals/record_run.py add evals/results/<time>/aggregate-result.json --note "<why>"
 ```
+
+`history.jsonl` keeps every recorded run: when it started, the commit it measured, the Claude version, cost, and each case's score. Recording a run prints what moved since each case's last recorded score. Commit it with the change it measured.
 
 ## Cases
 
@@ -270,7 +272,7 @@ Emptying the inbox saves a queued charter first, without re-asking, then adds it
 > Empty my Anki inbox. The docs tools aren't available here, so here's everything that's in it:
 >
 > ```json
-> {"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense", "03 Past tenses"], "description": "## Scope\nSpanish for living in Madrid: everyday grammar, common verbs, and words met in reading. In: verb tenses, ser vs estar, por vs para.\n\nAssumes: present and past tense forms.\n\n## Out of scope\nLatin American slang (nowhere). Travel logistics (looked up).\n\n## Adding\nAsk.\n\n## Stages\n`01 Sounds and spelling` — accents and stress.\n`02 Present tense` — irregular verbs, ser/estar and por/para.\n`03 Past tenses` — preterite vs imperfect.\n\n## Conventions\n- Prefer cloze sentences from my reading.\n- Tags: `es::<area>::<topic>`."}}
+> {"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense", "03 Past tenses"], "description": "## Scope\nSpanish for living in Madrid: everyday grammar, common verbs, and words met in reading. In: verb tenses, ser vs estar, por vs para.\n\nAssumes: regular present and past conjugations.\n\n## Out of scope\nLatin American slang (nowhere). Travel logistics (looked up).\n\n## Adding\nAsk.\n\n## Stages\n`01 Sounds and spelling` — accents and stress.\n`02 Present tense` — irregular verbs, ser/estar and por/para.\n`03 Past tenses` — preterite vs imperfect.\n\n## Conventions\n- Prefer cloze sentences from my reading.\n- Tags: `es::<area>::<topic>`."}}
 > ```
 >
 > ```json
@@ -482,6 +484,7 @@ A card may only rely on concepts the deck already teaches; missing ones are taug
 
 | grader | kind | passes when |
 |---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
 | `prereqs-handled` | LLM judge, reads the transcript | The deck the cards go into is empty: its find_notes search returned no cards, so it does not yet teach precision, recall or what a harmonic mean is. PASS if the cards added include ones that introduce the concepts the F1 cards rely on (precision, recall, and the harmonic mean, or whichever of these the F1 cards use) before or alongside the F1 cards, OR if the reply clearly tells the user that those prerequisite cards are missing and offers to add them. FAIL if F1 cards rely on precision, recall or the harmonic mean without any card introducing them and without flagging the gap. |
 
 ### name-the-options

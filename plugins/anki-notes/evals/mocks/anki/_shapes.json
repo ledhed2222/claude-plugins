@@ -1,0 +1,19 @@
+{
+  "source": "AnkiMCP add-on 0.41.1 (AnkiWeb 124672614), primitives/essential/tools: the keys every successful reply has. Tools not listed are not checked.",
+  "tools": {
+    "add_notes": {"keys": ["created", "skipped", "failed", "results"], "items": {"results": ["index", "status"]}},
+    "card_reposition": {"keys": ["repositioned"]},
+    "create_deck": {"keys": ["deckId", "deckName", "created"]},
+    "create_model": {"keys": ["model_name", "model_id"]},
+    "find_notes": {"keys": ["noteIds", "count", "total", "hasMore"]},
+    "get_deck_description": {"keys": ["name", "description", "is_markdown"]},
+    "list_decks": {"keys": ["decks"], "items": {"decks": ["name"]}},
+    "model_field_names": {"keys": ["model_name", "field_names"]},
+    "model_names": {"keys": ["modelNames"]},
+    "model_templates": {"keys": ["model_name", "templates"]},
+    "notes_info": {"keys": ["notes"], "items": {"notes": ["noteId", "cards"]}},
+    "update_model_styling": {"keys": ["model_name"]},
+    "update_model_templates": {"keys": ["model_name", "updated_templates"]},
+    "update_note_fields": {"keys": ["noteId", "updatedFields"]}
+  }
+}

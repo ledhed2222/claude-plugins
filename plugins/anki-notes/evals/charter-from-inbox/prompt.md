@@ -10,7 +10,7 @@ allowed_tools: [Skill, Read, mcp__plugin_ankimcp_anki__list_decks, mcp__plugin_a
 Empty my Anki inbox. The docs tools aren't available here, so here's everything that's in it:
 
 ```json
-{"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense", "03 Past tenses"], "description": "## Scope\nSpanish for living in Madrid: everyday grammar, common verbs, and words met in reading. In: verb tenses, ser vs estar, por vs para.\n\nAssumes: present and past tense forms.\n\n## Out of scope\nLatin American slang (nowhere). Travel logistics (looked up).\n\n## Adding\nAsk.\n\n## Stages\n`01 Sounds and spelling` — accents and stress.\n`02 Present tense` — irregular verbs, ser/estar and por/para.\n`03 Past tenses` — preterite vs imperfect.\n\n## Conventions\n- Prefer cloze sentences from my reading.\n- Tags: `es::<area>::<topic>`."}}
+{"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense", "03 Past tenses"], "description": "## Scope\nSpanish for living in Madrid: everyday grammar, common verbs, and words met in reading. In: verb tenses, ser vs estar, por vs para.\n\nAssumes: regular present and past conjugations.\n\n## Out of scope\nLatin American slang (nowhere). Travel logistics (looked up).\n\n## Adding\nAsk.\n\n## Stages\n`01 Sounds and spelling` — accents and stress.\n`02 Present tense` — irregular verbs, ser/estar and por/para.\n`03 Past tenses` — preterite vs imperfect.\n\n## Conventions\n- Prefer cloze sentences from my reading.\n- Tags: `es::<area>::<topic>`."}}
 ```
 
 ```json
