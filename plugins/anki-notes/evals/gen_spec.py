@@ -37,10 +37,14 @@ def _describe(meta, body):
     kind = meta.get("type", "?")
     if kind == "tool_used":
         tool = f"`{_tool_name(meta.get('tool', '?'))}`"
+        if meta.get("input_match"):
+            tool += f" with input matching `{meta['input_match']}`"
         if meta.get("max") == "0":
             return "tool check", f"{tool} is never called"
         n = meta.get("min", "1")
         return "tool check", f"{tool} is called at least {'once' if n == '1' else n + ' times'}"
+    if kind == "tool_order":
+        return "tool check", f"`{_tool_name(meta.get('before', '?'))}` is first called before `{_tool_name(meta.get('after', '?'))}`"
     if kind == "regex":
         where = {"mock_calls": "the inputs sent to the mocked Anki tools",
                  "last_message": "the final reply", "trace": "the whole transcript"}.get(meta.get("target", "last_message"), meta.get("target"))

@@ -57,7 +57,8 @@ This project strives to be very async: every script here, shipped or eval toolin
 - When a reply must depend on a name with a space (a deck like `AI Engineering`), use a `type: agent` mock with the verbatim reply for each name and the real error for anything else; see `mocks/anki/get_deck_description.md`. A fixed mock answers every name the same, so a check for an unknown deck gets a charter back.
 - Grader regexes are JavaScript: no inline `(?i)`. `tool_used` has no flags field, so spell out both cases (`[nN]ame`).
 - **Record every run you mean to keep**: `mise run record evals/results/<time>/aggregate-result.json --note "<why it ran>"`, then commit `evals/history.jsonl` with the change it measured. It prints the overall score and every case that moved since that case's last recorded score; `mise run diff <result.json>` shows the same without recording. The root `evals/results/` is gitignored, so the history file is the only record that lasts. Skip throwaway debugging runs. A case runs 3 times, so a move of one run (0.33 or less) is often noise: re-run the case before acting on it.
-- A full run is 288 sessions, about 25 minutes with `-j 8`, and about $60; run one case with `--case <name>` while iterating, with `--runs 1 --ablation none` for a quick check.
+- A full run is 288 sessions without the `themes` cases, about 25 minutes with `-j 8`, and about $60 (the `themes` cases add 108 sessions and roughly $30); run one case with `--case <name>` while iterating, with `--runs 1 --ablation none` for a quick check.
+- Most `themes` cases run `build_theme.py`, so they need `--allow-tools Write Bash` (`mise run eval --tag themes --allow-tools Write Bash`). The eval sandbox usually can't run npm, so font cases grade the family names Claude chooses (the strings in its `fetch_font.py --info` calls and theme.json), never whether a font downloaded; a theme falls back to the system font there.
 
 ### Adding or changing a case
 

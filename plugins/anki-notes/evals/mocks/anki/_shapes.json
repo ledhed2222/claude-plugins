@@ -10,8 +10,10 @@
     "list_decks": {"keys": ["decks"], "items": {"decks": ["name"]}},
     "model_field_names": {"keys": ["model_name", "field_names"]},
     "model_names": {"keys": ["modelNames"]},
+    "model_styling": {"keys": ["model_name", "css", "message"]},
     "model_templates": {"keys": ["model_name", "templates"]},
     "notes_info": {"keys": ["notes"], "items": {"notes": ["noteId", "cards"]}},
+    "store_media_file": {"keys": ["filename", "filepath", "size", "message"]},
     "update_model_styling": {"keys": ["model_name"]},
     "update_model_templates": {"keys": ["model_name", "updated_templates"]},
     "update_note_fields": {"keys": ["noteId", "updatedFields"]}
