@@ -80,7 +80,7 @@ The same folder holds the other checks Claude runs instead of applying rules by 
 claude plugin eval . --trust-plugin
 ```
 
-Add `--model <model>` to compare models, or `--case <name>` to run one case.
+Add `--model <model>` to compare models, or `--case <name>` to run one case. The `themes` cases need extra tool grants; `evals/SPEC.md` has the command.
 
 ## Ideas
 

@@ -1,0 +1,1 @@
+{"model_name": "{{input.model_name}}", "css": ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}\n", "message": "Retrieved CSS styling for model \"{{input.model_name}}\""}
