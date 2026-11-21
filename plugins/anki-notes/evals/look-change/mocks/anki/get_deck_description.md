@@ -1,0 +1,1 @@
+{"name": "Spanish", "is_markdown": true, "description": "## Scope\nSpanish grammar and vocabulary for a C1 learner.\n\n## Out of scope\nTravel logistics.\n\n## Adding\nAsk: offer cards and add them only after a yes.\n\n## Stages\n`01 Basics`.\n\n## Conventions\n- Note types: `Spanish · Basic` and `Spanish · Cloze` (the deck's theme).\n- Tags: `es::<area>::<topic>`."}

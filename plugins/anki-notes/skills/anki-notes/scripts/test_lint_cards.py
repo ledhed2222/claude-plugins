@@ -41,6 +41,8 @@ class LintTests(unittest.TestCase):
         self.assertTrue(any("not 1..n" in m for m in msgs(bad)))
         none = {"model": "Cloze", "fields": {"Text": "no blanks", "Extra": ""}, "tags": TAGS}
         self.assertTrue(any("no {{c1" in m for m in msgs(none)))
+        themed = dict(ok, model="AI Engineering · Cloze")
+        self.assertEqual(lint(themed), [])
 
     def test_tags(self):
         self.assertTrue(any("type::" in m for m in msgs(basic("Q?", "A.", tags=["src::x"]))))

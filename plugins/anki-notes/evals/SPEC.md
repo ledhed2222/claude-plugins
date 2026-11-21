@@ -6,6 +6,8 @@ What the [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals.md)
 
 The skill's job is to turn what Claude teaches into cards worth studying. The first cases each reproduce one mistake found while reviewing real cards by hand. The rest test the card-formulation checks, charter guide, questionnaire and note-type guide added from the spaced-repetition literature. A passing suite means none of those mistakes came back and the guides are followed.
 
+The cases tagged `themes` cover deck themes: the look question in a new charter, drafting and building themes with `build_theme.py`, choosing font families, and saving or changing a theme's note types.
+
 ## How a run works
 
 1. A fresh, headless Claude Code session starts with only this plugin and `ankimcp` loaded.
@@ -32,6 +34,8 @@ Every case runs 3 times with the plugin and 3 times without it, on the plain mod
 - Anything after the user's yes in a multi-turn flow (a case has one user message). Cases either test that nothing is written before the yes, or put the approval in the prompt.
 - Whether the LLM judges agree with a human reviewer (see Ideas in the plugin README).
 - `scripts/apply_stage.py` and the real AnkiMCP server.
+- How a theme looks on a real phone (AnkiMobile).
+- Fetching fonts: that is `fetch_font.py`'s job and has unit tests, and the eval sandbox usually can't run npm. The font cases grade the family names Claude chooses (in its `fetch_font.py --info` calls, theme.json drafts and reply), not whether they downloaded.
 
 ## Known failures
 
@@ -75,6 +79,12 @@ python3 -I plugins/anki-notes/evals/gen_spec.py        # after changing a case: 
 python3 -I plugins/anki-notes/evals/record_run.py add evals/results/<time>/aggregate-result.json --note "<why>"
 ```
 
+Most `themes` cases run `build_theme.py`, which needs shell and file tools that a case can't grant itself:
+
+```
+claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
+```
+
 `history.jsonl` keeps every recorded run: when it started, the commit it measured, the Claude version, cost, and each case's score. Recording a run prints what moved since each case's last recorded score. Commit it with the change it measured.
 
 ## Cases
@@ -99,6 +109,23 @@ python3 -I plugins/anki-notes/evals/record_run.py add evals/results/<time>/aggre
 | [`doing-not-teaching`](#doing-not-teaching) | Helping with a task, as opposed to teaching a concept, makes no cards. |
 | [`inbox-path`](#inbox-path) | Without Anki, drafted cards still pass the formulation checks and are reported as not saved. |
 | [`leech-first-rebuild`](#leech-first-rebuild) | A stage rebuild starts with the leech and marked cards and names the rule each rewrite fixes. |
+| [`look-away`](#look-away) | Away from Anki, the queued charter carries the picked theme. |
+| [`look-away-empty`](#look-away-empty) | Emptying a queued charter with a theme creates its note types before saving the description. |
+| [`look-change`](#look-change) | Changing a theme recovers its spec from the CSS, rebuilds, previews, and applies to both note types only on a yes. |
+| [`look-choices`](#look-choices) | Any feeling answer gets two or three distinct theme.json drafts, each built and previewed front and back. |
+| [`look-cjk`](#look-cjk) | A Japanese deck keeps the system font (both fonts null) and still gets themed colors. |
+| [`look-contrast`](#look-contrast) | A palette under 4.5:1 contrast fails the build, and Claude picks new colors and rebuilds instead of hand-writing CSS. |
+| [`look-cyrillic`](#look-cyrillic) | A Russian deck's themes include the cyrillic subset and only families checked to have Cyrillic. |
+| [`look-fill`](#look-fill) | Cards for a themed deck use its own Basic or Cloze copy with the stock fields. |
+| [`look-font-literary`](#look-font-literary) | A deck of example sentences gets pairings whose body font is a text serif with italics on. |
+| [`look-font-technical`](#look-font-technical) | An AI Engineering deck gets pairings with a sans body, at least one with a monospace label. |
+| [`look-invert`](#look-invert) | A user who says studying makes them anxious gets calm themes with no motion, and the reply doesn't mirror the anxiety. |
+| [`look-motion`](#look-motion) | Motion stays off on a pick until the user says yes after seeing it. |
+| [`look-pairings`](#look-pairings) | Mixing one option's palette with another's fonts gives a theme with A's colors and B's font families, previewed in the deck's language. |
+| [`look-question`](#look-question) | Creating a charter asks the look question once, in round two, optional, about both how studying feels and how it should feel. |
+| [`look-repo`](#look-repo) | Theming a deck whose note types live in a repo proposes a change to the repo's stylesheet, not new or restyled note types. |
+| [`look-save`](#look-save) | Saving a picked theme creates both note types from models.json, then the deck, with the charter naming them. |
+| [`look-skip`](#look-skip) | Skipping the look question still gets themes drafted from the subject, with "none" offered. |
 | [`metric-concept`](#metric-concept) | Teaching an AI-engineering concept in an Automatic deck should produce one-fact, self-contained cards with no arithmetic drills. |
 | [`missing-prereq`](#missing-prereq) | A card may only rely on concepts the deck already teaches; missing ones are taught first or flagged. |
 | [`name-the-options`](#name-the-options) | A two-option idea becomes a card that names both options in its question. |
@@ -127,6 +154,7 @@ python3 -I plugins/anki-notes/evals/record_run.py add evals/results/<time>/aggre
 | [`q-why-exam`](#q-why-exam) | When the user studies for an exam, the charter's scope and stages follow the syllabus. |
 | [`q-why-work`](#q-why-work) | When the user learns for work, the charter selects by what changes how they work, not by a syllabus. |
 | [`regression`](#regression) | Known-bad drafts are rewritten into the reviewed good shapes, and paired-relationship clozes are left alone. |
+| [`rescued-tag`](#rescued-tag) | A stage rebuild tags each rewritten leech `rescued` in the plan. |
 | [`restate-then-draft`](#restate-then-draft) | A multi-point explanation becomes cards that each test exactly one point. |
 | [`source-question`](#source-question) | Cards about something read in an article ask about the subject, never about what the article said. |
 | [`stale-fact`](#stale-fact) | An answer that depends on a date, model or benchmark says so in the question, or the card tests the durable principle instead. |
@@ -160,7 +188,7 @@ A charter's Assumes line stops prerequisite cards for basics the user already kn
 | grader | kind | passes when |
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
-| `no-basics-in-calls` | tool check | `add_notes` is never called |
+| `no-basics-in-calls` | tool check | `add_notes` with input matching `[wW][hH][aA][tT] [iI][sS] ([aA] \|[aA][nN] \|[tT][hH][eE] )?([aA][rR][iI][tT][hH][mM][eE][tT][iI][cC] )?([mM][eE][aA][nN]\|[mM][eE][dD][iI][aA][nN]\|[rR][aA][tT][iI][oO]\|[pP][eE][rR][cC][eE][nN][tT][aA][gG][eE]\|[aA][vV][eE][rR][aA][gG][eE])\\b` is never called |
 | `respects-assumes` | LLM judge, reads the transcript | The deck's charter says it assumes basic statistics (mean, median, ratio, percentage), and the deck has no cards on precision or recall. Look at the cards in every add_notes call. PASS if no card teaches mean, average, ratio or percentage as a concept of its own, and either cards introducing precision and recall are added before or with the F1 cards, or the reply says they're missing. FAIL if a card teaches a basic statistics term, or F1 cards rely on precision and recall with no card or note about them. |
 
 ### charter-away
@@ -261,7 +289,7 @@ Leeches that share a charter-level cause lead to a proposed charter change, not 
 |---|---|---|
 | `no-save` | tool check | `update_deck_description` is never called |
 | `proposes-change` | LLM judge, reads the final reply | The deck's three leeches are a model price, a model's context-window size and a leaderboard position. PASS if the reply names one shared cause at the charter level (the charter doesn't keep fast-changing, model-specific figures like prices, context sizes and rankings out of scope, or doesn't require dating them) and proposes a specific charter change for it, asking before saving. FAIL if it only rewrites or reschedules the three cards, names no shared cause, or says it saved a charter change. |
-| `reads-leeches` | tool check | `find_notes` is called at least once |
+| `reads-leeches` | tool check | `find_notes` with input matching `tag:leech` is called at least once |
 
 ### charter-from-inbox
 
@@ -284,8 +312,8 @@ Emptying the inbox saves a queued charter first, without re-asking, then adds it
 | grader | kind | passes when |
 |---|---|---|
 | `adds-card` | tool check | `add_notes` is called at least once |
-| `charter-before-cards` | tool_order |  |
-| `deck-before-cards` | tool_order |  |
+| `charter-before-cards` | tool check | `update_deck_description` is first called before `add_notes` |
+| `deck-before-cards` | tool check | `create_deck` is first called before `add_notes` |
 | `saves-charter` | tool check | `update_deck_description` is called at least once |
 
 ### charter-lean
@@ -352,14 +380,14 @@ An approved charter creates the deck and every stage, saves the full text as Mar
 
 | grader | kind | passes when |
 |---|---|---|
-| `creates-deck` | tool check | `create_deck` is called at least once |
-| `creates-stage-01` | tool check | `create_deck` is called at least once |
-| `creates-stage-02` | tool check | `create_deck` is called at least once |
-| `creates-stage-03` | tool check | `create_deck` is called at least once |
-| `deck-before-description` | tool_order |  |
-| `saves-full-text` | tool check | `update_deck_description` is called at least once |
-| `saves-markdown` | tool check | `update_deck_description` is called at least once |
-| `syncs-after` | tool_order |  |
+| `creates-deck` | tool check | `create_deck` with input matching `\"deck_name\":\\s*\"Spanish\` is called at least once |
+| `creates-stage-01` | tool check | `create_deck` with input matching `Spanish::01 Sounds and spelling` is called at least once |
+| `creates-stage-02` | tool check | `create_deck` with input matching `Spanish::02 Present tense` is called at least once |
+| `creates-stage-03` | tool check | `create_deck` with input matching `Spanish::03 Past tenses` is called at least once |
+| `deck-before-description` | tool check | `create_deck` is first called before `update_deck_description` |
+| `saves-full-text` | tool check | `update_deck_description` with input matching `Out of scope[\\s\\S]*03 Past tenses[\\s\\S]*Tags` is called at least once |
+| `saves-markdown` | tool check | `update_deck_description` with input matching `\"is_markdown\":\\s*true` is called at least once |
+| `syncs-after` | tool check | `update_deck_description` is first called before `sync` |
 
 ### charter-test-cases
 
@@ -390,7 +418,7 @@ A fixed list is never asked for whole; its members are carded one at a time or a
 | grader | kind | passes when |
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
-| `no-name-all-in-calls` | tool check | `add_notes` is never called |
+| `no-name-all-in-calls` | tool check | `add_notes` with input matching `\\b([nN][aA][mM][eE]\|[lL][iI][sS][tT]\|[wW][hH][aA][tT] [aA][rR][eE]) ([aA][lL][lL]\|[tT][hH][eE]\|[iI][tT][sS]) ([fF][oO][uU][rR]\|4)\\b` is never called |
 | `one-per-card` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if no card asks for the whole list ("name the four cells"). Each cell that gets a card is asked for on its own, by what it means; or all four sit in one Cloze note with one blank per cell, in a fixed order, where the visible cells don't give a blank away. FAIL if any card asks for two or more cells in one answer, or asks for the set as a whole. |
 
 ### coined-term
@@ -452,7 +480,545 @@ A stage rebuild starts with the leech and marked cards and names the rule each r
 | `leeches-first` | LLM judge, reads the final reply | The stage has a leech card ("Precision vs recall?") and a marked card ("Why F1?"). PASS if the plan Claude shows deals with those two cards first, and for each rewrite it names the rule the old card broke (for example: two facts in one answer, a vague question, no named options). FAIL if the plan doesn't single out the leech and marked cards, or rewrites them without saying which rule each fix addresses. |
 | `no-adds-before-review` | tool check | `add_notes` is never called |
 | `no-writes-before-review` | tool check | `update_note_fields` is never called |
-| `searches-problem-cards` | tool check | `find_notes` is called at least once |
+| `searches-problem-cards` | tool check | `find_notes` with input matching `tag:leech\|tag:marked` is called at least once |
+
+### look-away
+
+Away from Anki, the queued charter carries the picked theme.
+
+**User message:**
+
+> We're setting up my new Portuguese deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> European Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.
+>
+> Assumes: fluent Spanish, no Portuguese.
+>
+> ## Out of scope
+> Brazilian-only usage. Business and legal Portuguese.
+>
+> ## Adding
+> Ask: offer cards and add them only after a yes.
+>
+> ## Stages
+> - `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.
+> - `02 Present tense`: regular and common irregular verbs in the present.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `pt::<area>::<topic>`.
+>
+> The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "<b>Vou embora amanhã.</b>".
+>
+> Second round: Ask mode, Basic and Cloze. I pick this theme, motion off. Save the deck.
+>
+> ```json
+> {"deck": "Portuguese", "mood": "warm, unhurried", "subsets": ["latin", "latin-ext"],
+>  "fonts": {"body": null, "accent": null},
+>  "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
+>  "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"}}
+> ```
+
+**Deck:** the shared mock deck, with this case's own `add_notes`, `card_reposition`, `create_deck`, `create_model`, `find_notes`, `get_deck_description`, `list_decks`, `model_field_add`, `model_field_names`, `model_field_rename`, `model_field_reposition`, `model_names`, `model_styling`, `model_templates`, `notes_info`, `store_media_file`, `sync`, `tag_add`, `update_deck_description`, `update_model_styling`, `update_model_templates`, `update_note_fields`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `queued-charter` | LLM judge, reads the final reply | PASS if the reply gives one json block of the form {"charter": {"deck": ..., "stages": [...], "description": ..., "theme": {...}}} with the full approved charter text and the picked theme (not null), and says it couldn't be saved to Anki yet. FAIL if the theme is missing or null, the charter is split across several blocks, or Claude claims it saved anything to Anki. |
+| `theme-in-block` | text search | the final reply contain `"charter"\s*:[\s\S]*"theme"\s*:\s*\{` |
+
+### look-away-empty
+
+Emptying a queued charter with a theme creates its note types before saving the description.
+
+**User message:**
+
+> Anki is open now. Empty my Anki inbox. Here is everything under "Queued cards" in it:
+>
+> ```json
+> {"charter": {"deck": "Portuguese", "stages": ["01 Sounds and spelling", "02 Present tense"], "description": "## Scope\nEuropean Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.\n\nAssumes: fluent Spanish, no Portuguese.\n\n## Out of scope\nBrazilian-only usage. Business and legal Portuguese.\n\n## Adding\nAsk: offer cards and add them only after a yes.\n\n## Stages\n- `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.\n- `02 Present tense`: regular and common irregular verbs in the present.\n\n## Conventions\n- Note types: `Portuguese · Basic` and `Portuguese · Cloze` (the deck's theme).\n- Tags: `pt::<area>::<topic>`.", "theme": {"deck": "Portuguese", "mood": "warm, unhurried", "subsets": ["latin", "latin-ext"], "fonts": {"body": null, "accent": null}, "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"}, "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"}, "motion": false}}}
+> ```
+
+**Deck:** the shared mock deck, with this case's own `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `creates-types` | tool check | `create_model` with input matching `"model_name":"Portuguese (·\|\\u00b7) (Basic\|Cloze)"` is called at least 2 times |
+| `types-before-charter` | tool check | `create_model` is first called before `update_deck_description` |
+
+### look-change
+
+Changing a theme recovers its spec from the CSS, rebuilds, previews, and applies to both note types only on a yes.
+
+**User message:**
+
+> Make the Spanish deck feel cozier.
+
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `model_names`, `model_styling`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `rebuilds` | tool check | `Bash` with input matching `build_theme\.py` is called at least once |
+| `recovers-and-previews` | LLM judge, reads the transcript | PASS if Claude read the current styling, recovered the theme spec from it (the mood in the comment at the top and the current colors), edited that spec toward cozier, rebuilt it with build_theme.py, showed a preview, and asked before applying it to both `Spanish · Basic` and `Spanish · Cloze`. FAIL if it wrote CSS by hand, started a theme from scratch without reading the current one, applied the change without asking, or planned to change only one of the two note types. |
+| `waits-for-yes` | tool check | `update_model_styling` is never called |
+
+### look-choices
+
+Any feeling answer gets two or three distinct theme.json drafts, each built and previewed front and back.
+
+**User message:**
+
+> We're setting up my new Portuguese deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> European Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.
+>
+> Assumes: fluent Spanish, no Portuguese.
+>
+> ## Out of scope
+> Brazilian-only usage. Business and legal Portuguese.
+>
+> ## Adding
+> Ask: offer cards and add them only after a yes.
+>
+> ## Stages
+> - `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.
+> - `02 Present tense`: regular and common irregular verbs in the present.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `pt::<area>::<topic>`.
+>
+> The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "<b>Vou embora amanhã.</b>".
+>
+> Second round: Ask mode, Basic and Cloze. For the feeling question: right now it feels like a chore; I'd like it to feel like sitting in a café in Lisbon.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `builds-each` | tool check | `Bash` with input matching `build_theme\.py` is called at least 2 times |
+| `distinct-previews` | LLM judge, reads the final reply | PASS if the reply presents two or three themes that differ in palette and in font pairing (or, where fonts couldn't be used, clearly in palette), each with a preview of the sample note showing both front and back (a preview.html file to open, or the cards drawn inline). FAIL if there is only one theme, the themes differ only slightly, or a theme has no preview or shows only one side. |
+
+### look-cjk
+
+A Japanese deck keeps the system font (both fonts null) and still gets themed colors.
+
+**User message:**
+
+> We're setting up my new Japanese deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> Japanese for travel and conversation: kana, core kanji, polite speech.
+>
+> Assumes: no Japanese.
+>
+> ## Out of scope
+> Business keigo.
+>
+> ## Adding
+> Ask.
+>
+> ## Stages
+> - `01 Kana`: hiragana and katakana.
+> - `02 Core kanji`: the kanji on signs, menus and stations.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `ja::<area>::<topic>`.
+>
+> The sample note was Front "Japanese: how do you say 'Where is the station?'", Back "<b>駅はどこですか。</b>"
+>
+> Second round: Ask mode, Basic and Cloze. For the feeling question: I'd like it to feel playful.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `builds-themes` | tool check | `Bash` with input matching `build_theme\.py` is called at least 2 times |
+| `system-font` | LLM judge, reads the transcript | PASS if every theme.json Claude wrote sets both fonts (body and accent) to null so the device's own Japanese font is used, while the colors still differ between themes and fit the mood. FAIL if any theme names a font family, or the themes are left uncolored. |
+
+### look-contrast
+
+A palette under 4.5:1 contrast fails the build, and Claude picks new colors and rebuilds instead of hand-writing CSS.
+
+**User message:**
+
+> We're setting up my new Portuguese deck. You already drafted its charter and I approved it: Ask mode, Basic and Cloze, stages `01 Sounds and spelling` and `02 Present tense`, tags `pt::<area>::<topic>`. The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "**Vou embora amanhã.**"
+>
+> For the look question: I want it to feel light and sunny. Something like pale yellow text on a white background. Build a theme and show me the preview.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `build-refused` | text search | the whole transcript contain `not legible enough` |
+| `builds-again` | tool check | `Bash` with input matching `build_theme\\.py` is called at least 2 times |
+| `fixes-colors` | LLM judge, reads the final reply | PASS if the reply tells the user that pale yellow on white wasn't legible enough, and presents a rebuilt theme with new colors that keeps the light, sunny feel. FAIL if the reply presents the requested pale yellow on white as built, says it wrote the CSS by hand or bypassed the contrast check, or stops without offering any theme. |
+
+### look-cyrillic
+
+A Russian deck's themes include the cyrillic subset and only families checked to have Cyrillic.
+
+**User message:**
+
+> We're setting up my new Russian deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> Russian for reading short stories: core grammar, high-frequency vocabulary, verbs of motion.
+>
+> Assumes: no Russian; I can't read Cyrillic yet.
+>
+> ## Out of scope
+> Handwriting (cursive).
+>
+> ## Adding
+> Ask.
+>
+> ## Stages
+> - `01 Alphabet and sounds`: Cyrillic letters, stress and vowel reduction.
+> - `02 Cases`: the six cases and their endings.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `ru::<area>::<topic>`.
+>
+> The sample note was Front "Russian: how do you say 'I'm reading a book'?", Back "<b>Я читаю книгу.</b>"
+>
+> Second round: Ask mode, Basic and Cloze. For the feeling question: I'd like it to feel calm and literary.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `checks-fonts` | tool check | `Bash` with input matching `^(?=.*fetch_font\.py)(?=.*--info)(?=.*([A-Z][a-z]+))` is called at least once |
+| `cyrillic-fonts` | LLM judge, reads the final reply | PASS if every font family Claude plans or proposes supports Cyrillic (for example Literata, Lora, Source Serif 4, PT Serif, EB Garamond, IBM Plex Sans; never Fraunces or Atkinson Hyperlegible), and it shows or describes the themes on the Russian sample note. A fetch error that keeps it from checking or building the fonts doesn't count against it, as long as it doesn't present unchecked fonts as ready. FAIL if it plans a family without Cyrillic, presents fonts it never checked as ready to use, or shows the themes only on Latin text. |
+| `no-latin-only-font-bash` | tool check | `Bash` with input matching `family[^A-Za-z]{1,8}(Fraunces\|Atkinson)` is never called |
+| `no-latin-only-font-write` | tool check | `Write` with input matching `family[^A-Za-z]{1,8}(Fraunces\|Atkinson)` is never called |
+
+### look-fill
+
+Cards for a themed deck use its own Basic or Cloze copy with the stock fields.
+
+**User message:**
+
+> Explain what precision measures for a binary classifier, and when you'd care about it more than recall.
+
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `model_names`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `no-stock-type` | tool check | `add_notes` with input matching `"model_name":"(Basic\|Cloze)"` is never called |
+| `stock-fields` | tool check | `add_notes` with input matching `"fields":\{"(Front\|Text)"` is called at least once |
+| `themed-type` | tool check | `add_notes` with input matching `"model_name":"AI Engineering (·\|\\u00b7) (Basic\|Cloze)"` is called at least once |
+
+### look-font-literary
+
+A deck of example sentences gets pairings whose body font is a text serif with italics on.
+
+**User message:**
+
+> We're setting up a new Spanish vocabulary deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> Spanish vocabulary learned from novels I read, each word carded in the sentence I met it in.
+>
+> Assumes: B2 Spanish grammar.
+>
+> ## Out of scope
+> Grammar drills (they live in my Spanish deck).
+>
+> ## Adding
+> Ask.
+>
+> ## Stages
+> - `01 Core words`: common words met in reading that I don't know yet.
+> - `02 Literary words`: rarer, literary vocabulary.
+>
+> ## Conventions
+> - Cloze on the word in its example sentence; the English gloss in Extra.
+> - Tags: `esv::<topic>`.
+>
+> The sample note was Cloze "Se quedó {{c1::boquiabierto}} al verla entrar." with Extra "open-mouthed, astonished".
+>
+> Second round: Ask mode, Cloze is right. For the feeling question: I'd like it to feel like reading a novel in a quiet café.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `checks-a-serif` | tool check | `Bash` with input matching `^(?=.*fetch_font\.py)(?=.*--info)(?=.*([Ss]erif\|Literata\|Lora\|Garamond\|Baskerville\|Merriweather\|Crimson\|Spectral\|Alegreya\|Newsreader))` is called at least once |
+| `serif-italic-body` | LLM judge, reads the transcript | Look at the body font of every font pairing Claude planned. Judge the font families Claude planned: the ones it wrote into theme.json drafts, checked with `fetch_font.py --info` or named in its reply, whether or not the fetch then worked. If a fetch error made it fall back to the system font, judge the pairing it planned before that. PASS if every planned body font is a serif made for reading text (for example Literata, Source Serif 4, Lora, EB Garamond, PT Serif) with italics on. FAIL if any planned pairing names a sans-serif, monospace or display face for the body, or leaves italics off. |
+
+### look-font-technical
+
+An AI Engineering deck gets pairings with a sans body, at least one with a monospace label.
+
+**User message:**
+
+> We're setting up my new AI Engineering deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> General AI-engineering knowledge that carries over between projects: concepts, metrics, failure modes, eval techniques, design tradeoffs.
+>
+> Assumes: working software engineer, basic statistics.
+>
+> ## Out of scope
+> Anything specific to one project. Commands, flags and config syntax.
+>
+> ## Adding
+> Automatic.
+>
+> ## Stages
+> - `01 Classification metrics`: confusion matrix, precision, recall, F1, thresholds.
+> - `02 Eval basics`: test sets, run-to-run variation, judging outputs.
+>
+> ## Conventions
+> - Tags: `aie::<area>::<topic>`.
+>
+> The sample note was Front "Evals: you raise a classifier's threshold. Which goes up: precision or recall?", Back "<b>Precision.</b>"
+>
+> Second round: Automatic, Basic and Cloze. For the feeling question: I'd like it to feel focused.
+
+**Deck:** the shared mock deck, with this case's own `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `checks-a-mono` | tool check | `Bash` with input matching `^(?=.*fetch_font\.py)(?=.*--info)(?=.*(Mono\|Code\|Courier))` is called at least once |
+| `checks-a-sans` | tool check | `Bash` with input matching `^(?=.*fetch_font\.py)(?=.*--info)(?=.*(Sans\|Inter\|Roboto\|Lato\|Manrope\|Figtree))` is called at least once |
+| `sans-and-mono` | LLM judge, reads the transcript | Look at every font pairing Claude planned. Judge the font families Claude planned: the ones it wrote into theme.json drafts, checked with `fetch_font.py --info` or named in its reply, whether or not the fetch then worked. If a fetch error made it fall back to the system font, judge the pairing it planned before that. PASS if every planned body font is a sans-serif (for example IBM Plex Sans, Inter) and at least one pairing uses a monospace font for the label (for example IBM Plex Mono, JetBrains Mono). FAIL if any planned pairing names a serif or display face for the body, or none has a monospace label. |
+
+### look-invert
+
+A user who says studying makes them anxious gets calm themes with no motion, and the reply doesn't mirror the anxiety.
+
+**User message:**
+
+> We're setting up my new Portuguese deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> European Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.
+>
+> Assumes: fluent Spanish, no Portuguese.
+>
+> ## Out of scope
+> Brazilian-only usage. Business and legal Portuguese.
+>
+> ## Adding
+> Ask: offer cards and add them only after a yes.
+>
+> ## Stages
+> - `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.
+> - `02 Present tense`: regular and common irregular verbs in the present.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `pt::<area>::<topic>`.
+>
+> The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "<b>Vou embora amanhã.</b>".
+>
+> Second round: Ask mode, Basic and Cloze. For the feeling question: honestly, studying languages makes me anxious.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `aims-at-calm` | LLM judge, reads the transcript | Look at the themes Claude drafted (their theme.json and how it describes them). PASS if every theme aims at calm: quiet, low-saturation colors and motion off, described in terms of how the user would like to feel (calm, steady, unhurried). FAIL if any theme is bright, intense or high-saturation, turns motion on, or is described in terms of anxiety or stress, or if the reply dwells on the user's anxiety instead of designing past it. |
+| `builds-themes` | tool check | `Bash` with input matching `build_theme\.py` is called at least 2 times |
+| `no-motion` | text search | the whole transcript never contain `motion[^a-z]{1,6}true` |
+
+### look-motion
+
+Motion stays off on a pick until the user says yes after seeing it.
+
+**User message:**
+
+> We're setting up my new Portuguese deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> European Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.
+>
+> Assumes: fluent Spanish, no Portuguese.
+>
+> ## Out of scope
+> Brazilian-only usage. Business and legal Portuguese.
+>
+> ## Adding
+> Ask: offer cards and add them only after a yes.
+>
+> ## Stages
+> - `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.
+> - `02 Present tense`: regular and common irregular verbs in the present.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `pt::<area>::<topic>`.
+>
+> The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "<b>Vou embora amanhã.</b>".
+>
+> Second round: Ask mode, Basic and Cloze. You showed me three themes and I pick this one. Build it.
+>
+> ```json
+> {"deck": "Portuguese", "mood": "warm, unhurried", "subsets": ["latin", "latin-ext"],
+>  "fonts": {"body": null, "accent": null},
+>  "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
+>  "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"}}
+> ```
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `asks-motion` | LLM judge, reads the final reply | PASS if Claude builds the picked theme with motion off and asks whether to turn motion on (the answer fade and the rescued shimmer), leaving it off until the user says yes. FAIL if it turns motion on, or never asks about it. |
+| `no-motion` | text search | the whole transcript never contain `motion[^a-z]{1,6}true` |
+
+### look-pairings
+
+Mixing one option's palette with another's fonts gives a theme with A's colors and B's font families, previewed in the deck's language.
+
+**User message:**
+
+> We're setting up my new Spanish deck (charter approved; the sample note was Front "Spanish: how do you say 'I'd been waiting for hours'?", Back "<b>Llevaba horas esperando.</b>"). You showed me these two themes:
+>
+> Option A, "Lora, warm paper":
+> ```json
+> {"deck": "Spanish", "mood": "warm", "subsets": ["latin"], "fonts": {"body": {"family": "Lora", "italic": true}, "accent": null},
+>  "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
+>  "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"}}
+> ```
+>
+> Option B, "Literata, quiet blue":
+> ```json
+> {"deck": "Spanish", "mood": "calm", "subsets": ["latin"], "fonts": {"body": {"family": "Literata", "italic": true}, "accent": {"family": "Nunito"}},
+>  "light": {"bg": "#F7FAFC", "text": "#1A2733", "accent": "#1F6FB2", "rule": "#D5E1EA"},
+>  "night": {"bg": "#111820", "text": "#E6EEF4", "accent": "#7FB6E6", "rule": "#2A3743"}}
+> ```
+>
+> I like option A's colors but option B's fonts. Can you combine them?
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `combined` | LLM judge, reads the final reply | Judge the font families Claude planned: the ones it wrote into theme.json drafts, checked with `fetch_font.py --info` or named in its reply, whether or not the fetch then worked. If a fetch error made it fall back to the system font, judge the pairing it planned before that. PASS if the reply presents a combined theme with option A's colors and option B's fonts (Literata body, Nunito label), named by its fonts and feel (like "Literata, warm paper"), and shows it on the Spanish sample note: a built preview, or the card described or drawn inline if the build couldn't run. FAIL if the combined theme mixes up which colors or fonts came from which option, or the sample shown isn't the Spanish note. |
+| `rebuilds` | tool check | `Bash` with input matching `build_theme\.py` is called at least once |
+
+### look-question
+
+Creating a charter asks the look question once, in round two, optional, about both how studying feels and how it should feel.
+
+**User message:**
+
+> Set up an Anki deck for European Portuguese. To save you the first round of questions: I'm moving to Lisbon next spring and need it to live there; I'll learn from sessions with you and review on my phone; I know Spanish well but no Portuguese; I need to both understand and speak it.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `asks-feeling` | LLM judge, reads the transcript | Look at the questions Claude asks the user after drafting the charter (in an AskUserQuestion call or in its reply). PASS if exactly one question is about the deck's look, it is marked optional or skippable, and it asks both how studying this feels and how the user would like it to feel. FAIL if there is no such question, it is asked more than once, it is required, or it asks only one of the two (only the current feeling, or only the wanted one). |
+| `no-deck-yet` | tool check | `create_deck` is never called |
+
+### look-repo
+
+Theming a deck whose note types live in a repo proposes a change to the repo's stylesheet, not new or restyled note types.
+
+**User message:**
+
+> Give my Spanish deck a theme. I'd like it to feel like a sunny plaza.
+
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `model_names`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `no-create` | tool check | `create_model` is never called |
+| `no-restyle` | tool check | `update_model_styling` is never called |
+| `proposes-repo-change` | LLM judge, reads the final reply | PASS if Claude proposes the theme as a change to the stylesheet in the user's anki-cards repo (the repo that holds the Reconocimiento and Produccion note types), for the user to apply. FAIL if it proposes creating new note types or restyling the note types in Anki directly. |
+
+### look-save
+
+Saving a picked theme creates both note types from models.json, then the deck, with the charter naming them.
+
+**User message:**
+
+> We're setting up my new Portuguese deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> European Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.
+>
+> Assumes: fluent Spanish, no Portuguese.
+>
+> ## Out of scope
+> Brazilian-only usage. Business and legal Portuguese.
+>
+> ## Adding
+> Ask: offer cards and add them only after a yes.
+>
+> ## Stages
+> - `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.
+> - `02 Present tense`: regular and common irregular verbs in the present.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `pt::<area>::<topic>`.
+>
+> The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "<b>Vou embora amanhã.</b>".
+>
+> Second round: Ask mode, Basic and Cloze. You showed me three themes and I pick this one, with motion off. Build it and save the deck.
+>
+> ```json
+> {"deck": "Portuguese", "mood": "warm, unhurried", "subsets": ["latin", "latin-ext"],
+>  "fonts": {"body": null, "accent": null},
+>  "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
+>  "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"}}
+> ```
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `charter-names-types` | tool check | `update_deck_description` with input matching `Portuguese (·\|\\u00b7) Basic[\s\S]*Portuguese (·\|\\u00b7) Cloze\|Portuguese (·\|\\u00b7) Cloze[\s\S]*Portuguese (·\|\\u00b7) Basic` is called at least once |
+| `creates-basic` | tool check | `create_model` with input matching `"model_name":"Portuguese (·\|\\u00b7) Basic"` is called at least once |
+| `creates-cloze` | tool check | `create_model` with input matching `"model_name":"Portuguese (·\|\\u00b7) Cloze"` is called at least once |
+| `from-build` | tool check | `Bash` with input matching `build_theme\.py` is called at least once |
+| `models-before-charter` | tool check | `create_model` is first called before `update_deck_description` |
+
+### look-skip
+
+Skipping the look question still gets themes drafted from the subject, with "none" offered.
+
+**User message:**
+
+> We're setting up my new Portuguese deck. You already drafted its charter and I approved it:
+>
+> ## Scope
+> European Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.
+>
+> Assumes: fluent Spanish, no Portuguese.
+>
+> ## Out of scope
+> Brazilian-only usage. Business and legal Portuguese.
+>
+> ## Adding
+> Ask: offer cards and add them only after a yes.
+>
+> ## Stages
+> - `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.
+> - `02 Present tense`: regular and common irregular verbs in the present.
+>
+> ## Conventions
+> - Basic and Cloze.
+> - Tags: `pt::<area>::<topic>`.
+>
+> The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "<b>Vou embora amanhã.</b>".
+>
+> Second round: Ask mode is right, Basic and Cloze are fine, and I'll skip the question about how studying it feels. Carry on.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `builds-themes` | tool check | `Bash` with input matching `build_theme\.py` is called at least 2 times |
+| `drafts-and-offers-none` | LLM judge, reads the transcript | PASS if Claude drafts two or three themes based on the subject (Portuguese, Lisbon) even though the user skipped the feeling question, shows them, and offers "none" (keeping Anki's default look) as a choice. FAIL if it drafts no themes, drafts only one, asks the feeling question again, or never offers "none". |
 
 ### metric-concept
 
@@ -575,7 +1141,7 @@ Adding a field counts the affected notes, warns about the full sync, and waits f
 
 | grader | kind | passes when |
 |---|---|---|
-| `counts-notes` | tool check | `find_notes` is called at least once |
+| `counts-notes` | tool check | `find_notes` with input matching `note:` is called at least once |
 | `no-change-before-yes` | tool check | `model_field_add` is never called |
 | `warns` | LLM judge, reads the final reply | PASS if the reply says how many notes use the type, warns that adding a field makes the next sync a full one, asks the user to sync their other devices first, and asks before making the change. FAIL if it says it already added the field, or leaves out the full-sync warning or the request to sync other devices first. |
 
@@ -591,12 +1157,12 @@ A card in a deck with a custom note type uses the charter's default type and fil
 
 | grader | kind | passes when |
 |---|---|---|
-| `lema-dictionary-form` | tool check | `add_notes` is called at least once |
-| `no-hint` | tool check | `add_notes` is never called |
-| `no-production` | tool check | `add_notes` is never called |
-| `palabra-in-sentence` | tool check | `add_notes` is called at least once |
-| `sentence-field` | tool check | `add_notes` is called at least once |
-| `uses-default-type` | tool check | `add_notes` is called at least once |
+| `lema-dictionary-form` | tool check | `add_notes` with input matching `\"Lema\":\\s*\"darse cuenta` is called at least once |
+| `no-hint` | tool check | `add_notes` with input matching `\"Pista\` is never called |
+| `no-production` | tool check | `add_notes` with input matching `\"model_name\":\\s*\"Produccion\` is never called |
+| `palabra-in-sentence` | tool check | `add_notes` with input matching `\"Palabra\":\\s*\"(se dio cuenta\|se\\\|dio cuenta\|dio cuenta)\` is called at least once |
+| `sentence-field` | tool check | `add_notes` with input matching `\"Oraci\u00f3n\":\\s*\"No se dio cuenta de que la tienda estaba cerrada` is called at least once |
+| `uses-default-type` | tool check | `add_notes` with input matching `\"model_name\":\\s*\"Reconocimiento\` is called at least once |
 
 ### nt-move-up
 
@@ -611,7 +1177,7 @@ A word the user keeps getting wrong is recommended for production per the charte
 | grader | kind | passes when |
 |---|---|---|
 | `move-up` | LLM judge, reads the final reply | The deck has an `Reconocimiento` note for "darse cuenta", and the charter says to move a note to `Produccion` when the user keeps using the wrong word for it. PASS if the reply recommends moving that note to production, drafts a `Pista` for it (a short English gloss such as "to realize, notice"), and tells the user to do the move with Change Note Type in Anki's browser. FAIL if it doesn't suggest moving the note, creates a separate production note instead, or claims it changed the note type itself. |
-| `no-duplicate-production` | tool check | `add_notes` is never called |
+| `no-duplicate-production` | tool check | `add_notes` with input matching `Produccion` is never called |
 
 ### nt-no-leak
 
@@ -693,7 +1259,7 @@ When the collection already has fitting note types, the charter reuses them with
 | `lists-types` | tool check | `model_names` is called at least once |
 | `no-new-type` | tool check | `create_model` is never called |
 | `no-save` | tool check | `update_deck_description` is never called |
-| `reads-types` | tool check | `model_field_names` is called at least once |
+| `reads-types` | tool check | `model_field_names` with input matching `Reconocimiento\|Produccion` is called at least once |
 | `reuses` | LLM judge, reads the final reply | The collection already has `Reconocimiento` (recognition) and `Produccion` (production) note types. PASS if the draft charter's Conventions use those existing types, name recognition as the default, say what goes in each field, and give a rule for moving a note up to production. FAIL if it proposes a new note type instead, ignores the existing ones, or leaves out the default or the move-up rule. |
 
 ### one-right-answer
@@ -724,7 +1290,7 @@ Members of an open set are carded by what they do; no card asks for the whole se
 | grader | kind | passes when |
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
-| `no-example-prompt-in-calls` | tool check | `add_notes` is never called |
+| `no-example-prompt-in-calls` | tool check | `add_notes` with input matching `\\b([gG][iI][vV][eE]\|[nN][aA][mM][eE]\|[lL][iI][sS][tT]) ([aA][nN]\|[oO][nN][eE]\|[tT][wW][oO]\|[tT][hH][rR][eE][eE]\|[sS][oO][mM][eE]\|[aA] [fF][eE][wW]) ([eE][xX][aA][mM][pP][lL][eE]\|[mM][eE][tT][rR][iI][cC])[sS]?\\b` is never called |
 | `no-set-question` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if no card asks for the whole set ("name three text-generation metrics") or for "an example of" a category. Each metric is carded by what it does or measures, or the metric is named and the card asks what it measures or what kind of metric it is. FAIL if any card's answer is a list, or the question has many right answers because it asks for any member of the set. |
 
 ### procedure
@@ -742,7 +1308,7 @@ A procedure is carded at its decision points, not as a sequence of steps or comm
 | `adds-cards` | tool check | `add_notes` is called at least once |
 | `decision-points` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if the cards test decisions in the procedure (when to take a step, why it's needed, what goes wrong without it), and none asks for the order of steps or what comes next. FAIL if any card asks for a step's position in the sequence, the next step, or a command or flag. |
 | `no-commands-in-calls` | text search | the inputs sent to the mocked Anki tools never contain ` --[a-z][a-z-]+` |
-| `no-step-order-in-calls` | tool check | `add_notes` is never called |
+| `no-step-order-in-calls` | tool check | `add_notes` with input matching `[wW][hH][aA][tT] ([cC][oO][mM][eE][sS]\|[dD][oO] [yY][oO][uU] [dD][oO]\|[sS][tT][eE][pP] [cC][oO][mM][eE][sS]) ([nN][eE][xX][tT]\|[aA][fF][tT][eE][rR]\|[fF][iI][rR][sS][tT]\|[bB][eE][fF][oO][rR][eE])\|[wW][hH][iI][cC][hH] [sS][tT][eE][pP]\|\\b[sS][tT][eE][pP] ([oO][nN][eE]\|[tT][wW][oO]\|[tT][hH][rR][eE][eE]\|[0-9])\\b` is never called |
 
 ### project-specific
 
@@ -903,6 +1469,21 @@ Known-bad drafts are rewritten into the reviewed good shapes, and paired-relatio
 | `adds-cards` | tool check | `add_notes` is called at least once |
 | `good-shapes` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if all of these hold: the pooled-recall card's answer is one short fact (for example what serves as the pseudo answer key); grounding vs attribution is a single paired Cloze note or split cards, not one card with a paragraph answer; the inference/scoring card asks which one costs more; the cache-key card is a concrete scenario with a one-clause answer (a version or hash of the prompt); and the threshold Cloze keeps both blanks in one note rather than being split or flagged as a giveaway. FAIL if any rewritten card still has a multi-sentence answer, asks two things at once, or the threshold note was split into two notes. |
 
+### rescued-tag
+
+A stage rebuild tags each rewritten leech `rescued` in the plan.
+
+**User message:**
+
+> Rebuild stage 01 Classification metrics of my AI Engineering deck. Write the plan for me to review; don't apply anything yet.
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `notes_info`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `searches-problem-cards` | tool check | `find_notes` with input matching `tag:leech\|tag:marked` is called at least once |
+| `tags-rescued` | LLM judge, reads the transcript | Look at the stage plan Claude wrote. Notes 1001 and 1002 are leeches; 1003 is not. PASS if every leech the plan rewrites carries the `rescued` tag in the plan, and a leech the plan keeps unchanged apart from a new mnemonic is not required to have it. FAIL if a rewritten leech lacks the `rescued` tag, or the plan applies changes instead of only writing them for review. |
+
 ### restate-then-draft
 
 A multi-point explanation becomes cards that each test exactly one point.
@@ -932,7 +1513,7 @@ Cards about something read in an article ask about the subject, never about what
 |---|---|---|
 | `about-subject` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if every card asks about prompt injection itself (why instructions can't fix it, what makes it possible), and none asks what the post or its author said, argued or recommended. FAIL if any card's question is about the article rather than the subject. |
 | `adds-cards` | tool check | `add_notes` is called at least once |
-| `no-source-in-calls` | tool check | `add_notes` is never called |
+| `no-source-in-calls` | tool check | `add_notes` with input matching `([pP][oO][sS][tT]\|[aA][rR][tT][iI][cC][lL][eE]\|[bB][lL][oO][gG]\|[aA][uU][tT][hH][oO][rR]\|[eE][sS][sS][aA][yY])\\b[^\\\"]{0,80}\\b([aA][rR][gG][uU][eE]\|[sS][aA][yY]\|[cC][lL][aA][iI][mM]\|[rR][eE][cC][oO][mM][mM][eE][nN][dD]\|[sS][uU][gG][gG][eE][sS][tT])\|[aA][cC][cC][oO][rR][dD][iI][nN][gG] [tT][oO] [tT][hH][eE] ([pP][oO][sS][tT]\|[aA][rR][tT][iI][cC][lL][eE]\|[aA][uU][tT][hH][oO][rR]\|[bB][lL][oO][gG])` is never called |
 
 ### stale-fact
 
@@ -962,6 +1543,6 @@ A fact that invites a yes/no question becomes a what, why or which question.
 | grader | kind | passes when |
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
-| `no-yes-no-in-calls` | tool check | `add_notes` is never called |
+| `no-yes-no-in-calls` | tool check | `add_notes` with input matching `\"(Front\|Text)\":\\s*\"(?:[^\"]{0,40}: )?(?:<b>)?(Does\|Is\|Are\|Can\|Could\|Will\|Would\|Should\|Do\|Must\|Has\|Have)\\b` is never called |
 | `no-yes-no` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if no card's question can be answered with yes or no; each asks what, why, which or how. FAIL if any card's question is a yes/no question (for example "Does temperature 0 make outputs identical?"). |
 <!-- generated:end -->

@@ -47,7 +47,7 @@ def lint(card, prefix=None, skip=()):
         if check not in skip:
             out.append((sev, f"{check}: {msg}"))
 
-    if model == "Cloze":
+    if model == "Cloze" or model.endswith(" · Cloze"):  # a deck theme's copy, see build_theme.py
         body = f.get("Text", "")
         nums = sorted({int(n) for n in re.findall(r"\{\{c(\d+)::", body)})
         if not nums:

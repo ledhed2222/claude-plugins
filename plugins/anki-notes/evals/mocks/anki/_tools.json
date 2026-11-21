@@ -555,6 +555,42 @@
       }
     },
     {
+      "name": "model_styling",
+      "title": "Note Type Styling",
+      "description": "Get the CSS styling for a specific note type (model). This CSS is used when rendering cards of this type. Set include_latex=true to additionally return the model's LaTeX preamble ('latex_pre', 'latex_post', 'latex_svg') -- the header/footer wrapped around [latex] and [$]...[/$] blocks when rendering them. Only ask for it when diagnosing or fixing LaTeX/TikZ rendering; it is omitted by default.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Note type to inspect",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "include_latex": {
+            "default": false,
+            "description": "Also return latex_pre/latex_post/latex_svg",
+            "title": "Include Latex",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "model_stylingArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "model_stylingDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Note Type Styling",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
       "name": "model_templates",
       "title": "Note Type Templates",
       "description": "Get the card template HTML (Front and Back) for each card type in a note type (model). Returns the raw HTML templates used to render cards during review and editing.",
@@ -660,6 +696,75 @@
         "readOnlyHint": true,
         "destructiveHint": false,
         "openWorldHint": false
+      }
+    },
+    {
+      "name": "store_media_file",
+      "title": "Store Media File",
+      "description": "Store a media file to Anki's collection.media folder. Accepts files via base64 data, local file path, or URL. Use this to add images, audio, or other media files that can be referenced in note fields. Returns the stored filename and full path. See https://docs.ankiweb.net/media.html for how Anki stores and references media. URL fetches to private-network addresses are blocked unless the host is listed in the media_allowed_hosts config.",
+      "inputSchema": {
+        "properties": {
+          "filename": {
+            "description": "Filename to store the media under",
+            "title": "Filename",
+            "type": "string"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Base64-encoded file content; mutually exclusive with path/url",
+            "title": "Data"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Local file path to read from; mutually exclusive with data/url",
+            "title": "Path"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "URL to download the file from; mutually exclusive with data/path",
+            "title": "Url"
+          }
+        },
+        "required": [
+          "filename"
+        ],
+        "title": "store_media_fileArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "store_media_fileDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Store Media File",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
       }
     },
     {
