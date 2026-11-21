@@ -1,10 +1,16 @@
 # pyright: basic
 """Mechanical checks on drafted cards, before they are added or queued.
 
-Usage: python3 -I lint_cards.py <cards.json> [--prefix aie] [--strict]
+Usage: python3 -I lint_cards.py <cards.json|inbox.md> [--prefix aie] [--skip yes-no,...] [--strict]
 
 cards.json is a list of cards in the Anki inbox's format:
   {"deck": ..., "stage": ..., "model": "Basic"|"Cloze"|..., "fields": {...}, "tags": [...]}
+A Markdown file (the Anki inbox exported) is read as its ```json blocks, numbered
+from 1 in document order; charter blocks are skipped. Findings are numbered the
+same way, so "#3" is the third block.
+
+Every finding starts with a check id. --skip turns checks off, for a charter
+whose Conventions has a "Lint skip:" line.
 
 Standard library only, so it also runs in the claude.ai sandbox.
 Findings are "error" (empty fields, broken cloze, missing tags) or "warn"
@@ -31,55 +37,78 @@ def words(s):
     return [w for w in re.findall(r"[^\W\d_]{5,}", s.lower()) if w not in STOP]
 
 
-def lint(card, prefix=None):
+def lint(card, prefix=None, skip=()):
     out = []
     f = card.get("fields", {})
     model = card.get("model", "")
     tags = card.get("tags", [])
 
-    def add(sev, msg):
-        out.append((sev, msg))
+    def add(sev, check, msg):
+        if check not in skip:
+            out.append((sev, f"{check}: {msg}"))
 
     if model == "Cloze":
         body = f.get("Text", "")
         nums = sorted({int(n) for n in re.findall(r"\{\{c(\d+)::", body)})
         if not nums:
-            add("error", "Cloze has no {{c1::...}} deletion")
+            add("error", "cloze", "Cloze has no {{c1::...}} deletion")
         elif nums != list(range(1, len(nums) + 1)):
-            add("error", f"cloze numbers {nums} are not 1..n")
+            add("error", "cloze", f"cloze numbers {nums} are not 1..n")
         for ans in re.findall(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}", body):
             if len(text(ans).split()) > 6:
-                add("warn", f"cloze answer is long ({len(text(ans).split())} words): split the note")
+                add("warn", "long-answer", f"cloze answer is long ({len(text(ans).split())} words): split the note")
         if re.search(r"\{\{c\d+::\s*\}\}", body):
-            add("error", "empty cloze deletion")
+            add("error", "cloze", "empty cloze deletion")
     else:
         front, back = f.get("Front", ""), f.get("Back", "")
         if not text(front) or not text(back):
-            add("error", "empty Front or Back")
+            add("error", "empty", "empty Front or Back")
         else:
             answer = text(re.split(r"<small>", back)[0])  # the Why/Example line doesn't count
             if len(answer.split()) > 25:
-                add("warn", f"back is {len(answer.split())} words: one fact per card")
+                add("warn", "long-answer", f"back is {len(answer.split())} words: one fact per card")
             if YESNO.match(text(front)):
-                add("warn", "front looks like a yes/no question")
+                add("warn", "yes-no", "front looks like a yes/no question")
             if LIST_ASK.search(text(front)):
-                add("warn", "asks for a whole set or 'an example of': card one member, or turn it around")
+                add("warn", "whole-set", "asks for a whole set or 'an example of': card one member, or turn it around")
             # a front that names its choices ("A or B?") must contain the answer, so skip it
             leaked = [] if re.search(r"\bor\b", text(front), re.I) else sorted(set(words(answer)) & set(words(text(front))))
             if leaked:
-                add("warn", f"answer word(s) appear in the question: {', '.join(leaked)}")
+                add("warn", "answer-in-question", f"answer word(s) appear in the question: {', '.join(leaked)}")
         for name, val in f.items():
             if re.search(r"<(br|hr)\s*>", val):
-                add("warn", f"{name}: close void tags (<br />)")
+                add("warn", "void-tag", f"{name}: close void tags (<br />)")
 
     types = [t for t in tags if t.startswith("type::")]
     if len(types) != 1:
-        add("error", f"need exactly one type:: tag, found {len(types)}")
+        add("error", "tags", f"need exactly one type:: tag, found {len(types)}")
     if not any(t.startswith("src::") for t in tags):
-        add("error", "missing src:: tag")
+        add("error", "tags", "missing src:: tag")
     if prefix and not any(t.startswith(prefix + "::") for t in tags):
-        add("error", f"missing a {prefix}:: tag")
+        add("error", "tags", f"missing a {prefix}:: tag")
     return out
+
+
+def parse_cards(raw):
+    """[(number, card)] from a JSON list or from a Markdown doc's ```json blocks."""
+    if raw.lstrip().startswith("["):
+        return list(enumerate(json.loads(raw), 1))
+    out = []
+    for n, block in enumerate(re.findall(r"```json\s*\n(.*?)```", raw, re.S), 1):
+        try:
+            item = json.loads(block)
+        except ValueError:
+            item = {"unparsed": block}
+        if "charter" not in item and "charter_change" not in item:
+            out.append((n, item))
+    return out
+
+
+async def read_cards(path):
+    def read():
+        with open(path) as f:
+            return f.read()
+    return parse_cards(await asyncio.to_thread(read))
 
 
 async def main():
@@ -87,15 +116,17 @@ async def main():
     if not args:
         sys.exit(__doc__)
     prefix = args[args.index("--prefix") + 1] if "--prefix" in args else None
+    skip = args[args.index("--skip") + 1].split(",") if "--skip" in args else ()
     strict = "--strict" in args
-    def read():
-        with open(args[0]) as f:
-            return json.load(f)
-    cards = await asyncio.to_thread(read)
+    cards = await read_cards(args[0])
     bad = False
-    for i, c in enumerate(cards, 1):
+    for i, c in cards:
+        if "unparsed" in c:
+            print(f"#{i} [error] not valid JSON")
+            bad = True
+            continue
         label = text(c.get("fields", {}).get("Front") or c.get("fields", {}).get("Text") or "")[:50]
-        for sev, msg in lint(c, prefix):
+        for sev, msg in lint(c, prefix, skip):
             print(f"#{i} [{sev}] {msg}  ({label})")
             bad = bad or sev == "error" or strict
     print(f"{len(cards)} cards checked")

@@ -1,6 +1,6 @@
 import unittest
 
-from lint_cards import lint
+from lint_cards import lint, parse_cards
 
 TAGS = ["aie::evals::recall", "type::definition", "src::test"]
 
@@ -50,6 +50,60 @@ class LintTests(unittest.TestCase):
     def test_empty_and_void_tags(self):
         self.assertTrue(any("empty" in m for m in msgs(basic("", "A."))))
         self.assertTrue(any("void" in m for m in msgs(basic("Q?", "A.<br>B."))))
+
+    def test_skip(self):
+        card = basic("Does temperature 0 make outputs identical?", "No.")
+        self.assertEqual([m for m in msgs(card, skip=("yes-no",)) if "yes/no" in m], [])
+
+
+class EvalCaseTests(unittest.TestCase):
+    """Eval cases from the formulation PR that a script can grade without an LLM."""
+
+    def test_no_giveaway(self):
+        leak = basic("Why is the harmonic mean used for F1 instead of the arithmetic mean?",
+                     "<b>The harmonic mean</b> is pulled toward the lower of precision and recall.")
+        self.assertTrue(any(m.startswith("answer-in-question") for m in msgs(leak)))
+        fixed = basic("F1 combines precision and recall. Why is it pulled down hard when one of them is low?",
+                      "<b>It uses a harmonic mean.</b>")
+        self.assertEqual(lint(fixed), [])
+
+    def test_closed_list(self):
+        whole = basic("Name all four cells of a confusion matrix.", "TP, FP, FN, TN")
+        self.assertTrue(any(m.startswith("whole-set") for m in msgs(whole)))
+        ordered = {"model": "Cloze", "tags": TAGS, "fields": {"Extra": "", "Text":
+                   "Confusion matrix cells: {{c1::true positive}}, {{c2::false positive}}, {{c3::false negative}}, {{c4::true negative}}"}}
+        self.assertEqual(lint(ordered), [])
+
+    def test_inbox_path(self):
+        doc = """# Anki inbox
+Cards queued away from Anki.
+
+## Queued cards
+
+```json
+{"charter": {"deck": "Spanish", "stages": ["01 Basics"], "description": "..."}}
+```
+
+```json
+{"deck": "AI Engineering", "stage": null, "model": "Basic", "fields": {"Front": "Which eval step costs more: inference or scoring?", "Back": "<b>Inference.</b>"}, "tags": ["aie::evals::cost", "type::contrast", "src::eval-cost"]}
+```
+
+```json
+{"deck": "AI Engineering", "stage": null, "model": "Basic", "fields": {"Front": "Is recall the same as precision?", "Back": "No."}, "tags": ["aie::metrics::recall", "type::contrast", "src::recall"]}
+```
+
+```json
+{not json
+```
+"""
+        cards = parse_cards(doc)
+        self.assertEqual([n for n, _ in cards], [2, 3, 4])
+        self.assertEqual(lint(cards[0][1], prefix="aie"), [])
+        self.assertTrue(any(m.startswith("yes-no") for m in msgs(cards[1][1])))
+        self.assertIn("unparsed", cards[2][1])
+
+    def test_json_list(self):
+        self.assertEqual(parse_cards('[{"a": 1}]'), [(1, {"a": 1})])
 
 
 if __name__ == "__main__":

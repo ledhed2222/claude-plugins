@@ -14,7 +14,7 @@ Read this only when a charter calls for a new note type or a change to one. Whet
 
 ## Propose before building
 
-Show the user the type's name and fields, how many cards each note makes and what each asks, the templates, and one sample note as each of its cards' fronts and backs would show it. Build only on a yes.
+Check the design first: write the templates (as `model_templates` returns them) and a sample note to a JSON file and run `python3 -I <this skill dir>/scripts/render_note.py <spec.json>`, or for an existing type `render_note.py <note.json> --model <type>`. It renders every card, fails when a front shows its answer or a back reuses `{{FrontSide}}` under a scripted front that hides it, and can't run JavaScript, so a scripted type still needs a preview in Anki. Show the user the type's name and fields, how many cards each note makes and what each asks, the templates, and one sample note as each of its cards' fronts and backs would show it. Build only on a yes.
 
 ## Build
 

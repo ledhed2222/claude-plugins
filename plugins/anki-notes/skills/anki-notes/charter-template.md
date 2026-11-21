@@ -17,3 +17,5 @@ Automatic (whenever Claude teaches something in scope) or Ask (propose cards and
 Only what differs from the skill's defaults for this subject: what earns a card, note types (what goes in each field, and when a note moves from one type to another), direction, context cues, whether answers go stale, sources. Start any rule that overrides the skill with "Overrides:".
 
 Tags: `<prefix>::<area>::<topic>`.
+
+Lint skip: only if a card check misfires for this subject, the check ids to turn off (for example `answer-in-question` for a language deck whose fronts quote the sentence the word came from).
