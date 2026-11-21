@@ -31,6 +31,7 @@ This file is for working on the plugin in this repo. `claude plugin validate` wa
 - To simulate Anki being closed, override every shared mock with a connection-refused error (see `inbox-path/mocks/anki/`). Leaving `ankimcp` out of `plugins` doesn't work: the suite's mocks still serve the Anki tools.
 - `AskUserQuestion` isn't available in headless runs even when allowed, so grade questionnaires from the reply.
 - `model_field_names.md` and `model_templates.md` answer per note type from `mocks/anki/fixtures/`; add a fixture when a case needs another type. The lookup rejects a file name with spaces or accents, so mock note types get plain names (`Reconocimiento`, not `Español Reconocimiento`).
+- When a reply must depend on a name with a space (a deck like `AI Engineering`), use a `type: agent` mock with the verbatim reply for each name and the real error for anything else; see `mocks/anki/get_deck_description.md`. A fixed mock answers every name the same, so a check for an unknown deck gets a charter back.
 - Grader regexes are JavaScript: no inline `(?i)`. `tool_used` has no flags field, so spell out both cases (`[nN]ame`).
 - A full run is 288 sessions, about 25 minutes with `-j 8`, and about $60; run one case with `--case <name>` while iterating, with `--runs 1 --ablation none` for a quick check.
 

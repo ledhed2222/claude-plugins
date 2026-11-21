@@ -41,12 +41,11 @@ From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a
 
 - `charter-save` (0.88): saves the deck, stages and charter but never syncs afterwards, though `charters.md` step 7 says to.
 - `charter-lean` (0.50): drafts run well past 250 words, carrying note-type designs and long question lists. `charter-test-cases` (0.89) also leaves out the three test topics now and then.
-- `charter-overlap` (0.75): asks about the boundary with AI Engineering but never puts the overlap in both decks' Out of scope.
 - `charter-change-proposed` (0.78): fixes leeches that share a cause (prices, context sizes, rankings) card by card instead of proposing a charter change.
 - `nt-field-change` (0.44): warns about the full sync correctly but never counts the notes that use the type, which `note-types.md` asks for first.
 - `no-giveaway` (0.50): some fronts nearly answer themselves ("Is a score measured on the tuning examples too high or too low?").
 - `one-right-answer` (0.50): most cards are tight scenarios, but a few why/what fronts allow several right answers.
-- `q-why-work` (0.67) and `charter-from-inbox` (0.67): one-off misses (charter not tied to the user's work; inbox charter not saved).
+- `q-why-work` (0.67): one run in three doesn't tie the charter to the user's work.
 
 **The case or grader is at fault:**
 
@@ -55,6 +54,11 @@ From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a
 - `restate-then-draft` (0.50): the judge treats a two-blank cloze as mixing two points, but Anki makes one card per blank.
 - `nt-repo` (0.87): the real `Reconocimiento` type already has a `Notas` field and back section, so Claude correctly changes nothing. Ask for a field that doesn't exist yet.
 - `charter-away`, `charter-change-away` (0.00) and `inbox-path` (0.33): without Anki or the inbox, the skill says nothing was saved instead of showing the queued charter block. Left as is: a planned server-side Anki client will make the no-Anki path moot.
+
+**Fixed in the mocks since that run, so re-check:**
+
+- `charter-overlap` (0.75) never saw the AI Engineering charter: the fixture lookup rejects a deck name with a space. It passed once with an agent mock.
+- `charter-from-inbox` (0.67) got the AI Engineering charter back for the not-yet-created Spanish deck, so a queued charter looked like a change. Unknown decks now get the real not-found error; it passed once.
 
 **Cause unknown:**
 
@@ -273,7 +277,7 @@ Emptying the inbox saves a queued charter first, without re-asking, then adds it
 > {"deck": "Spanish", "stage": null, "model": "Cloze", "fields": {"Text": "La farmacia {{c1::está}} al final de la calle.", "Extra": "estar: location"}, "tags": ["es::grammar::ser-estar", "type::application"]}
 > ```
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -290,7 +294,7 @@ A draft charter is short, doesn't restate the skill's rules, marks overrides, an
 
 > Set up an Anki deck for Spanish. Why: I'm moving to Madrid next year. How: I read novels on my Kindle with lookups and review on my phone. What I know: I'm about B1 and comfortable with the present and past tenses. And I need both to understand Spanish and to speak it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -342,7 +346,7 @@ An approved charter creates the deck and every stage, saves the full text as Mar
 > - Prefer cloze sentences from my reading.
 > - Tags: `es::<area>::<topic>`.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -363,7 +367,7 @@ A new charter is shown with three test topics, how it decides each, and a sample
 
 > Set up an Anki deck for Spanish. Why: I'm moving to Madrid next year. How: I read novels on my Kindle with lookups and review on my phone. What I know: I'm about B1 and comfortable with the present and past tenses. And I need both to understand Spanish and to speak it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -549,7 +553,7 @@ A note-type proposal that needs script says JavaScript isn't officially supporte
 
 > Set up an Anki deck for Spanish with a note type that blanks the word in its own sentence automatically for the production card. I review on AnkiDroid on my phone. Why: I'm moving to Madrid next year. How: I read novels on my Kindle with lookups and review on my phone. What I know: I'm about B1 and comfortable with the present and past tenses. And I need both to understand Spanish and to speak it. Show me the draft, including the templates.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -614,7 +618,7 @@ In a proposed note type, no card's front shows its own answer.
 
 > Set up an Anki deck for Spanish, with a note type that gives me both a recognition card and a production card from one note. Why: I'm moving to Madrid next year. How: I read novels on my Kindle with lookups and review on my phone. What I know: I'm about B1 and comfortable with the present and past tenses. And I need both to understand Spanish and to speak it. Show me the draft, including the templates.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -629,7 +633,7 @@ A technical subject with varied card shapes stays on Basic and Cloze.
 
 > Set up an Anki deck for distributed systems. Why: I'm a backend engineer and want to design better systems at work. How: sessions with Claude while I work, reviewed on my phone. What I know: basic networking and databases. I need to understand it well enough to make design decisions. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -645,7 +649,7 @@ A subject needing both recognition and production gets a well-designed note type
 
 > Set up an Anki deck for Spanish. Why: I'm moving to Madrid next year. How: I read novels on my Kindle with lookups and review on my phone. What I know: I'm about B1 and comfortable with the present and past tenses. And I need both to understand Spanish and to speak it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -679,7 +683,7 @@ When the collection already has fitting note types, the charter reuses them with
 
 > Set up an Anki deck for Spanish. Why: I'm moving to Madrid next year. How: I read novels on my Kindle with lookups and review on my phone. What I know: I'm about B1 and comfortable with the present and past tenses. And I need both to understand Spanish and to speak it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`, `model_names`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`, `model_names`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -761,7 +765,7 @@ When new material comes from conversation classes, the charter sources cards fro
 
 > Set up an Anki deck for Spanish. Why: I'm moving to Madrid next year. How: I take a weekly conversation class and bring my notes home; I review on my phone. I'm about B1. I need to understand it and speak it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -776,7 +780,7 @@ When new material comes from the user's reading, the charter sources cards from 
 
 > Set up an Anki deck for Spanish. Why: I'm moving to Madrid next year. How: I read novels on my Kindle and look up words as I go; I review on my phone. I'm about B1. I need to understand it and speak it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -791,7 +795,7 @@ Setting up a deck starts with the four-question questionnaire, as a numbered lis
 
 > Set up an Anki deck for Spanish.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -807,7 +811,7 @@ The follow-up questions after a draft are few and never repeat the first round.
 
 > Set up an Anki deck for music theory. Why: I play guitar and want to improvise over jazz standards. How: I learn from a jazz theory book chapter by chapter and review on my desktop. What I know: I can read chord symbols and know the major scale. I need to use it while playing, not just understand it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -822,7 +826,7 @@ Questions the user already answered are not asked again.
 
 > Set up a Spanish deck: I'm moving to Madrid next year, I read on my Kindle and review on my phone.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|
@@ -838,7 +842,7 @@ Every questionnaire answer shows up in at least one line of the drafted charter.
 
 > Set up an Anki deck for music theory. Why: I play guitar and want to improvise over jazz standards. How: I learn from a jazz theory book chapter by chapter and review on my desktop. What I know: I can read chord symbols and know the major scale. I need to use it while playing, not just understand it. Show me the draft.
 
-**Deck:** the shared mock deck, with this case's own `list_decks`.
+**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
 
 | grader | kind | passes when |
 |---|---|---|

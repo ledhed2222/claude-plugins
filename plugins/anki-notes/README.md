@@ -55,7 +55,7 @@ A deck's charter is its description in Anki (click the deck, then the descriptio
 
 **Changing a charter:** say what isn't working ("stop carding slang in Spanish"). Claude makes the smallest change that fixes it, tells you what it means for cards already in the deck, and shows you the old and new text before saving. It may also suggest a change when the same kind of card keeps getting rejected or failed.
 
-Away from Anki, an approved charter or a requested change is queued in the Anki inbox and saved the next time Claude Code starts with Anki open. [`charters.md`](skills/anki-notes/charters.md) and [`note-types.md`](skills/anki-notes/note-types.md) are the full guides Claude follows. Adding, removing or reordering a note type's fields makes Anki's next sync a full one, so Claude asks you to sync your other devices first.
+Away from Anki, an approved charter or a requested change is queued in the Anki inbox and saved the next time Claude Code starts with Anki open. [`charters.md`](skills/anki-notes/charters.md) and [`note-types.md`](skills/anki-notes/note-types.md) are the full guides Claude follows. Adding, removing or reordering a note type's fields, or moving notes to another type, makes Anki's next sync a full one, so Claude asks you to sync your other devices first.
 
 ## Using it
 
