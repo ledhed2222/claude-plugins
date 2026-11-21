@@ -9,12 +9,13 @@ Usage:
 Plan: {"deck": "AI Engineering::02 Eval basics", "tags": ["src::..."],
        "items": [{"new": {"model": "Basic", "fields": {...}, "tags": [...]}},
                  {"keep": <note id>},
-                 {"rewrite": <note id>, "fields": {...}},
+                 {"rewrite": <note id>, "fields": {...}, "tags": [...]},
                  {"delete": [<note id>, ...]}]}
 Items are in study order. new/keep/rewrite notes are moved into the deck and
 their new cards repositioned in that order. Every card of a new/keep/rewrite
 note is also unsuspended, including keep notes the user had suspended. delete
-only tags the notes "to-delete" for the user to remove.
+only tags the notes "to-delete" for the user to remove. A rewrite's optional
+tags are added to the note (say "rescued" for a rewritten leech).
 
 Notes created by --apply are recorded in <plan>.applied.json, so a run that
 fails partway can be re-run without adding them twice.
@@ -33,7 +34,7 @@ KINDS = ("new", "keep", "rewrite", "delete")
 def check_items(items):
     for i, item in enumerate(items):
         kinds = [k for k in KINDS if k in item]
-        if len(kinds) != 1 or not set(item) <= {kinds[0], "fields"}:
+        if len(kinds) != 1 or not set(item) <= {kinds[0], "fields", "tags"}:
             sys.exit(f"item {i}: needs exactly one of {', '.join(KINDS)}: {item}")
         kind = kinds[0]
         if kind == "new" and not {"model", "fields"} <= set(item["new"]):
@@ -42,8 +43,8 @@ def check_items(items):
             sys.exit(f"item {i}: rewrite needs fields")
         if kind == "delete" and not item["delete"]:
             sys.exit(f"item {i}: delete needs note ids")
-        if "fields" in item and kind != "rewrite":
-            sys.exit(f"item {i}: fields only go with rewrite")
+        if ("fields" in item or "tags" in item) and kind != "rewrite":
+            sys.exit(f"item {i}: fields and tags only go with rewrite")
 
 
 async def apply_plan(anki, plan_path, plan):
@@ -68,6 +69,8 @@ async def apply_plan(anki, plan_path, plan):
             ordered.append(res["note_id"])
         elif "rewrite" in item:
             await anki.call("update_note_fields", id=item["rewrite"], fields=item["fields"])
+            if item.get("tags"):
+                await anki.call("tag_add", note_ids=[item["rewrite"]], tags=" ".join(item["tags"]))
             ordered.append(item["rewrite"])
         elif "keep" in item:
             ordered.append(item["keep"])

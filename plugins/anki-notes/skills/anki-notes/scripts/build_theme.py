@@ -15,7 +15,10 @@ theme.json:
   },
   "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
   "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"},
-  "motion": false                             // opt-in: 120 ms answer fade, rescued shimmer
+  "motion": false,                            // opt-in: 120 ms answer fade, rescued shimmer
+  "sample": {"stage": "01 Basics", "front": "...", "back": "...", "tags": ["rescued"]}
+                                              // the deck's sample note, shown in preview.html;
+                                              // a Cloze sample puts the blanked text in front
 }
 
 Writes to <out dir>:
