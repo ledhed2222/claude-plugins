@@ -20,3 +20,5 @@ jobs:
       - run: |
           claude plugin validate .
           for p in plugins/*/; do claude plugin validate "$p"; done
+      - name: anki-notes eval spec is up to date
+        run: python3 -I plugins/anki-notes/evals/gen_spec.py --check

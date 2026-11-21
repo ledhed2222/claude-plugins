@@ -34,3 +34,7 @@ Unofficial. Declares the MCP server that the [AnkiMCP](https://ankimcp.ai) Anki 
 
 - Stay clearly unofficial: no AnkiMCP or Anki logo or branding. An icon, if added, must be original art.
 - The server only exists while Anki is open with the add-on installed; the README says so and should keep saying so. No `privacyPolicyUrl`: the server is local and the plugin collects nothing. Keep it that way: no hooks or telemetry.
+
+### anki-notes
+
+The owner's own skill for turning what Claude teaches into Anki flashcards. It depends on `ankimcp` and has an eval suite; its conventions are in [`plugins/anki-notes/CLAUDE.md`](plugins/anki-notes/CLAUDE.md).

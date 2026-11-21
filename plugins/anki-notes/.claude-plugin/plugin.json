@@ -1,0 +1,20 @@
+{
+  "name": "anki-notes",
+  "version": "0.1.0",
+  "description": "Turns what Claude teaches you into staged Anki flashcards, with per-deck charters and an inbox doc for cards drafted away from Anki.",
+  "author": {
+    "name": "ledhed2222"
+  },
+  "homepage": "https://github.com/ledhed2222/claude-plugins/tree/main/plugins/anki-notes#readme",
+  "repository": "https://github.com/ledhed2222/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "anki",
+    "flashcards",
+    "spaced-repetition",
+    "learning"
+  ],
+  "dependencies": [
+    "ankimcp"
+  ]
+}
