@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if curl -s -m 2 -o /dev/null http://127.0.0.1:3141/; then echo 'Anki is open. Once, at the start of this session, read the Claude Docs doc \"Anki inbox\"; if it holds queued cards, empty it with the anki-notes skill and report in one line. If it is empty, say nothing about it.'; fi"
+            "command": "[ -n \"$EVAL_SKIP_INBOX_HOOK\" ] && exit 0; if curl -s -m 2 -o /dev/null http://127.0.0.1:3141/; then echo 'Anki is open. Once, at the start of this session, read the Claude Docs doc \"Anki inbox\"; if it holds queued cards, empty it with the anki-notes skill and report in one line. If it is empty, say nothing about it.'; fi"
           }
         ]
       }
