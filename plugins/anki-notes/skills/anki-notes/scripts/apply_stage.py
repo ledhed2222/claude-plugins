@@ -27,14 +27,14 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
 from ankimcp_client import AnkiError, Client, read_json, write_text  # noqa: E402
 
-KINDS = ("new", "keep", "rewrite", "delete")
+_KINDS = ("new", "keep", "rewrite", "delete")
 
 
-def check_items(items):
+def _check_items(items):
     for i, item in enumerate(items):
-        kinds = [k for k in KINDS if k in item]
+        kinds = [k for k in _KINDS if k in item]
         if len(kinds) != 1 or not set(item) <= {kinds[0], "fields"}:
-            sys.exit(f"item {i}: needs exactly one of {', '.join(KINDS)}: {item}")
+            sys.exit(f"item {i}: needs exactly one of {', '.join(_KINDS)}: {item}")
         kind = kinds[0]
         if kind == "new" and not {"model", "fields"} <= set(item["new"]):
             sys.exit(f"item {i}: new needs model and fields")
@@ -46,7 +46,7 @@ def check_items(items):
             sys.exit(f"item {i}: fields only go with rewrite")
 
 
-async def apply_plan(anki, plan_path, plan):
+async def _apply_plan(anki, plan_path, plan):
     deck, base_tags, items = plan["deck"], plan.get("tags", []), plan["items"]
     applied_path = plan_path + ".applied.json"
     applied, _ = await asyncio.gather(read_json(applied_path, missing={}), anki.call("create_deck", deck_name=deck))
@@ -86,7 +86,7 @@ async def apply_plan(anki, plan_path, plan):
     print(f"{len(ordered)} notes / {len(cards)} cards in {deck}; {r.get('repositioned')} new cards ordered")
 
 
-async def main(anki, args, flags):
+async def _apply(anki, args, flags):
     if not args:
         await anki.sync()
         print("sync: success")
@@ -95,7 +95,7 @@ async def main(anki, args, flags):
     plan_path = args[0]
     plan = await read_json(plan_path)
     items = plan["items"]
-    check_items(items)
+    _check_items(items)
     existing = [i.get("keep") or i.get("rewrite") for i in items if "keep" in i or "rewrite" in i]
     existing += [n for i in items for n in i.get("delete", [])]
     found = {n["noteId"] for n in (await anki.call("notes_info", notes=existing, excerpt_chars=1))["notes"]} if existing else set()
@@ -108,23 +108,23 @@ async def main(anki, args, flags):
     if "--apply" not in flags:
         sys.exit("dry run ok; pass --apply" + (" (--sync only runs after --apply)" if "--sync" in flags else ""))
 
-    await apply_plan(anki, plan_path, plan)
+    await _apply_plan(anki, plan_path, plan)
     if "--sync" in flags:
         await anki.sync()
         print("sync: success")
 
 
-async def run():
+async def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags = set(sys.argv[1:]) - set(args)
     if not args and "--sync" not in flags:
         sys.exit(__doc__)
     try:
         async with Client() as anki:
-            await main(anki, args, flags)
+            await _apply(anki, args, flags)
     except AnkiError as e:
         sys.exit(str(e))
 
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    asyncio.run(main())

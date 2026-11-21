@@ -33,7 +33,7 @@ def check(cards):
     return errors
 
 
-def groups(cards):
+def _groups(cards):
     out = {}
     for n, c in cards:
         out.setdefault((c["deck"], c["stage"], c["model"]), []).append((n, c))
@@ -43,7 +43,7 @@ def groups(cards):
 async def add_cards(anki, cards, report):
     first = []
     # one group at a time: every call writes into the same collection
-    for (deck, stage, model), group in groups(cards).items():
+    for (deck, stage, model), group in _groups(cards).items():
         r = await anki.call("add_notes", deck_name=f"{deck}::{stage}", model_name=model,
                             notes=[{"fields": c["fields"], "tags": c["tags"]} for _, c in group])
         for res in r["results"]:
@@ -73,7 +73,7 @@ async def main():
     errors = check(cards)
     if errors:
         sys.exit("\n".join(errors))
-    print({f"{d}::{s} ({m})": len(v) for (d, s, m), v in groups(cards).items()})
+    print({f"{d}::{s} ({m})": len(v) for (d, s, m), v in _groups(cards).items()})
     if "--apply" not in sys.argv:
         sys.exit("dry run ok; pass --apply")
 

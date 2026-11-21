@@ -22,25 +22,25 @@ import os
 import re
 import sys
 
-TAG = re.compile(r"\{\{([#^/]?)\s*([^}]*?)\s*\}\}")
+_TAG = re.compile(r"\{\{([#^/]?)\s*([^}]*?)\s*\}\}")
 
 
-def plain(html):
+def _plain(html):
     html = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", html)
     html = re.sub(r"<br\s*/?>|<[^>]+>", " ", html)
     return re.sub(r"\s+", " ", html.replace("&nbsp;", " ")).strip()
 
 
-def has(haystack, needle):
+def _has(haystack, needle):
     return re.search(rf"(?<!\w){re.escape(needle)}(?!\w)", haystack, re.I) is not None
 
 
-def refs(template):
+def _refs(template):
     """Field names a template uses, any filter stripped."""
-    return {name.split(":")[-1] for kind, name in TAG.findall(template) if name != "FrontSide"}
+    return {name.split(":")[-1] for kind, name in _TAG.findall(template) if name != "FrontSide"}
 
 
-def cloze(value, n, side):
+def _cloze(value, n, side):
     def sub(m):
         num, body, hint = int(m.group(1)), m.group(2), m.group(3)
         if num != n:
@@ -49,10 +49,10 @@ def cloze(value, n, side):
     return re.sub(r"\{\{c(\d+)::(.*?)(?:::(.*?))?\}\}", sub, value)
 
 
-def render(template, note, n=None, side="front", front_side=""):
+def _render(template, note, n=None, side="front", front_side=""):
     def section(m):
         kind, name, inner = m.group(1), m.group(2), m.group(3)
-        filled = bool(plain(note.get(name, "")))
+        filled = bool(_plain(note.get(name, "")))
         return inner if filled == (kind == "#") else ""
     out = template
     while True:  # sections can nest; resolve innermost first
@@ -68,19 +68,19 @@ def render(template, note, n=None, side="front", front_side=""):
         *filters, fname = name.split(":")
         value = note.get(fname, "")
         if "cloze" in filters:
-            return cloze(value, n, side)
+            return _cloze(value, n, side)
         if "type" in filters:
             return ""
-        return plain(value) if "text" in filters else value
-    return TAG.sub(field, out)
+        return _plain(value) if "text" in filters else value
+    return _TAG.sub(field, out)
 
 
-def cards(templates, note):
+def _cards(templates, note):
     """[(label, n, front template, back template)]: one per cloze number for cloze types."""
     out = []
     for name, t in templates.items():
         if re.search(r"\{\{[^}]*cloze:", t["Front"]):
-            fields = [f for f in refs(t["Front"]) if re.search(r"\{\{c\d+::", note.get(f, ""))]
+            fields = [f for f in _refs(t["Front"]) if re.search(r"\{\{c\d+::", note.get(f, ""))]
             nums = sorted({int(x) for f in fields for x in re.findall(r"\{\{c(\d+)::", note[f])})
             out += [(f"{name} c{n}", n, t["Front"], t["Back"]) for n in nums]
         else:
@@ -90,29 +90,29 @@ def cards(templates, note):
 
 def check(templates, note):
     findings, shown = [], []
-    for label, n, ft, bt in cards(templates, note):
-        front = render(ft, note, n, "front")
-        back = render(bt, note, n, "back", front_side=front)
-        shown.append((label, plain(front), plain(back)))
-        if not plain(front):
+    for label, n, ft, bt in _cards(templates, note):
+        front = _render(ft, note, n, "front")
+        back = _render(bt, note, n, "back", front_side=front)
+        shown.append((label, _plain(front), _plain(back)))
+        if not _plain(front):
             findings.append(("warn", f"{label}: front is empty, so Anki makes no card"))
             continue
         if n is not None:
-            answers = [plain(a) for f in refs(ft) for num, a in re.findall(r"\{\{c(\d+)::(.*?)(?:::.*?)?\}\}", note.get(f, "")) if int(num) == n]
+            answers = [_plain(a) for f in _refs(ft) for num, a in re.findall(r"\{\{c(\d+)::(.*?)(?:::.*?)?\}\}", note.get(f, "")) if int(num) == n]
         else:
-            answers = [plain(note.get(f, "")) for f in refs(bt) - refs(ft)]
+            answers = [_plain(note.get(f, "")) for f in _refs(bt) - _refs(ft)]
         answers = [a for a in answers if len(a) > 1]
         scripted = "<script" in ft.lower()
         # a front that names its choices ("A or B?") must contain the answer, as in lint_cards
-        choices = re.search(r"\bor\b", plain(front), re.I)
+        choices = re.search(r"\bor\b", _plain(front), re.I)
         if not scripted and not choices:
             for a in answers:
-                if has(plain(front), a):
+                if _has(_plain(front), a):
                     findings.append(("error", f"{label}: front shows its answer '{a}'"))
         if scripted:
             findings.append(("warn", f"{label}: front has JavaScript, which this check can't run; preview it in Anki"))
         # a scripted front that shows a field containing the answer has to hide it there
-        hiding = [f for f in refs(ft) for a in answers if has(plain(note.get(f, "")), a)] if n is None else []
+        hiding = [f for f in _refs(ft) for a in answers if _has(_plain(note.get(f, "")), a)] if n is None else []
         if scripted and hiding and "{{FrontSide}}" in bt.replace(" ", ""):
             findings.append(("error", f"{label}: back reuses {{{{FrontSide}}}} but the front has to hide the answer in "
                                       f"{', '.join(sorted(set(hiding)))}; render the fields fresh"))
