@@ -78,7 +78,7 @@ Cards are only written to Anki from Claude Code, through the `anki` MCP server o
 4. **Add** with `add_notes`, one call per stage and note type.
    - `Basic`: `{"Front": ..., "Back": ...}`. Bold the key term with `<b>`. An optional context line goes at the end of Back: `<br><br><small><b>Why/Example:</b> one sentence</small>`.
    - `Cloze`: `{"Text": ..., "Extra": ""}`.
-   - Tags: the charter's prefix (`<prefix>::<area>::<topic>`), `type::definition|contrast|application|formula`, and `src::<where-it-came-from>` so a batch can be found together.
+   - Tags: the charter's prefix (`<prefix>::<area>::<topic>`), `type::definition|contrast|application|formula`, and `src::<topic>` so a batch can be found together. Name the topic, never the project or session it came from: no client, module or dataset names in tags either.
 5. **Order** them: new cards land at the end of the queue, so if a card belongs before others in its stage, move it with `card_reposition`.
 6. **Sync**: `sync()`, then poll `sync(job_id)` until it reports `success`. If it ends in `conflict`, never pick a direction yourself; cancel and tell the user.
 7. **Report** in one line: how many were added, to which deck and stage, their fronts in short form, and whether the sync succeeded.
