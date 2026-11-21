@@ -70,6 +70,25 @@ Claude never deletes cards. Cards that should go are tagged `to-delete`; search 
 
 For a big cleanup, Claude writes the stage as a plan file (every card's current text and what will change) for you to review, then applies it with `skills/anki-notes/scripts/apply_stage.py`. This only works in Claude Code with Anki open.
 
+## Evals
+
+`evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals.md) suite: one case per mistake the skill must not make, each run with and without the plugin against a mocked deck, so your real Anki is never touched. [`evals/SPEC.md`](evals/SPEC.md) lists what each case tests and what counts as passing. From the root of this repo:
+
+```
+claude plugin eval . --trust-plugin
+```
+
+Add `--model <model>` to compare models, or `--case <name>` to run one case.
+
+## Ideas
+
+Not built yet.
+
+- **Native pronunciation audio.** For language decks, attach a recording of each word or phrase as spoken by a native speaker. The charter decides whether a deck gets audio and which accent (for example `Audio: es-MX for every target-language word`). Anki plays a `[sound:…]` file stored in its media folder, and AnkiMCP's `store_media_file` can save one, so the open questions are which speech service sounds native enough, and what it costs.
+- **Validate the LLM graders.** Run each `llm` grader over cards that were already reviewed by hand, and check it agrees on both the good cards and the bad ones before trusting its scores.
+- **Pick the model by eval.** Run the suite once per candidate model with `--model`, then pin the cheapest one that clears the bar in a card-writing subagent. claude.ai ignores plugin agents, so the skill still works there on its own.
+- **Learn from real use.** Track, per batch of cards (their `src::` tag), how many get suspended, tagged `to-delete` or keep being failed, and feed the patterns back into the rules and charters.
+
 ## Troubleshooting
 
 | what you see | why |

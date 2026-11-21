@@ -1,0 +1,1 @@
+{"decks": [{"deck_id": 1, "name": "AI Engineering", "is_filtered": false}, {"deck_id": 2, "name": "AI Engineering::01 Classification metrics", "is_filtered": false}, {"deck_id": 3, "name": "AI Engineering::02 Eval basics", "is_filtered": false}, {"deck_id": 6, "name": "AI Engineering::03 Document extraction", "is_filtered": false}]}
