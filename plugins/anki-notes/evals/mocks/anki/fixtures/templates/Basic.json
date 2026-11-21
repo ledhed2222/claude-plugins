@@ -1,0 +1,1 @@
+{"model_name": "Basic", "templates": {"Card 1": {"Front": "{{Front}}", "Back": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"}}, "template_count": 1, "message": "Retrieved 1 card template(s) for model \"Basic\""}

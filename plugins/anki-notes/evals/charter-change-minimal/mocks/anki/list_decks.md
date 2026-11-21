@@ -1,0 +1,1 @@
+{"decks": [{"deck_id": 1, "name": "Spanish", "is_filtered": false}, {"deck_id": 2, "name": "Spanish::01 Present tense", "is_filtered": false}, {"deck_id": 3, "name": "Spanish::02 Past tenses", "is_filtered": false}, {"deck_id": 4, "name": "Spanish::03 Subjunctive", "is_filtered": false}]}

@@ -21,13 +21,18 @@ This file is for working on the plugin in this repo. `claude plugin validate` wa
 
 ## Evals
 
-- One case per directory under `evals/`, each reproducing a mistake the owner flagged in a real card review. `evals/SPEC.md` says what each case tests and the pass bar.
+- One case per directory under `evals/`. The first ones each reproduce a mistake the owner flagged in a real card review; the rest test the formulation checks, `charters.md` and `note-types.md`. `evals/SPEC.md` says what each case tests and the pass bar.
 - **Run from the repo root**, not from this folder: `claude plugin eval . --trust-plugin`. Each case loads `ankimcp` too (`plugins: ["../..", "../../../ankimcp"]`), and the harness only loads plugins under the directory it was pointed at.
 - `evals/mocks/anki/` replaces the Anki server for every case. `_tools.json` is the real server's `tools/list` for the mocked tools; save it again from the running add-on if those tools change. A case overrides one mock with its own `mocks/anki/<tool>.md`.
 - Mock replies must look like real ones. A reply that disagrees with the request (say, "1 created" for a batch of 6) makes Claude stop to investigate, and the run fails for reasons that have nothing to do with the skill.
 - An `llm` grader with `focus: trace` sees only the first and last 12 messages, so it can miss the tool call it is meant to judge. Pair each such rule with a `regex` grader on `target: mock_calls`, which sees every call.
 - Every case sets `EVAL_SKIP_INBOX_HOOK: "1"` in `env`, or the hook reaches a real Anki open on the machine and adds noise to the run.
-- A full run is 42 sessions and about $6; run one case with `--case <name>` while iterating.
+- Cases where the skill reads `charters.md`, `note-types.md` or another file next to `SKILL.md` must list `Read` in `allowed_tools`, or the read is blocked and Claude works without the guide.
+- To simulate Anki being closed, override every shared mock with a connection-refused error (see `inbox-path/mocks/anki/`). Leaving `ankimcp` out of `plugins` doesn't work: the suite's mocks still serve the Anki tools.
+- `AskUserQuestion` isn't available in headless runs even when allowed, so grade questionnaires from the reply.
+- `model_field_names.md` and `model_templates.md` answer per note type from `mocks/anki/fixtures/`; add a fixture when a case needs another type. The lookup rejects a file name with spaces or accents, so mock note types get plain names (`Reconocimiento`, not `Español Reconocimiento`).
+- Grader regexes are JavaScript: no inline `(?i)`. `tool_used` has no flags field, so spell out both cases (`[nN]ame`).
+- A full run is 288 sessions, about 25 minutes with `-j 8`, and about $60; run one case with `--case <name>` while iterating, with `--runs 1 --ablation none` for a quick check.
 
 ### Adding or changing a case
 
