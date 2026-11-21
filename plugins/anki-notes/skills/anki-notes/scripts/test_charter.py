@@ -1,6 +1,10 @@
+import functools
 import unittest
+from unittest import mock
 
-from charter import edit, lint, prefix, stages
+import ankimcp_client
+from charter import edit, from_anki, lint, prefix, stages
+from test_ankimcp_client import fake_server, tool_result
 
 GOOD = """## Scope
 Spanish for living in Madrid: everyday conversation and reading. In: present and past tenses, ser vs estar, common verbs.
@@ -80,6 +84,28 @@ class EvalCaseTests(unittest.TestCase):
         new = edit(GOOD, "Conventions", "- Tags: `es::<area>::<topic>`.")
         self.assertTrue(new.startswith(GOOD.split("## Conventions")[0]))
         self.assertTrue(new.endswith("## Conventions\n- Tags: `es::<area>::<topic>`.\n"))
+
+
+class FromAnkiTests(unittest.IsolatedAsyncioTestCase):
+    async def test_reads_every_deck_and_keeps_own_text_apart(self):
+        descs = {"Spanish": "## Conventions\n- Tags: `es::<area>`", "AI Engineering": "## Conventions\n- Tags: `aie::x`",
+                 "Default": "", "Mine": "own charter"}
+
+        def replies(msg):
+            if msg.get("method") != "tools/call":
+                return {"jsonrpc": "2.0", "id": msg.get("id"), "result": {}} if "id" in msg else None
+            name, args = msg["params"]["name"], msg["params"]["arguments"]
+            if name == "list_decks":
+                payload = {"decks": [{"name": n} for n in [*descs, "Mine::01 Basics", "Mine::01 Basics::x"]]}
+            else:
+                payload = {"description": descs[args["deck_name"]]}
+            return dict(tool_result(payload), jsonrpc="2.0", id=msg["id"])
+        server = await fake_server(replies, [])
+        port = server.sockets[0].getsockname()[1]
+        async with server:
+            with mock.patch.object(ankimcp_client, "Client", functools.partial(ankimcp_client.Client, port=port)):
+                text, others, subs = await from_anki("Mine", True)
+        self.assertEqual((text, sorted(others), subs), ("own charter", ["aie", "es"], ["01 Basics"]))
 
 
 if __name__ == "__main__":

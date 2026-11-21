@@ -124,10 +124,16 @@ class Client:
         raise AnkiError(f"sync: still running after {SYNC_POLLS} polls; check Anki")
 
 
-async def read_json(path):
+async def read_json(path, missing=None):
+    """missing: returned when the file doesn't exist; None means raise."""
     def _read():
-        with open(path) as f:
-            return json.load(f)
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except FileNotFoundError:
+            if missing is None:
+                raise
+            return missing
     return await asyncio.to_thread(_read)
 
 

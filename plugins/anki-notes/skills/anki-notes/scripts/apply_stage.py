@@ -49,9 +49,8 @@ def check_items(items):
 async def apply_plan(anki, plan_path, plan):
     deck, base_tags, items = plan["deck"], plan.get("tags", []), plan["items"]
     applied_path = plan_path + ".applied.json"
-    applied = await read_json(applied_path) if os.path.exists(applied_path) else {}
+    applied, _ = await asyncio.gather(read_json(applied_path, missing={}), anki.call("create_deck", deck_name=deck))
 
-    await anki.call("create_deck", deck_name=deck)
     ordered = []
     for i, item in enumerate(items):
         if "new" in item:

@@ -13,7 +13,7 @@ To add a plugin: create `plugins/<name>/`, add an entry to `marketplace.json`, a
 
 ## Checks
 
-- Before every commit: `claude plugin validate .` (marketplace) and `claude plugin validate plugins/<name>` for each changed plugin. CI runs both.
+- The root `mise.toml` sets the tool versions (latest Python, LTS Node) and the repo-wide tasks: `validate` and `ci`. A plugin with its own checks keeps its tasks in `plugins/<name>/mise.toml` with a `ci` task, which the root `ci` runs. Before every commit: `mise run ci` from the root. CI runs the same task.
 - Test a plugin from disk without installing: `claude --plugin-dir plugins/<name>`.
 - Bump `version` in a plugin's `plugin.json` on any change that should reach existing installs.
 - Icons are fixed the first time a plugin is submitted to the plugin directory, so add one before submitting.

@@ -110,12 +110,11 @@ async def from_anki(deck, want_text):
     try:
         async with Client() as anki:
             names = [d["name"] for d in (await anki.call("list_decks"))["decks"]]
-            others = []
-            for top in (n for n in names if "::" not in n and n != deck):
-                d = await anki.call("get_deck_description", deck_name=top)
-                if prefix(d.get("description") or ""):
-                    others.append(prefix(d["description"]))
-            text = (await anki.call("get_deck_description", deck_name=deck)).get("description") if want_text else None
+            tops = [n for n in names if "::" not in n and n != deck] + ([deck] if want_text else [])
+            descs = [d.get("description") or "" for d in await asyncio.gather(
+                *(anki.call("get_deck_description", deck_name=t) for t in tops))]  # reads only, so they run at once
+            text = descs.pop() if want_text else None
+            others = [prefix(d) for d in descs if prefix(d)]
     except AnkiError as e:
         sys.exit(str(e))
     subs = [n[len(deck) + 2:] for n in names if n.startswith(deck + "::") and "::" not in n[len(deck) + 2:]]
