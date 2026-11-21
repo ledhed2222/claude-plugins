@@ -66,7 +66,8 @@ def lint(text, other_prefixes=(), subdecks=None):
         out.append(("error", f"stage numbers {nums} are not 01..n (or 00..n)"))
     for line in secs.get("Stages", "").splitlines():
         for n, name in STAGE.findall(line):
-            if not re.search(rf"`{n} {re.escape(name)}`\s*:\s*\S", line) or len(STAGE.findall(line)) > 1:
+            # "`01 X`: covers ..." or "`01 X` — covers ...", one stage per line
+            if not re.search(rf"`{n} {re.escape(name)}`\s*[:—–-]\s*\w", line) or len(STAGE.findall(line)) > 1:
                 out.append(("warn", f"stage {n} {name.strip()} has no one-line description"))
 
     words = len(re.findall(r"\S+", text))
