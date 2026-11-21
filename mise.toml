@@ -3,45 +3,11 @@
 python = "latest"
 node = "lts"
 
-[env]
-SCRIPTS = "plugins/anki-notes/skills/anki-notes/scripts"
-EVALS = "plugins/anki-notes/evals"
-
 [tasks.validate]
 description = "Validate the marketplace and every plugin"
 run = ['claude plugin validate .', 'for p in plugins/*/; do claude plugin validate "$p"; done']
 
-[tasks.check]
-description = "Check anki-notes eval cases, SPEC.md and run history"
-run = [
-  'python3 -I $EVALS/gen_spec.py --check',
-  'python3 -I $EVALS/check_cases.py',
-  'python3 -I $EVALS/record_run.py --check',
-]
-
-[tasks.test]
-description = "Run the eval tooling and skill script tests"
-run = [
-  'cd $EVALS && python3 -m unittest test_check_cases test_record_run',
-  'cd $SCRIPTS && python3 -m unittest',
-]
-
 [tasks.ci]
-description = "Everything CI runs"
-depends = ["validate", "check", "test"]
-
-[tasks.spec]
-description = "Regenerate the anki-notes eval SPEC.md"
-run = 'python3 -I $EVALS/gen_spec.py'
-
-[tasks.eval]
-description = "Run the eval suite; extra args go to claude plugin eval (e.g. --case <name> --runs 1 --ablation none)"
-run = 'claude plugin eval . --trust-plugin -j 8'
-
-[tasks.record]
-description = "Record a run: mise run record <result.json> --note '<why it ran>'"
-run = 'python3 -I $EVALS/record_run.py add'
-
-[tasks.diff]
-description = "Show what moved in a run without recording it"
-run = 'python3 -I $EVALS/record_run.py diff'
+description = "Everything CI runs: validate, then each plugin's own ci task"
+depends = ["validate"]
+run = 'for f in plugins/*/mise.toml; do mise -C "$(dirname "$f")" run ci || exit 1; done'

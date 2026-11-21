@@ -1,0 +1,40 @@
+# Tools come from the repo root's mise.toml. Tasks run in this folder unless they say otherwise.
+
+[tasks.check]
+description = "Check the eval cases, SPEC.md and run history"
+run = [
+  'python3 -I evals/gen_spec.py --check',
+  'python3 -I evals/check_cases.py',
+  'python3 -I evals/record_run.py --check',
+]
+
+[tasks.test]
+description = "Run the eval tooling and skill script tests"
+run = [
+  'cd evals && python3 -m unittest test_check_cases test_record_run',
+  'cd skills/anki-notes/scripts && python3 -m unittest',
+]
+
+[tasks.ci]
+description = "This plugin's CI checks"
+depends = ["check", "test"]
+
+[tasks.spec]
+description = "Regenerate evals/SPEC.md"
+run = 'python3 -I evals/gen_spec.py'
+
+# the harness only loads ankimcp from under the directory it's pointed at, so these run from the repo root
+[tasks.eval]
+description = "Run the eval suite; extra args go to claude plugin eval (e.g. --case <name> --runs 1 --ablation none)"
+dir = "{{config_root}}/../.."
+run = 'claude plugin eval . --trust-plugin -j 8'
+
+[tasks.record]
+description = "Record a run: mise run record evals/results/<time>/aggregate-result.json --note '<why>' (path from the repo root)"
+dir = "{{config_root}}/../.."
+run = 'python3 -I plugins/anki-notes/evals/record_run.py add'
+
+[tasks.diff]
+description = "Show what moved in a run without recording it (path from the repo root)"
+dir = "{{config_root}}/../.."
+run = 'python3 -I plugins/anki-notes/evals/record_run.py diff'
