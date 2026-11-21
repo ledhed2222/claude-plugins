@@ -1,3 +1,5 @@
 # claude plugin eval reports
 evals/results/
 *.applied.json
+__pycache__/
+*.pyc
