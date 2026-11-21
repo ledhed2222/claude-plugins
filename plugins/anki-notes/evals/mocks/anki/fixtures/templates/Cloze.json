@@ -1,0 +1,1 @@
+{"model_name": "Cloze", "templates": {"Cloze": {"Front": "{{cloze:Text}}", "Back": "{{cloze:Text}}<br>\n{{Back Extra}}"}}, "template_count": 1, "message": "Retrieved 1 card template(s) for model \"Cloze\""}

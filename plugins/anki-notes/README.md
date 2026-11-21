@@ -45,13 +45,17 @@ A deck's charter is its description in Anki (click the deck, then the descriptio
 
 | section | says |
 |---|---|
-| Scope | what the deck teaches |
-| Out of scope | what looks related but doesn't get a card |
+| Scope | what the deck teaches, a few example topics, and what you already know |
+| Out of scope | what looks related but doesn't get a card, and where it goes instead |
 | Adding | **Automatic** (add cards without asking) or **Ask** (offer them first) |
-| Stages | the numbered subdecks, in order |
-| Conventions | rules for this subject, like cloze sentences for a language, and the tag prefix |
+| Stages | the numbered subdecks, in order, each with a line on what it covers |
+| Conventions | rules for this subject only, like both card directions for a language, and the tag prefix |
 
-New decks start from [`charter-template.md`](skills/anki-notes/charter-template.md). If Claude teaches something that fits no deck, it suggests a new deck and charter rather than guessing. It also shows you any change to a charter before making it.
+**Setting up a deck:** say "set up an Anki deck for Spanish". Claude asks a short questionnaire: why you're learning it, how you plan to study it, what you already know, and whether you need to understand it or produce it. It checks the new deck doesn't overlap your others and drafts a charter from [`charter-template.md`](skills/anki-notes/charter-template.md). It also considers whether the subject needs a custom note type, reusing one you already have where it fits (for vocabulary, say, a note with the word, its sentence and a gloss that gives both a recognition and a production card). Then it shows you how the charter sorts three example topics and what a sample note looks like, and asks a few follow-up questions. Once you approve, Claude creates the deck, its stages and any new note type. If Claude teaches something that fits no deck, it suggests a new one rather than guessing.
+
+**Changing a charter:** say what isn't working ("stop carding slang in Spanish"). Claude makes the smallest change that fixes it, tells you what it means for cards already in the deck, and shows you the old and new text before saving. It may also suggest a change when the same kind of card keeps getting rejected or failed.
+
+Away from Anki, an approved charter or a requested change is queued in the Anki inbox and saved the next time Claude Code starts with Anki open. [`charters.md`](skills/anki-notes/charters.md) and [`note-types.md`](skills/anki-notes/note-types.md) are the full guides Claude follows. Adding, removing or reordering a note type's fields, or moving notes to another type, makes Anki's next sync a full one, so Claude asks you to sync your other devices first.
 
 ## Using it
 

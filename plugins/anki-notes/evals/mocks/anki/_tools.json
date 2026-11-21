@@ -1,401 +1,1103 @@
 {
- "tools": [
-  {
-   "name": "add_notes",
-   "title": "Add Notes",
-   "description": "Add multiple notes to Anki in a single batch sharing the same deck and model. Uses Anki's native batch API for atomic undo support. Supports partial success - individual failures don't affect others. Intended for notes the user has asked to create. Returns summary counts (created, skipped, failed) and a per-note results array with status and note_id. Each note is {\"fields\": {...}, \"tags\": [...]}; tags is a JSON array.",
-   "inputSchema": {
-    "$defs": {
-     "NoteEntry": {
-      "description": "A single note to add in a batch.",
-      "properties": {
-       "fields": {
-        "additionalProperties": {
-         "type": "string"
+  "tools": [
+    {
+      "name": "add_notes",
+      "title": "Add Notes",
+      "description": "Add multiple notes to Anki in a single batch sharing the same deck and model. Uses Anki's native batch API for atomic undo support. Supports partial success - individual failures don't affect others. Intended for notes the user has asked to create. Returns summary counts (created, skipped, failed) and a per-note results array with status and note_id. Each note is {\"fields\": {...}, \"tags\": [...]}; tags is a JSON array.",
+      "inputSchema": {
+        "$defs": {
+          "NoteEntry": {
+            "description": "A single note to add in a batch.",
+            "properties": {
+              "fields": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Field values as key-value pairs (e.g., {\"Front\": \"question\", \"Back\": \"answer\"})",
+                "title": "Fields",
+                "type": "object"
+              },
+              "tags": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Additional tags for this note (merged with shared tags)",
+                "title": "Tags"
+              }
+            },
+            "required": [
+              "fields"
+            ],
+            "title": "NoteEntry",
+            "type": "object"
+          }
         },
-        "description": "Field values as key-value pairs (e.g., {\"Front\": \"question\", \"Back\": \"answer\"})",
-        "title": "Fields",
-        "type": "object"
-       },
-       "tags": {
-        "anyOf": [
-         {
-          "items": {
-           "type": "string"
+        "properties": {
+          "deck_name": {
+            "description": "Deck to add all notes to",
+            "title": "Deck Name",
+            "type": "string"
           },
-          "type": "array"
-         },
-         {
-          "type": "null"
-         }
+          "model_name": {
+            "description": "Note type shared by all notes in this batch",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "notes": {
+            "description": "Notes to add; each {\"fields\": {...}, \"tags\": [...]}",
+            "items": {
+              "$ref": "#/$defs/NoteEntry"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tags for every note (JSON array)",
+            "title": "Tags"
+          },
+          "allow_duplicate": {
+            "default": false,
+            "description": "Skip the duplicate check against the sort field",
+            "title": "Allow Duplicate",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "deck_name",
+          "model_name",
+          "notes"
         ],
-        "default": null,
-        "description": "Additional tags for this note (merged with shared tags)",
-        "title": "Tags"
-       }
+        "title": "add_notesArguments",
+        "type": "object"
       },
-      "required": [
-       "fields"
-      ],
-      "title": "NoteEntry",
-      "type": "object"
-     }
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "add_notesDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Add Notes",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
     },
-    "properties": {
-     "deck_name": {
-      "description": "Deck to add all notes to",
-      "title": "Deck Name",
-      "type": "string"
-     },
-     "model_name": {
-      "description": "Note type shared by all notes in this batch",
-      "title": "Model Name",
-      "type": "string"
-     },
-     "notes": {
-      "description": "Notes to add; each {\"fields\": {...}, \"tags\": [...]}",
-      "items": {
-       "$ref": "#/$defs/NoteEntry"
-      },
-      "title": "Notes",
-      "type": "array"
-     },
-     "tags": {
-      "anyOf": [
-       {
-        "items": {
-         "type": "string"
+    {
+      "name": "card_reposition",
+      "title": "Reposition New Cards",
+      "description": "Reposition new cards in the new-card queue (set learning order). Only new cards (queue=0) are affected; other cards are silently skipped. Returns repositioned count.",
+      "inputSchema": {
+        "properties": {
+          "card_ids": {
+            "description": "Card IDs to reposition",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Card Ids",
+            "type": "array"
+          },
+          "starting_from": {
+            "default": 0,
+            "description": "Starting position (0-based)",
+            "title": "Starting From",
+            "type": "integer"
+          },
+          "step_size": {
+            "default": 1,
+            "description": "Increment between cards",
+            "title": "Step Size",
+            "type": "integer"
+          },
+          "randomize": {
+            "default": false,
+            "description": "Shuffle before assigning positions",
+            "title": "Randomize",
+            "type": "boolean"
+          },
+          "shift_existing": {
+            "default": false,
+            "description": "Push other cards forward",
+            "title": "Shift Existing",
+            "type": "boolean"
+          }
         },
-        "type": "array"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "description": "Tags for every note (JSON array)",
-      "title": "Tags"
-     },
-     "allow_duplicate": {
-      "default": false,
-      "description": "Skip the duplicate check against the sort field",
-      "title": "Allow Duplicate",
-      "type": "boolean"
-     }
-    },
-    "required": [
-     "deck_name",
-     "model_name",
-     "notes"
-    ],
-    "title": "add_notesArguments",
-    "type": "object"
-   },
-   "outputSchema": {
-    "additionalProperties": true,
-    "title": "add_notesDictOutput",
-    "type": "object"
-   },
-   "annotations": {
-    "title": "Add Notes",
-    "readOnlyHint": false,
-    "destructiveHint": false,
-    "openWorldHint": false
-   }
-  },
-  {
-   "name": "card_reposition",
-   "title": "Reposition New Cards",
-   "description": "Reposition new cards in the new-card queue (set learning order). Only new cards (queue=0) are affected; other cards are silently skipped. Returns repositioned count.",
-   "inputSchema": {
-    "properties": {
-     "card_ids": {
-      "description": "Card IDs to reposition",
-      "items": {
-       "type": "integer"
-      },
-      "title": "Card Ids",
-      "type": "array"
-     },
-     "starting_from": {
-      "default": 0,
-      "description": "Starting position (0-based)",
-      "title": "Starting From",
-      "type": "integer"
-     },
-     "step_size": {
-      "default": 1,
-      "description": "Increment between cards",
-      "title": "Step Size",
-      "type": "integer"
-     },
-     "randomize": {
-      "default": false,
-      "description": "Shuffle before assigning positions",
-      "title": "Randomize",
-      "type": "boolean"
-     },
-     "shift_existing": {
-      "default": false,
-      "description": "Push other cards forward",
-      "title": "Shift Existing",
-      "type": "boolean"
-     }
-    },
-    "required": [
-     "card_ids"
-    ],
-    "title": "card_repositionArguments",
-    "type": "object"
-   },
-   "outputSchema": {
-    "additionalProperties": true,
-    "title": "card_repositionDictOutput",
-    "type": "object"
-   },
-   "annotations": {
-    "title": "Reposition New Cards",
-    "readOnlyHint": false,
-    "destructiveHint": true,
-    "openWorldHint": false
-   }
-  },
-  {
-   "name": "find_notes",
-   "title": "Find Notes",
-   "description": "Search for notes using Anki query syntax. Returns an array of note IDs matching the query. Supports pagination with limit/offset parameters. Maximum limit is 500 per request. Examples: \"deck:Spanish\", \"tag:verb\", \"is:due\", \"front:hello\", \"added:1\" (cards added today), \"prop:due<=2\" (cards due within 2 days), \"flag:1\" (red flag), \"is:suspended\". Set include_first_field=true to also get a 'noteLabels' array of {noteId, firstField} entries (first field excerpted at 250 chars, with truncated/fullLength markers) - one call to find AND label results instead of find_notes followed by notes_info. The labels identify notes; read full content with notes_info before editing. Pass 'noteIds' (not 'noteLabels') to any tool that wants note IDs.",
-   "inputSchema": {
-    "properties": {
-     "query": {
-      "description": "Anki search query, e.g. \"deck:Spanish\" or \"is:due\"",
-      "title": "Query",
-      "type": "string"
-     },
-     "limit": {
-      "default": 100,
-      "description": "Maximum note IDs to return (max 500)",
-      "title": "Limit",
-      "type": "integer"
-     },
-     "offset": {
-      "default": 0,
-      "description": "Results to skip, for pagination",
-      "title": "Offset",
-      "type": "integer"
-     },
-     "include_first_field": {
-      "default": false,
-      "description": "Also return each note's excerpted first field",
-      "title": "Include First Field",
-      "type": "boolean"
-     }
-    },
-    "required": [
-     "query"
-    ],
-    "title": "find_notesArguments",
-    "type": "object"
-   },
-   "outputSchema": {
-    "additionalProperties": true,
-    "title": "find_notesDictOutput",
-    "type": "object"
-   },
-   "annotations": {
-    "title": "Find Notes",
-    "readOnlyHint": true,
-    "destructiveHint": false,
-    "openWorldHint": false
-   }
-  },
-  {
-   "name": "get_deck_description",
-   "title": "Get Deck Description",
-   "description": "Read a deck's own stored description and Markdown setting. The description can document the deck's purpose and card-authoring conventions. Returns deck_id, name, description and is_markdown, with the original text and formatting preserved. An unset description is an empty string. Unknown and filtered decks return an error; parent descriptions are not inherited.",
-   "inputSchema": {
-    "properties": {
-     "deck_name": {
-      "description": "Deck name, including any \"Parent::Child\" path",
-      "title": "Deck Name",
-      "type": "string"
-     }
-    },
-    "required": [
-     "deck_name"
-    ],
-    "title": "get_deck_descriptionArguments",
-    "type": "object"
-   },
-   "outputSchema": {
-    "additionalProperties": true,
-    "title": "get_deck_descriptionDictOutput",
-    "type": "object"
-   },
-   "annotations": {
-    "title": "Get Deck Description",
-    "readOnlyHint": true,
-    "destructiveHint": false,
-    "openWorldHint": false
-   }
-  },
-  {
-   "name": "list_decks",
-   "title": "List Decks",
-   "description": "List all available Anki decks, optionally with statistics. Counts reflect the local collection at call time; this call does not sync with AnkiWeb. Returns deck objects with deck_id, name, and is_filtered. With include_stats=true, adds per-deck card counts (new, learn, review, total).",
-   "inputSchema": {
-    "properties": {
-     "include_stats": {
-      "default": false,
-      "description": "Add per-deck card counts (new, learn, review, total)",
-      "title": "Include Stats",
-      "type": "boolean"
-     }
-    },
-    "title": "list_decksArguments",
-    "type": "object"
-   },
-   "outputSchema": {
-    "additionalProperties": true,
-    "title": "list_decksDictOutput",
-    "type": "object"
-   },
-   "annotations": {
-    "title": "List Decks",
-    "readOnlyHint": true,
-    "destructiveHint": false,
-    "openWorldHint": false
-   }
-  },
-  {
-   "name": "notes_info",
-   "title": "Note Details",
-   "description": "Get detailed information about specific notes including all fields, tags, model info, and CSS styling. Use this after find_notes to get complete note data. Includes CSS for proper rendering awareness. Use include_fields to return only specific fields, or exclude_fields to omit fields - useful for reducing response size in bulk queries. If both are provided, include_fields takes priority. Use excerpt_chars (>= 1) to cap every returned field value at that many characters; each field then also carries truncated (bool) and fullLength (original character count). Excerpts exist to IDENTIFY notes cheaply, NOT to search their content - content search belongs in find_notes queries, which run server-side over full content. A truncated value is not a safe basis for an edit: writing it back stores the cut-off value. The full value comes from a call without excerpt_chars.",
-   "inputSchema": {
-    "properties": {
-     "notes": {
-      "description": "Note IDs to fetch",
-      "items": {
-       "type": "integer"
-      },
-      "title": "Notes",
-      "type": "array"
-     },
-     "include_fields": {
-      "anyOf": [
-       {
-        "items": {
-         "type": "string"
-        },
-        "type": "array"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "description": "Return only these fields (takes priority over exclude_fields)",
-      "title": "Include Fields"
-     },
-     "exclude_fields": {
-      "anyOf": [
-       {
-        "items": {
-         "type": "string"
-        },
-        "type": "array"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "description": "Omit these fields from the response",
-      "title": "Exclude Fields"
-     },
-     "excerpt_chars": {
-      "anyOf": [
-       {
-        "type": "integer"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "description": "Truncate each field value to this many characters",
-      "title": "Excerpt Chars"
-     }
-    },
-    "required": [
-     "notes"
-    ],
-    "title": "notes_infoArguments",
-    "type": "object"
-   },
-   "outputSchema": {
-    "additionalProperties": true,
-    "title": "notes_infoDictOutput",
-    "type": "object"
-   },
-   "annotations": {
-    "title": "Note Details",
-    "readOnlyHint": true,
-    "destructiveHint": false,
-    "openWorldHint": false
-   }
-  },
-  {
-   "name": "sync",
-   "title": "Sync with AnkiWeb",
-   "description": "Synchronize the local Anki collection with AnkiWeb. This is an ASYNCHRONOUS job: one tool, three call shapes, driven by which arguments you pass.\n\nTHE THREE CALL SHAPES:\n  1. sync()                     -> start a sync\n  2. sync(job_id=\"...\")         -> check that sync's progress/result\n  3. sync(job_id=\"...\", resolve=\"upload\"|\"download\"|\"cancel\") -> resolve a conflict\n\nSTEP 1 -- START. Call sync with NO arguments. You get back {job_id, status:'running'}. The sync is NOT finished yet -- 'running' only means it has begun. Keep the job_id.\n\nSTEP 2 -- POLL until done. Call sync AGAIN passing ONLY that job_id (sync(job_id=\"...\")). This returns the job's status snapshot. One poll is usually not enough -- the sync is finished only once status becomes one of the FOUR terminal values: 'success', 'error', 'conflict', or 'cancelled'. While status is still 'running', wait briefly and poll again.\n\nSTEP 3 -- HANDLE the terminal status:\n  * 'success'   -> done, the collection is in sync. Nothing more to do.\n  * 'conflict'  -> a one-way full sync is required. Look at the snapshot's legal_directions and call sync with the job_id AND resolve set to one of them: resolve='upload' pushes LOCAL -> AnkiWeb (your computer wins), resolve='download' pulls AnkiWeb -> LOCAL (the server wins). WARNING: the wrong direction PERMANENTLY DISCARDS the data on the losing side. Only pass a direction that appears in legal_directions. If you are unsure which side is correct, call sync with the job_id and resolve='cancel' to abandon safely -- nothing is transferred, the collection is left untouched, and a fresh sync() can be started later. After resolve='upload'/'download' you get a new {status:'running'} -- go back to STEP 2 and poll again.\n  * 'error'     -> inspect error.code. error.code=='auth_failed' means the AnkiWeb login expired or failed and the USER must re-authenticate (in Anki: Tools > Preferences, or the Sync button) before a new sync will work. error.hint (when present) is a human-readable next step.\n  * 'cancelled' -> a conflict was abandoned; nothing was transferred.\n\nGUARDRAILS: resolve REQUIRES a job_id (calling sync with resolve but no job_id is an error -- resolve needs a job to act on). An unknown or expired job_id returns a not_found error.\n\nSNAPSHOT FIELDS returned by sync(job_id): status (running|conflict|success|error|cancelled), phase (checking|full_transfer|media|done), legal_directions (the resolve options, only when status=='conflict'), required (only when status=='conflict': the ChangesRequired name that forced the full sync; null otherwise), result (on success), error ({code, message, category, hint} on error), job_id, started_at, finished_at.\n\nRESULT FIELDS (on status=='success'): result.outcome is the backend's post-sync state -- 'NO_CHANGES' (nothing to transfer) or 'NORMAL_SYNC' (changes were transferred); either way the sync is COMPLETE and nothing further is required. It is distinct from the top-level 'required' field, which is only populated for conflicts (null otherwise). On the resolve path result carries resolved:true instead of outcome. result.media_error is null when media synced fine, or an error payload when media failed -- media is best-effort and never fails the collection sync itself.\n\nSCOPE: this is the only tool that talks to AnkiWeb. No other tool syncs on its own; the other tools read and write the local collection without contacting AnkiWeb. Running it at the start and end of a session keeps other devices' reviews and local changes in step.",
-   "inputSchema": {
-    "properties": {
-     "job_id": {
-      "anyOf": [
-       {
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "description": "Job to poll or resolve; omit to start a new sync",
-      "title": "Job Id"
-     },
-     "resolve": {
-      "anyOf": [
-       {
-        "enum": [
-         "upload",
-         "download",
-         "cancel"
+        "required": [
+          "card_ids"
         ],
-        "type": "string"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null,
-      "description": "Direction to resolve a full-sync conflict; requires job_id",
-      "title": "Resolve"
-     }
+        "title": "card_repositionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "card_repositionDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Reposition New Cards",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      }
     },
-    "title": "syncArguments",
-    "type": "object"
-   },
-   "outputSchema": {
-    "additionalProperties": true,
-    "title": "syncDictOutput",
-    "type": "object"
-   },
-   "annotations": {
-    "title": "Sync with AnkiWeb",
-    "readOnlyHint": false,
-    "destructiveHint": true,
-    "openWorldHint": true
-   }
-  }
- ]
+    {
+      "name": "create_deck",
+      "title": "Create Deck",
+      "description": "Create a new empty Anki deck. Supports parent::child structure (e.g., \"Japanese::Tokyo\" creates parent deck \"Japanese\" and child deck \"Tokyo\"). Maximum 2 levels of nesting allowed. Will not overwrite existing decks. Creates the deck only; it adds no notes or cards. Returns deckId and created flag (false if deck already existed).",
+      "inputSchema": {
+        "properties": {
+          "deck_name": {
+            "description": "Deck name, optionally \"Parent::Child\" (max 2 levels)",
+            "title": "Deck Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deck_name"
+        ],
+        "title": "create_deckArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_deckDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Create Deck",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "create_model",
+      "title": "Create Note Type",
+      "description": "Create a new note type (model) in Anki with custom fields, card templates, and styling. Useful for creating specialized models like RTL (Right-to-Left) language models for Hebrew, Arabic, etc. Each model defines the structure of notes and how cards are generated from them. Returns model_id, fields list, template_count, and any template warnings.\n\nThe result carries \"will_force_full_sync\": collection state read AFTER the write, reporting whether the NEXT sync will be a one-way full sync that overwrites the collection on AnkiWeb and other devices with this one. It does NOT mean this call caused it -- the flag is collection-wide and sticky, so once any earlier operation marked the schema modified it stays true until a full sync clears it. Creating a note type does not itself modify the schema, so this is typically false unless the collection was already dirty.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Name for the new note type; must not already exist",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "in_order_fields": {
+            "description": "Field names in order",
+            "items": {
+              "type": "string"
+            },
+            "title": "In Order Fields",
+            "type": "array"
+          },
+          "card_templates": {
+            "description": "Card templates, each a dict with 'Name', 'Front', and 'Back' keys",
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Card Templates",
+            "type": "array"
+          },
+          "css": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Stylesheet applied to cards of this model",
+            "title": "Css"
+          },
+          "is_cloze": {
+            "default": false,
+            "description": "Whether this is a cloze-deletion note type",
+            "title": "Is Cloze",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model_name",
+          "in_order_fields",
+          "card_templates"
+        ],
+        "title": "create_modelArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "create_modelDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Create Note Type",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "find_notes",
+      "title": "Find Notes",
+      "description": "Search for notes using Anki query syntax. Returns an array of note IDs matching the query. Supports pagination with limit/offset parameters. Maximum limit is 500 per request. Examples: \"deck:Spanish\", \"tag:verb\", \"is:due\", \"front:hello\", \"added:1\" (cards added today), \"prop:due<=2\" (cards due within 2 days), \"flag:1\" (red flag), \"is:suspended\". Set include_first_field=true to also get a 'noteLabels' array of {noteId, firstField} entries (first field excerpted at 250 chars, with truncated/fullLength markers) - one call to find AND label results instead of find_notes followed by notes_info. The labels identify notes; read full content with notes_info before editing. Pass 'noteIds' (not 'noteLabels') to any tool that wants note IDs.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "Anki search query, e.g. \"deck:Spanish\" or \"is:due\"",
+            "title": "Query",
+            "type": "string"
+          },
+          "limit": {
+            "default": 100,
+            "description": "Maximum note IDs to return (max 500)",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "description": "Results to skip, for pagination",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "include_first_field": {
+            "default": false,
+            "description": "Also return each note's excerpted first field",
+            "title": "Include First Field",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "find_notesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "find_notesDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Find Notes",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_deck_description",
+      "title": "Get Deck Description",
+      "description": "Read a deck's own stored description and Markdown setting. The description can document the deck's purpose and card-authoring conventions. Returns deck_id, name, description and is_markdown, with the original text and formatting preserved. An unset description is an empty string. Unknown and filtered decks return an error; parent descriptions are not inherited.",
+      "inputSchema": {
+        "properties": {
+          "deck_name": {
+            "description": "Deck name, including any \"Parent::Child\" path",
+            "title": "Deck Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deck_name"
+        ],
+        "title": "get_deck_descriptionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "get_deck_descriptionDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Get Deck Description",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_decks",
+      "title": "List Decks",
+      "description": "List all available Anki decks, optionally with statistics. Counts reflect the local collection at call time; this call does not sync with AnkiWeb. Returns deck objects with deck_id, name, and is_filtered. With include_stats=true, adds per-deck card counts (new, learn, review, total).",
+      "inputSchema": {
+        "properties": {
+          "include_stats": {
+            "default": false,
+            "description": "Add per-deck card counts (new, learn, review, total)",
+            "title": "Include Stats",
+            "type": "boolean"
+          }
+        },
+        "title": "list_decksArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "list_decksDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "List Decks",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "model_field_add",
+      "title": "Add Note Type Field",
+      "description": "Add a new field to a note type, optionally at a 0-based index (default: appended at the end). This changes the note type schema, which forces a one-way full sync on the next sync -- it overwrites the collection on AnkiWeb and your other devices. The result carries \"will_force_full_sync\": collection state read AFTER the write, reporting whether the NEXT sync will be a one-way full sync that overwrites the collection on AnkiWeb and other devices with this one. It does NOT mean this call caused it -- the flag is collection-wide and sticky, so once any earlier operation marked the schema modified it stays true until a full sync clears it. This tool therefore always reports true.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Name of the note type (model) to modify",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "field_name": {
+            "description": "Name of the new field to add",
+            "title": "Field Name",
+            "type": "string"
+          },
+          "index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "0-based position for the new field (0..field_count, inclusive). Omit to append at the end.",
+            "title": "Index"
+          }
+        },
+        "required": [
+          "model_name",
+          "field_name"
+        ],
+        "title": "model_field_addArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "model_field_addDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Add Note Type Field",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "model_field_names",
+      "title": "Note Type Field Names",
+      "description": "Get the field names and descriptions for a specific note type (model). Use this to know what fields are required when creating notes of this type. Returns both field_names (list of strings) and fields (list of objects with name and description).",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Note type to inspect",
+            "title": "Model Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "model_field_namesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "model_field_namesDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Note Type Field Names",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "model_field_rename",
+      "title": "Rename Note Type Field",
+      "description": "Rename a field of a note type, keeping its content. Anki rewrites references to the field in the card templates to the new name. Renaming does not itself modify the schema. The result carries \"will_force_full_sync\": collection state read AFTER the write, reporting whether the NEXT sync will be a one-way full sync that overwrites the collection on AnkiWeb and other devices with this one. It does NOT mean this call caused it -- the flag is collection-wide and sticky, so once any earlier operation marked the schema modified it stays true until a full sync clears it. This tool reports true only if the collection was already dirty.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Name of the note type (model) to modify",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "field_name": {
+            "description": "Current name of the field to rename",
+            "title": "Field Name",
+            "type": "string"
+          },
+          "new_name": {
+            "description": "New name for the field",
+            "title": "New Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_name",
+          "field_name",
+          "new_name"
+        ],
+        "title": "model_field_renameArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "model_field_renameDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Rename Note Type Field",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "model_field_reposition",
+      "title": "Reposition Note Type Field",
+      "description": "Move an existing field of a note type to a new 0-based position. This changes the note type schema, which forces a one-way full sync on the next sync -- it overwrites the collection on AnkiWeb and your other devices. The result carries \"will_force_full_sync\": collection state read AFTER the write, reporting whether the NEXT sync will be a one-way full sync that overwrites the collection on AnkiWeb and other devices with this one. It does NOT mean this call caused it -- the flag is collection-wide and sticky, so once any earlier operation marked the schema modified it stays true until a full sync clears it. This tool therefore always reports true.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Name of the note type (model) to modify",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "field_name": {
+            "description": "Name of the field to move",
+            "title": "Field Name",
+            "type": "string"
+          },
+          "index": {
+            "description": "0-based target position for the field (0..field_count-1)",
+            "title": "Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_name",
+          "field_name",
+          "index"
+        ],
+        "title": "model_field_repositionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "model_field_repositionDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Reposition Note Type Field",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "model_names",
+      "title": "Note Type Names",
+      "description": "Get a list of all available note type (model) names in Anki. Use this to see what note types are available before creating notes. Returns modelNames list and commonTypes shortcuts (basic, basicReversed, cloze).",
+      "inputSchema": {
+        "properties": {},
+        "title": "model_namesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "model_namesDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Note Type Names",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "model_templates",
+      "title": "Note Type Templates",
+      "description": "Get the card template HTML (Front and Back) for each card type in a note type (model). Returns the raw HTML templates used to render cards during review and editing.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Note type to inspect",
+            "title": "Model Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "model_templatesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "model_templatesDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Note Type Templates",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "notes_info",
+      "title": "Note Details",
+      "description": "Get detailed information about specific notes including all fields, tags, model info, and CSS styling. Use this after find_notes to get complete note data. Includes CSS for proper rendering awareness. Use include_fields to return only specific fields, or exclude_fields to omit fields - useful for reducing response size in bulk queries. If both are provided, include_fields takes priority. Use excerpt_chars (>= 1) to cap every returned field value at that many characters; each field then also carries truncated (bool) and fullLength (original character count). Excerpts exist to IDENTIFY notes cheaply, NOT to search their content - content search belongs in find_notes queries, which run server-side over full content. A truncated value is not a safe basis for an edit: writing it back stores the cut-off value. The full value comes from a call without excerpt_chars.",
+      "inputSchema": {
+        "properties": {
+          "notes": {
+            "description": "Note IDs to fetch",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "include_fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Return only these fields (takes priority over exclude_fields)",
+            "title": "Include Fields"
+          },
+          "exclude_fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Omit these fields from the response",
+            "title": "Exclude Fields"
+          },
+          "excerpt_chars": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Truncate each field value to this many characters",
+            "title": "Excerpt Chars"
+          }
+        },
+        "required": [
+          "notes"
+        ],
+        "title": "notes_infoArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "notes_infoDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Note Details",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "sync",
+      "title": "Sync with AnkiWeb",
+      "description": "Synchronize the local Anki collection with AnkiWeb. This is an ASYNCHRONOUS job: one tool, three call shapes, driven by which arguments you pass.\n\nTHE THREE CALL SHAPES:\n  1. sync()                     -> start a sync\n  2. sync(job_id=\"...\")         -> check that sync's progress/result\n  3. sync(job_id=\"...\", resolve=\"upload\"|\"download\"|\"cancel\") -> resolve a conflict\n\nSTEP 1 -- START. Call sync with NO arguments. You get back {job_id, status:'running'}. The sync is NOT finished yet -- 'running' only means it has begun. Keep the job_id.\n\nSTEP 2 -- POLL until done. Call sync AGAIN passing ONLY that job_id (sync(job_id=\"...\")). This returns the job's status snapshot. One poll is usually not enough -- the sync is finished only once status becomes one of the FOUR terminal values: 'success', 'error', 'conflict', or 'cancelled'. While status is still 'running', wait briefly and poll again.\n\nSTEP 3 -- HANDLE the terminal status:\n  * 'success'   -> done, the collection is in sync. Nothing more to do.\n  * 'conflict'  -> a one-way full sync is required. Look at the snapshot's legal_directions and call sync with the job_id AND resolve set to one of them: resolve='upload' pushes LOCAL -> AnkiWeb (your computer wins), resolve='download' pulls AnkiWeb -> LOCAL (the server wins). WARNING: the wrong direction PERMANENTLY DISCARDS the data on the losing side. Only pass a direction that appears in legal_directions. If you are unsure which side is correct, call sync with the job_id and resolve='cancel' to abandon safely -- nothing is transferred, the collection is left untouched, and a fresh sync() can be started later. After resolve='upload'/'download' you get a new {status:'running'} -- go back to STEP 2 and poll again.\n  * 'error'     -> inspect error.code. error.code=='auth_failed' means the AnkiWeb login expired or failed and the USER must re-authenticate (in Anki: Tools > Preferences, or the Sync button) before a new sync will work. error.hint (when present) is a human-readable next step.\n  * 'cancelled' -> a conflict was abandoned; nothing was transferred.\n\nGUARDRAILS: resolve REQUIRES a job_id (calling sync with resolve but no job_id is an error -- resolve needs a job to act on). An unknown or expired job_id returns a not_found error.\n\nSNAPSHOT FIELDS returned by sync(job_id): status (running|conflict|success|error|cancelled), phase (checking|full_transfer|media|done), legal_directions (the resolve options, only when status=='conflict'), required (only when status=='conflict': the ChangesRequired name that forced the full sync; null otherwise), result (on success), error ({code, message, category, hint} on error), job_id, started_at, finished_at.\n\nRESULT FIELDS (on status=='success'): result.outcome is the backend's post-sync state -- 'NO_CHANGES' (nothing to transfer) or 'NORMAL_SYNC' (changes were transferred); either way the sync is COMPLETE and nothing further is required. It is distinct from the top-level 'required' field, which is only populated for conflicts (null otherwise). On the resolve path result carries resolved:true instead of outcome. result.media_error is null when media synced fine, or an error payload when media failed -- media is best-effort and never fails the collection sync itself.\n\nSCOPE: this is the only tool that talks to AnkiWeb. No other tool syncs on its own; the other tools read and write the local collection without contacting AnkiWeb. Running it at the start and end of a session keeps other devices' reviews and local changes in step.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Job to poll or resolve; omit to start a new sync",
+            "title": "Job Id"
+          },
+          "resolve": {
+            "anyOf": [
+              {
+                "enum": [
+                  "upload",
+                  "download",
+                  "cancel"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Direction to resolve a full-sync conflict; requires job_id",
+            "title": "Resolve"
+          }
+        },
+        "title": "syncArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "syncDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Sync with AnkiWeb",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "tag_add",
+      "title": "Add Tags",
+      "description": "Add tags to notes by note ID. tags is a space-separated list of tag names (e.g. 'vocab grammar'). Returns added_count.",
+      "inputSchema": {
+        "properties": {
+          "note_ids": {
+            "description": "Note IDs to add tags to",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Note Ids",
+            "type": "array"
+          },
+          "tags": {
+            "description": "Space-separated tag names to add (e.g., 'vocab grammar')",
+            "title": "Tags",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note_ids",
+          "tags"
+        ],
+        "title": "tag_addArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "tag_addDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Add Tags",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_deck_description",
+      "title": "Update Deck Description",
+      "description": "Replace a deck's entire description and optionally change its Markdown setting. An empty description clears it. Text is stored as supplied, without HTML/Markdown conversion; omitting is_markdown preserves the current setting. Only the named deck is updated; other deck settings are preserved. Unknown and filtered decks return an error. Returns deck_id, name, description and is_markdown. This operation does not sync with AnkiWeb.",
+      "inputSchema": {
+        "properties": {
+          "deck_name": {
+            "description": "Deck name, including any \"Parent::Child\" path",
+            "title": "Deck Name",
+            "type": "string"
+          },
+          "description": {
+            "description": "Complete replacement description; an empty string clears it",
+            "title": "Description",
+            "type": "string"
+          },
+          "is_markdown": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Whether Anki renders the description as Markdown; omitted or null preserves the current setting",
+            "title": "Is Markdown"
+          }
+        },
+        "required": [
+          "deck_name",
+          "description"
+        ],
+        "title": "update_deck_descriptionArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "update_deck_descriptionDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Update Deck Description",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_model_styling",
+      "title": "Update Note Type Styling",
+      "description": "Update the CSS styling (and optionally the LaTeX preamble) of an existing note type (model). Changes apply to all cards using this model.\n\nTWO MUTUALLY EXCLUSIVE CSS INPUT MODES -- use exactly one, or neither when only writing LaTeX fields:\n  1. FULL REPLACE: pass 'css' with the complete new stylesheet.\n  2. PATCH: pass 'old_str' + 'new_str' to replace a snippet in place, like a text editor's find-and-replace. 'old_str' must match the current CSS EXACTLY ONCE (whitespace is significant); 0 matches or 2+ matches is an error and nothing is written. On a 0-match error the response includes an excerpt of the current CSS so you can correct 'old_str' and retry without a separate read. Prefer PATCH for small edits -- it avoids resending the whole stylesheet and cannot silently clobber concurrent changes.\n  TRANSPORT CAVEAT: if 'old_str' or 'new_str' would consist ENTIRELY of a JSON value -- exactly `null`, or a complete JSON array/object such as `[\"x\"]` or `{\"a\": 1}` -- it can be mis-read in transit and the call rejected. Include an adjacent character of surrounding context in the string to avoid it.\n\nOPTIONAL LATEX PREAMBLE: 'latex_pre', 'latex_post' and 'latex_svg' set the LaTeX header/footer/SVG-rendering flag used when rendering [latex] and [$]...[/$] blocks. Only the ones you pass are written, and they combine with either CSS mode or can be sent alone. Use them to fix [latex]/TikZ rendering (e.g. adding \\usepackage{tikz} to 'latex_pre'). Most models never need these -- leave them out unless LaTeX is actually broken. Read the current values with model_styling(include_latex=true).\n\nThe result carries \"will_force_full_sync\": collection state read AFTER the write, reporting whether the NEXT sync will be a one-way full sync that overwrites the collection on AnkiWeb and other devices with this one. It does NOT mean this call caused it -- the flag is collection-wide and sticky, so once any earlier operation marked the schema modified it stays true until a full sync clears it. Editing CSS or the LaTeX preamble does not itself modify the schema, so this is typically false unless the collection was already dirty.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Note type to update",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "css": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "New full CSS content (full-content mode; mutually exclusive with old_str/new_str)",
+            "title": "Css"
+          },
+          "old_str": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Exact existing CSS text to replace (patch mode; must match exactly once)",
+            "title": "Old Str"
+          },
+          "new_str": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Replacement CSS text (patch mode; paired with old_str)",
+            "title": "New Str"
+          },
+          "latex_pre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "New LaTeX preamble header (independent of CSS mode)",
+            "title": "Latex Pre"
+          },
+          "latex_post": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "New LaTeX preamble footer (independent of CSS mode)",
+            "title": "Latex Post"
+          },
+          "latex_svg": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Whether to render LaTeX as SVG (independent of CSS mode)",
+            "title": "Latex Svg"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "update_model_stylingArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "update_model_stylingDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Update Note Type Styling",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_model_templates",
+      "title": "Update Note Type Templates",
+      "description": "Update the card template HTML (Front/Back) of a note type (model). Changes apply to all future renders; existing cards keep their generated content but will use the new template on next render.\n\nTWO MUTUALLY EXCLUSIVE INPUT MODES -- use exactly one:\n  1. FULL REPLACE: pass 'templates' as {card template name: {'Front': html, 'Back': html}}. Front/Back are optional per template but replace the whole side. Multiple templates can be updated in one call.\n  2. PATCH: pass 'template_name' + 'side' ('Front' or 'Back') + 'old_str' + 'new_str' to replace a snippet in place, like a text editor's find-and-replace. 'old_str' must match that side's current HTML EXACTLY ONCE (whitespace is significant); 0 matches or 2+ matches is an error and nothing is written. On a 0-match error the response includes an excerpt of the current HTML so you can correct 'old_str' and retry without a separate read. Patch mode touches exactly one side of one template. Prefer PATCH for small edits -- it avoids resending the whole template and cannot silently clobber concurrent changes.\n  TRANSPORT CAVEAT: if 'old_str' or 'new_str' would consist ENTIRELY of a JSON value -- exactly `null`, or a complete JSON array/object such as `[\"x\"]` or `{\"a\": 1}` -- it can be mis-read in transit and the call rejected. Include an adjacent character of surrounding context in the string to avoid it.\n\nUse model_templates to read current template names and HTML.\n\nThe result carries \"will_force_full_sync\": collection state read AFTER the write, reporting whether the NEXT sync will be a one-way full sync that overwrites the collection on AnkiWeb and other devices with this one. It does NOT mean this call caused it -- the flag is collection-wide and sticky, so once any earlier operation marked the schema modified it stays true until a full sync clears it. Editing the HTML of existing card templates does not itself modify the schema, so this is typically false unless the collection was already dirty.",
+      "inputSchema": {
+        "properties": {
+          "model_name": {
+            "description": "Note type to update",
+            "title": "Model Name",
+            "type": "string"
+          },
+          "templates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "New Front/Back HTML by card template name (full-content mode; mutually exclusive with template_name/side/old_str/new_str)",
+            "title": "Templates"
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Card template to patch (patch mode)",
+            "title": "Template Name"
+          },
+          "side": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Which side to patch, 'Front' or 'Back' (patch mode)",
+            "title": "Side"
+          },
+          "old_str": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Exact existing HTML text to replace (patch mode; must match exactly once)",
+            "title": "Old Str"
+          },
+          "new_str": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Replacement HTML text (patch mode; paired with old_str)",
+            "title": "New Str"
+          }
+        },
+        "required": [
+          "model_name"
+        ],
+        "title": "update_model_templatesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "update_model_templatesDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Update Note Type Templates",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_note_fields",
+      "title": "Update Note Fields",
+      "description": "Update the fields of an existing note. Supports HTML content in fields and preserves CSS styling.\n\nTWO MUTUALLY EXCLUSIVE INPUT MODES -- use exactly one:\n  1. FULL REPLACE: pass 'fields' as {field name: new full value}. Each listed field is overwritten entirely; fields you omit are left alone.\n  2. PATCH: pass 'field_name' + 'old_str' + 'new_str' to replace a snippet in place, like a text editor's find-and-replace. 'old_str' must match that field's current value EXACTLY ONCE (whitespace and HTML markup are significant); 0 matches or 2+ matches is an error and nothing is written. On a 0-match error the response includes an excerpt of the current value so you can correct 'old_str' and retry without a separate read. Patch mode touches exactly one field. Prefer PATCH for small edits to long fields -- it avoids resending the whole value and cannot silently clobber concurrent changes.\n  TRANSPORT CAVEAT: if 'old_str' or 'new_str' would consist ENTIRELY of a JSON value -- exactly `null`, or a complete JSON array/object such as `[\"x\"]` or `{\"a\": 1}` -- it can be mis-read in transit and the call rejected. Include an adjacent character of surrounding context in the string to avoid it.\n\nNote: media file attachment (audio/picture) is not yet supported. WARNING: if the note is open in the Anki browser while it is updated, the fields will not update properly; closing the browser or switching it to a different note first avoids this. Intended for notes the user has asked to modify.",
+      "inputSchema": {
+        "properties": {
+          "id": {
+            "description": "Note ID to update",
+            "title": "Id",
+            "type": "integer"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "New full value by field name (full-content mode; mutually exclusive with field_name/old_str/new_str)",
+            "title": "Fields"
+          },
+          "field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Field to patch (patch mode)",
+            "title": "Field Name"
+          },
+          "old_str": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Exact existing field text to replace (patch mode; must match exactly once)",
+            "title": "Old Str"
+          },
+          "new_str": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Replacement field text (patch mode; paired with old_str)",
+            "title": "New Str"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "update_note_fieldsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "title": "update_note_fieldsDictOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "title": "Update Note Fields",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
 }

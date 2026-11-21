@@ -1,0 +1,1 @@
+{"decks": [{"deck_id": 1, "name": "Spanish", "is_filtered": false}, {"deck_id": 2, "name": "Spanish::01 Vocabulario", "is_filtered": false}, {"deck_id": 3, "name": "Spanish::02 Gramática", "is_filtered": false}]}

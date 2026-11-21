@@ -1,0 +1,1 @@
+{"model_name": "{{input.model_name}}", "old_name": "{{input.field_name}}", "new_name": "{{input.new_name}}", "message": "Renamed field \"{{input.field_name}}\" to \"{{input.new_name}}\"", "will_force_full_sync": false}

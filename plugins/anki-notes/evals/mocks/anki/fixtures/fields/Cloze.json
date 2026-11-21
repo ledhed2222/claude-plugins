@@ -1,0 +1,1 @@
+{"model_name": "Cloze", "field_names": ["Text", "Back Extra"], "fields": [{"name": "Text", "description": ""}, {"name": "Back Extra", "description": ""}], "total": 2, "message": "Model \"Cloze\" has 2 fields"}

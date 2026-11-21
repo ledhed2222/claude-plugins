@@ -8,6 +8,7 @@ This file is for working on the plugin in this repo. `claude plugin validate` wa
 
 - `skills/anki-notes/SKILL.md` -- the skill. Its card rules came from the owner reviewing real cards; keep them general. Rules for one subject belong in that deck's charter (its description in Anki), never here.
 - `skills/anki-notes/charter-template.md` -- the skeleton for a new deck's charter.
+- `skills/anki-notes/charters.md` -- how to write and change a deck's charter; `note-types.md` -- how to design a note type. The skill reads each only when it needs to.
 - `skills/anki-notes/scripts/apply_stage.py` -- applies a whole-stage plan. It talks to the add-on's HTTP server at `127.0.0.1:3141` directly, so it only works in Claude Code on the machine running Anki.
 - `hooks/hooks.json` -- one SessionStart hook (`startup`): if the add-on answers, it tells the session to empty the `Anki inbox` doc. It runs at the start of every Claude Code session, so keep it that cheap and silent when Anki is closed. It exits early when `EVAL_SKIP_INBOX_HOOK` is set.
 - `evals/` -- the eval suite; see below.
@@ -20,13 +21,19 @@ This file is for working on the plugin in this repo. `claude plugin validate` wa
 
 ## Evals
 
-- One case per directory under `evals/`, each reproducing a mistake the owner flagged in a real card review. `evals/SPEC.md` says what each case tests and the pass bar.
+- One case per directory under `evals/`. The first ones each reproduce a mistake the owner flagged in a real card review; the rest test the formulation checks, `charters.md` and `note-types.md`. `evals/SPEC.md` says what each case tests and the pass bar.
 - **Run from the repo root**, not from this folder: `claude plugin eval . --trust-plugin`. Each case loads `ankimcp` too (`plugins: ["../..", "../../../ankimcp"]`), and the harness only loads plugins under the directory it was pointed at.
 - `evals/mocks/anki/` replaces the Anki server for every case. `_tools.json` is the real server's `tools/list` for the mocked tools; save it again from the running add-on if those tools change. A case overrides one mock with its own `mocks/anki/<tool>.md`.
 - Mock replies must look like real ones. A reply that disagrees with the request (say, "1 created" for a batch of 6) makes Claude stop to investigate, and the run fails for reasons that have nothing to do with the skill.
 - An `llm` grader with `focus: trace` sees only the first and last 12 messages, so it can miss the tool call it is meant to judge. Pair each such rule with a `regex` grader on `target: mock_calls`, which sees every call.
 - Every case sets `EVAL_SKIP_INBOX_HOOK: "1"` in `env`, or the hook reaches a real Anki open on the machine and adds noise to the run.
-- A full run is 42 sessions and about $6; run one case with `--case <name>` while iterating.
+- Cases where the skill reads `charters.md`, `note-types.md` or another file next to `SKILL.md` must list `Read` in `allowed_tools`, or the read is blocked and Claude works without the guide.
+- To simulate Anki being closed, override every shared mock with a connection-refused error (see `inbox-path/mocks/anki/`). Leaving `ankimcp` out of `plugins` doesn't work: the suite's mocks still serve the Anki tools.
+- `AskUserQuestion` isn't available in headless runs even when allowed, so grade questionnaires from the reply.
+- `model_field_names.md` and `model_templates.md` answer per note type from `mocks/anki/fixtures/`; add a fixture when a case needs another type. The lookup rejects a file name with spaces or accents, so mock note types get plain names (`Reconocimiento`, not `Español Reconocimiento`).
+- When a reply must depend on a name with a space (a deck like `AI Engineering`), use a `type: agent` mock with the verbatim reply for each name and the real error for anything else; see `mocks/anki/get_deck_description.md`. A fixed mock answers every name the same, so a check for an unknown deck gets a charter back.
+- Grader regexes are JavaScript: no inline `(?i)`. `tool_used` has no flags field, so spell out both cases (`[nN]ame`).
+- A full run is 288 sessions, about 25 minutes with `-j 8`, and about $60; run one case with `--case <name>` while iterating, with `--runs 1 --ablation none` for a quick check.
 
 ### Adding or changing a case
 
