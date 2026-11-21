@@ -11,10 +11,10 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5
-        env:
-          MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
       - run: npm install -g @anthropic-ai/claude-code
       - run: mise run ci
