@@ -35,7 +35,7 @@ Every case runs 3 times with the plugin and 3 times without it, on the plain mod
 
 ## Known failures
 
-From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a re-run of 16 cases after fixing the mocks. To fix in later PRs; delete each line once its case passes.
+From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a re-run of 16 cases after fixing the mocks. The scores of every run since are in `history.jsonl`; `record_run.py diff` shows the latest movement. To fix in later PRs; delete each line once its case passes.
 
 **The skill is at fault:**
 
@@ -72,7 +72,10 @@ From the repo root:
 claude plugin eval . --trust-plugin                    # the whole suite
 claude plugin eval . --trust-plugin --case <name>      # one case
 python3 -I plugins/anki-notes/evals/gen_spec.py        # after changing a case: regenerate the list below
+python3 -I plugins/anki-notes/evals/record_run.py add evals/results/<time>/aggregate-result.json --note "<why>"
 ```
+
+`history.jsonl` keeps every recorded run: when it started, the commit it measured, the Claude version, cost, and each case's score. Recording a run prints what moved since each case's last recorded score. Commit it with the change it measured.
 
 ## Cases
 
