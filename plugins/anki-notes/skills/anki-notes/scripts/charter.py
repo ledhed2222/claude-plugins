@@ -22,34 +22,34 @@ import os
 import re
 import sys
 
-REQUIRED = ("Scope", "Out of scope", "Adding", "Stages", "Conventions")
-MAX_WORDS = 250
-STAGE = re.compile(r"`(\d{2}) ([^`]+)`")
+_REQUIRED = ("Scope", "Out of scope", "Adding", "Stages", "Conventions")
+_MAX_WORDS = 250
+_STAGE = re.compile(r"`(\d{2}) ([^`]+)`")
 
 
-def split_sections(text):
+def _split_sections(text):
     """[(heading or None, chunk)]: chunks concatenate back to text exactly."""
     parts = re.split(r"(?m)^(?=## )", text)
     return [(re.match(r"## (.*)", p).group(1).strip() if p.startswith("## ") else None, p) for p in parts if p]
 
 
-def sections(text):
-    return {h: chunk.split("\n", 1)[1] if "\n" in chunk else "" for h, chunk in split_sections(text) if h}
+def _sections(text):
+    return {h: chunk.split("\n", 1)[1] if "\n" in chunk else "" for h, chunk in _split_sections(text) if h}
 
 
 def stages(text):
-    return [(n, name.strip()) for n, name in STAGE.findall(sections(text).get("Stages", ""))]
+    return [(n, name.strip()) for n, name in _STAGE.findall(_sections(text).get("Stages", ""))]
 
 
 def prefix(text):
-    m = re.search(r"`([a-z0-9-]+)::", sections(text).get("Conventions", ""))
+    m = re.search(r"`([a-z0-9-]+)::", _sections(text).get("Conventions", ""))
     return m.group(1) if m else None
 
 
 def lint(text, other_prefixes=(), subdecks=None):
     out = []
-    secs = sections(text)
-    for name in REQUIRED:
+    secs = _sections(text)
+    for name in _REQUIRED:
         if name not in secs:
             out.append(("error", f"missing section: ## {name}"))
     if not re.search(r"(?m)^Assumes:", text):
@@ -65,14 +65,14 @@ def lint(text, other_prefixes=(), subdecks=None):
     if nums and (min(nums) > 1 or sorted(nums) != list(range(min(nums), min(nums) + len(nums)))):
         out.append(("error", f"stage numbers {nums} are not 01..n (or 00..n)"))
     for line in secs.get("Stages", "").splitlines():
-        for n, name in STAGE.findall(line):
+        for n, name in _STAGE.findall(line):
             # "`01 X`: covers ..." or "`01 X` — covers ...", one stage per line
-            if not re.search(rf"`{n} {re.escape(name)}`\s*[:—–-]\s*\w", line) or len(STAGE.findall(line)) > 1:
+            if not re.search(rf"`{n} {re.escape(name)}`\s*[:—–-]\s*\w", line) or len(_STAGE.findall(line)) > 1:
                 out.append(("warn", f"stage {n} {name.strip()} has no one-line description"))
 
     words = len(re.findall(r"\S+", text))
-    if words > MAX_WORDS:
-        out.append(("warn", f"{words} words; keep it under about {MAX_WORDS}"))
+    if words > _MAX_WORDS:
+        out.append(("warn", f"{words} words; keep it under about {_MAX_WORDS}"))
 
     p = prefix(text)
     if not p:
@@ -90,7 +90,7 @@ def lint(text, other_prefixes=(), subdecks=None):
 
 
 def edit(text, section, body):
-    chunks = split_sections(text)
+    chunks = _split_sections(text)
     if section not in [h for h, _ in chunks]:
         sys.exit(f"no section ## {section}")
     body = body.strip("\n") + "\n"
@@ -121,7 +121,7 @@ async def from_anki(deck, want_text):
     return text, others, subs
 
 
-async def read(path):
+async def _read(path):
     def _read():
         with open(path) as f:
             return f.read()
@@ -135,7 +135,7 @@ async def main():
     if args[0] == "edit":
         if len(args) != 5:
             sys.exit(__doc__)
-        old, body = await read(args[1]), await read(args[3])
+        old, body = await _read(args[1]), await _read(args[3])
         new = edit(old, args[2], body)
 
         def write():
@@ -151,7 +151,7 @@ async def main():
     if deck:
         text, others, subs = await from_anki(deck, not files)
     if files:
-        text = await read(files[0])
+        text = await _read(files[0])
     if not text:
         sys.exit("no charter text")
     findings = lint(text, others, subs)

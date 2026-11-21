@@ -23,9 +23,9 @@ import json
 import re
 import sys
 
-YESNO = re.compile(r"^\s*(is|are|was|were|does|do|did|can|could|should|will|would|has|have|had)\b", re.I)
-LIST_ASK = re.compile(r"\b(name|list|give|state)\s+(all|the\s+(two|three|four|five|six|\d+))\b|\ban example of\b|\bgive an? example\b", re.I)
-STOP = {"which", "their", "about", "there", "these", "those", "would", "could", "other", "where", "while", "being", "after", "before"}
+_YESNO = re.compile(r"^\s*(is|are|was|were|does|do|did|can|could|should|will|would|has|have|had)\b", re.I)
+_LIST_ASK = re.compile(r"\b(name|list|give|state)\s+(all|the\s+(two|three|four|five|six|\d+))\b|\ban example of\b|\bgive an? example\b", re.I)
+_STOP = {"which", "their", "about", "there", "these", "those", "would", "could", "other", "where", "while", "being", "after", "before"}
 
 
 def text(html):
@@ -33,8 +33,8 @@ def text(html):
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html)).strip()
 
 
-def words(s):
-    return [w for w in re.findall(r"[^\W\d_]{5,}", s.lower()) if w not in STOP]
+def _words(s):
+    return [w for w in re.findall(r"[^\W\d_]{5,}", s.lower()) if w not in _STOP]
 
 
 def lint(card, prefix=None, skip=()):
@@ -67,12 +67,12 @@ def lint(card, prefix=None, skip=()):
             answer = text(re.split(r"<small>", back)[0])  # the Why/Example line doesn't count
             if len(answer.split()) > 25:
                 add("warn", "long-answer", f"back is {len(answer.split())} words: one fact per card")
-            if YESNO.match(text(front)):
+            if _YESNO.match(text(front)):
                 add("warn", "yes-no", "front looks like a yes/no question")
-            if LIST_ASK.search(text(front)):
+            if _LIST_ASK.search(text(front)):
                 add("warn", "whole-set", "asks for a whole set or 'an example of': card one member, or turn it around")
             # a front that names its choices ("A or B?") must contain the answer, so skip it
-            leaked = [] if re.search(r"\bor\b", text(front), re.I) else sorted(set(words(answer)) & set(words(text(front))))
+            leaked = [] if re.search(r"\bor\b", text(front), re.I) else sorted(set(_words(answer)) & set(_words(text(front))))
             if leaked:
                 add("warn", "answer-in-question", f"answer word(s) appear in the question: {', '.join(leaked)}")
         for name, val in f.items():

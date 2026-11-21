@@ -12,9 +12,9 @@ time on purpose: they all write into one Anki collection.
 import asyncio
 import json
 
-HOST, PORT = "127.0.0.1", 3141
-TIMEOUT = 300
-SYNC_POLLS = 120
+_HOST, _PORT = "127.0.0.1", 3141
+_TIMEOUT = 300
+_SYNC_POLLS = 120
 
 
 class AnkiError(Exception):
@@ -47,7 +47,7 @@ def parse_response(raw):
 
 
 class Client:
-    def __init__(self, host=HOST, port=PORT):
+    def __init__(self, host=_HOST, port=_PORT):
         self.host, self.port = host, port
         self.session = None
         self.n = 0
@@ -65,14 +65,14 @@ class Client:
         if self.session:
             head.append(f"Mcp-Session-Id: {self.session}")
         try:
-            reader, writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port), TIMEOUT)
+            reader, writer = await asyncio.wait_for(asyncio.open_connection(self.host, self.port), _TIMEOUT)
         except OSError as e:
             raise AnkiError(f"AnkiMCP add-on unreachable at {self.host}:{self.port}"
                             f" (is Anki open with the add-on installed?): {e}") from None
         try:
             writer.write(("\r\n".join(head) + "\r\n\r\n").encode() + data)
             await writer.drain()
-            raw = await asyncio.wait_for(reader.read(), TIMEOUT)  # Connection: close, so read to EOF
+            raw = await asyncio.wait_for(reader.read(), _TIMEOUT)  # Connection: close, so read to EOF
         finally:
             writer.close()
             await writer.wait_closed()
@@ -110,7 +110,7 @@ class Client:
     async def sync(self, poll=1.0):
         """Sync to AnkiWeb and wait for success. A conflict is cancelled, never resolved."""
         job = (await self.call("sync"))["job_id"]
-        for _ in range(SYNC_POLLS):
+        for _ in range(_SYNC_POLLS):
             s = await self.call("sync", job_id=job)
             if s["status"] == "conflict":
                 # never pick a side: the wrong direction discards one side's changes
@@ -121,7 +121,7 @@ class Client:
                     raise AnkiError(f"sync: {s['status']} {s.get('error') or ''}")
                 return s
             await asyncio.sleep(poll)
-        raise AnkiError(f"sync: still running after {SYNC_POLLS} polls; check Anki")
+        raise AnkiError(f"sync: still running after {_SYNC_POLLS} polls; check Anki")
 
 
 async def read_json(path, missing=None):

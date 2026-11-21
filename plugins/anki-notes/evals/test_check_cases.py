@@ -4,7 +4,7 @@ from pathlib import Path
 
 from check_cases import check_case, check_shape, replies
 
-GOOD = """---
+_GOOD = """---
 description: A case.
 plugins: ["../..", "../../../ankimcp"]
 env:
@@ -13,11 +13,11 @@ allowed_tools: [Skill, mcp__plugin_ankimcp_anki__list_decks, mcp__plugin_ankimcp
 ---
 Teach me F1.
 """
-JUDGE = "---\ntype: llm\nfocus: trace\n---\nPASS if ...\n"
-CALLS = "---\ntype: tool_used\ntool: mcp__plugin_ankimcp_anki__add_notes\n---\n"
+_JUDGE = "---\ntype: llm\nfocus: trace\n---\nPASS if ...\n"
+_CALLS = "---\ntype: tool_used\ntool: mcp__plugin_ankimcp_anki__add_notes\n---\n"
 
 
-def case(prompt, graders, mocks=()):
+def _case(prompt, graders, mocks=()):
     root = Path(tempfile.mkdtemp())
     (root / "graders").mkdir()
     (root / "prompt.md").write_text(prompt)
@@ -30,36 +30,36 @@ def case(prompt, graders, mocks=()):
     return root
 
 
-SHARED = {"list_decks", "add_notes"}
+_SHARED = {"list_decks", "add_notes"}
 
 
 class CheckCaseTests(unittest.TestCase):
     def test_good_case(self):
-        self.assertEqual(check_case(case(GOOD, [JUDGE, CALLS]), SHARED, SHARED), [])
+        self.assertEqual(check_case(_case(_GOOD, [_JUDGE, _CALLS]), _SHARED, _SHARED), [])
 
     def test_missing_env_and_plugins(self):
-        bad = GOOD.replace('  EVAL_SKIP_INBOX_HOOK: "1"\n', '  OTHER: "1"\n').replace('"../../../ankimcp"', '"../ankimcp"')
-        problems = check_case(case(bad, [CALLS]), SHARED, SHARED)
+        bad = _GOOD.replace('  EVAL_SKIP_INBOX_HOOK: "1"\n', '  OTHER: "1"\n').replace('"../../../ankimcp"', '"../ankimcp"')
+        problems = check_case(_case(bad, [_CALLS]), _SHARED, _SHARED)
         self.assertEqual(len(problems), 2)
 
     def test_unmocked_tool_would_reach_anki(self):
-        problems = check_case(case(GOOD, [CALLS]), {"list_decks"}, SHARED)
+        problems = check_case(_case(_GOOD, [_CALLS]), {"list_decks"}, _SHARED)
         self.assertEqual(problems, ["add_notes is allowed but has no mock: a call would reach a real Anki"])
 
     def test_guide_cases_need_read(self):
-        charter = GOOD.replace("description: A case.", "description: A case.\ntags: [charter]")
-        self.assertEqual(len(check_case(case(charter, [CALLS]), SHARED, SHARED)), 1)
-        self.assertEqual(check_case(case(charter.replace("[Skill,", "[Skill, Read,"), [CALLS]), SHARED, SHARED), [])
+        charter = _GOOD.replace("description: A case.", "description: A case.\ntags: [charter]")
+        self.assertEqual(len(check_case(_case(charter, [_CALLS]), _SHARED, _SHARED)), 1)
+        self.assertEqual(check_case(_case(charter.replace("[Skill,", "[Skill, Read,"), [_CALLS]), _SHARED, _SHARED), [])
 
     def test_trace_judge_needs_call_grader(self):
-        self.assertEqual(len(check_case(case(GOOD, [JUDGE]), SHARED, SHARED)), 1)
+        self.assertEqual(len(check_case(_case(_GOOD, [_JUDGE]), _SHARED, _SHARED)), 1)
         regex = "---\ntype: regex\ntarget: mock_calls\npattern: x\n---\n"
-        self.assertEqual(check_case(case(GOOD, [JUDGE, regex]), SHARED, SHARED), [])
+        self.assertEqual(check_case(_case(_GOOD, [_JUDGE, regex]), _SHARED, _SHARED), [])
 
 
 class ShapeTests(unittest.TestCase):
     def test_agent_mock_lines_and_templates(self):
-        root = case(GOOD, [], mocks=[("add_notes", '---\ntype: agent\n---\nReply like:\n\n{"created": 1, "results": [{"index": 0}]}\n'),
+        root = _case(_GOOD, [], mocks=[("add_notes", '---\ntype: agent\n---\nReply like:\n\n{"created": 1, "results": [{"index": 0}]}\n'),
                                      ("create_deck", '{"deckName": "{{input.deck_name}}"}')])
         shape = {"keys": ["created", "results"], "items": {"results": ["index", "status"]}}
         (label, reply), = replies(root / "mocks" / "anki" / "add_notes.md")

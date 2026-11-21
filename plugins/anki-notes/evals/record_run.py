@@ -22,30 +22,30 @@ import json
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-HISTORY = HERE / "history.jsonl"
-FIELDS = {"started": str, "commit": str, "claude": str, "cost_usd": (int, float), "partial": bool,
+_HERE = Path(__file__).resolve().parent
+_HISTORY = _HERE / "history.jsonl"
+_FIELDS = {"started": str, "commit": str, "claude": str, "cost_usd": (int, float), "partial": bool,
           "arms": str, "runs_per_case": int, "scores": dict, "note": str}
 
 
-async def load():
+async def _load():
     try:
-        text = await asyncio.to_thread(HISTORY.read_text)
+        text = await asyncio.to_thread(_HISTORY.read_text)
     except FileNotFoundError:
         return []
     return [json.loads(l) for l in text.splitlines() if l.strip()]
 
 
-async def git(*args):
-    proc = await asyncio.create_subprocess_exec("git", "-C", str(HERE), *args,
+async def _git(*args):
+    proc = await asyncio.create_subprocess_exec("git", "-C", str(_HERE), *args,
                                                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     out, err = await proc.communicate()
     return proc.returncode, out.decode().strip(), err.decode().strip()
 
 
-async def head_commit():
+async def _head_commit():
     (code, sha, err), (_, dirty, _) = await asyncio.gather(
-        git("rev-parse", "--short", "HEAD"), git("status", "--porcelain", "--", str(HERE.parent)))
+        _git("rev-parse", "--short", "HEAD"), _git("status", "--porcelain", "--", str(_HERE.parent)))
     if code:
         sys.exit(f"git rev-parse failed: {err}")
     return sha + ("-dirty" if dirty else "")
@@ -67,7 +67,7 @@ def entry(result, commit, note):
     }
 
 
-def baseline(history):
+def _baseline(history):
     """Latest score of each case across the given runs."""
     out = {}
     for h in history:
@@ -77,7 +77,7 @@ def baseline(history):
 
 
 def diff(new, history):
-    base = baseline(history)
+    base = _baseline(history)
     shared = sorted(set(new["scores"]) & set(base))
     lines = []
     if shared:
@@ -101,7 +101,7 @@ def diff(new, history):
 def check(history):
     problems = []
     for i, h in enumerate(history, 1):
-        for key, kind in FIELDS.items():
+        for key, kind in _FIELDS.items():
             if not isinstance(h.get(key), kind):
                 problems.append(f"line {i}: {key} missing or not {kind}")
         if any(not isinstance(v, (int, float)) or not 0 <= v <= 1 for v in h.get("scores", {}).values()):
@@ -112,18 +112,18 @@ def check(history):
     return problems
 
 
-async def read_result(path):
+async def _read_result(path):
     return json.loads(await asyncio.to_thread(Path(path).read_text))
 
 
-async def given(value):
+async def _given(value):
     return value
 
 
 async def main():
     args = sys.argv[1:]
     if args == ["--check"]:
-        history = await load()
+        history = await _load()
         problems = check(history)
         print("\n".join(problems) or f"{len(history)} runs recorded")
         sys.exit(1 if problems else 0)
@@ -133,18 +133,18 @@ async def main():
     if args[0] == "add":
         if len(args) < 2:
             sys.exit(__doc__)
-        commit = given(opt("--commit")) if opt("--commit") else head_commit()
-        history, result, commit = await asyncio.gather(load(), read_result(args[1]), commit)
+        commit = _given(opt("--commit")) if opt("--commit") else _head_commit()
+        history, result, commit = await asyncio.gather(_load(), _read_result(args[1]), commit)
         new = entry(result, commit, opt("--note") or "")
         if any(h["started"] == new["started"] for h in history):
             sys.exit(f"run started {new['started']} is already recorded")
         print("\n".join(diff(new, history)))
         history.append(new)
         history.sort(key=lambda h: h["started"])
-        await asyncio.to_thread(HISTORY.write_text, "".join(json.dumps(h, ensure_ascii=False) + "\n" for h in history))
+        await asyncio.to_thread(_HISTORY.write_text, "".join(json.dumps(h, ensure_ascii=False) + "\n" for h in history))
         print(f"recorded run {new['started']} at {new['commit']}")
     else:
-        history, result = await asyncio.gather(load(), read_result(args[1]) if len(args) > 1 else given(None))
+        history, result = await asyncio.gather(_load(), _read_result(args[1]) if len(args) > 1 else _given(None))
         if result is not None:
             new, earlier = entry(result, "this run", ""), history
         elif history:

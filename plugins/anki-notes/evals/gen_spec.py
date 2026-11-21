@@ -11,12 +11,12 @@ import re
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-SPEC = HERE / "SPEC.md"
-START, END = "<!-- generated:start -->", "<!-- generated:end -->"
+_HERE = Path(__file__).resolve().parent
+_SPEC = _HERE / "SPEC.md"
+_START, _END = "<!-- generated:start -->", "<!-- generated:end -->"
 
 
-def split_frontmatter(text):
+def _split_frontmatter(text):
     m = re.match(r"---\n(.*?)\n---\n?(.*)", text, re.S)
     if not m:
         return {}, text.strip()
@@ -29,14 +29,14 @@ def split_frontmatter(text):
     return meta, m.group(2).strip()
 
 
-def tool_name(full):
+def _tool_name(full):
     return full.rsplit("__", 1)[-1]
 
 
-def describe(meta, body):
+def _describe(meta, body):
     kind = meta.get("type", "?")
     if kind == "tool_used":
-        tool = f"`{tool_name(meta.get('tool', '?'))}`"
+        tool = f"`{_tool_name(meta.get('tool', '?'))}`"
         if meta.get("max") == "0":
             return "tool check", f"{tool} is never called"
         n = meta.get("min", "1")
@@ -54,9 +54,9 @@ def describe(meta, body):
     return kind, body.replace("\n", " ")
 
 
-def render_case(c):
+def _render_case(c):
     out = []
-    meta, prompt = split_frontmatter((c / "prompt.md").read_text())
+    meta, prompt = _split_frontmatter((c / "prompt.md").read_text())
     out.append(f"\n### {c.name}\n\n{meta.get('description', '')}\n")
     out.append("**User message:**\n\n" + "\n".join(f"> {line}" if line else ">" for line in prompt.splitlines()))
     overrides = sorted(p.stem for p in (c / "mocks" / "anki").glob("*.md")) if (c / "mocks" / "anki").is_dir() else []
@@ -64,17 +64,17 @@ def render_case(c):
     out.append(f"\n**Deck:** {deck}.\n")
     out.append("| grader | kind | passes when |\n|---|---|---|")
     for g in sorted((c / "graders").glob("*.md")):
-        gmeta, gbody = split_frontmatter(g.read_text())
-        kind, rule = describe(gmeta, gbody)
+        gmeta, gbody = _split_frontmatter(g.read_text())
+        kind, rule = _describe(gmeta, gbody)
         # a | ends a table cell even inside backticks
         rule = rule.replace("|", "\\|")
         out.append(f"| `{g.stem}` | {kind} | {rule} |")
     return meta.get("description", ""), out
 
 
-async def render():
-    cases = sorted(p for p in HERE.iterdir() if (p / "prompt.md").is_file())
-    rendered = await asyncio.gather(*(asyncio.to_thread(render_case, c) for c in cases))  # one thread per case, order kept
+async def _render():
+    cases = sorted(p for p in _HERE.iterdir() if (p / "prompt.md").is_file())
+    rendered = await asyncio.gather(*(asyncio.to_thread(_render_case, c) for c in cases))  # one thread per case, order kept
     out = ["| case | what it checks |\n|---|---|"]
     out += [f"| [`{c.name}`](#{c.name}) | {desc} |" for c, (desc, _) in zip(cases, rendered)]
     out += [line for _, lines in rendered for line in lines]
@@ -82,15 +82,15 @@ async def render():
 
 
 async def main():
-    spec, body = await asyncio.gather(asyncio.to_thread(SPEC.read_text), render())
-    head, rest = spec.split(START, 1)
-    _, tail = rest.split(END, 1)
-    new = f"{head}{START}\n{body}{END}{tail}"
+    spec, body = await asyncio.gather(asyncio.to_thread(_SPEC.read_text), _render())
+    head, rest = spec.split(_START, 1)
+    _, tail = rest.split(_END, 1)
+    new = f"{head}{_START}\n{body}{_END}{tail}"
     if "--check" in sys.argv:
         if new != spec:
             sys.exit("SPEC.md is out of date with the eval cases: run python3 -I plugins/anki-notes/evals/gen_spec.py and commit the result")
         return
-    await asyncio.to_thread(SPEC.write_text, new)
+    await asyncio.to_thread(_SPEC.write_text, new)
 
 
 if __name__ == "__main__":

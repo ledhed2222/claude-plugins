@@ -5,15 +5,15 @@ from ankimcp_client import AnkiError, Client
 from find_dupes import close_matches
 from test_ankimcp_client import fake_server, tool_result
 
-TAGS = ["aie::evals::cost", "type::contrast", "src::eval-cost"]
+_TAGS = ["aie::evals::cost", "type::contrast", "src::eval-cost"]
 
 
-def card(front, stage="02 Eval basics", **kw):
+def _card(front, stage="02 Eval basics", **kw):
     return dict({"deck": "AI Engineering", "stage": stage, "model": "Basic",
-                 "fields": {"Front": front, "Back": "<b>Inference.</b>"}, "tags": TAGS}, **kw)
+                 "fields": {"Front": front, "Back": "<b>Inference.</b>"}, "tags": _TAGS}, **kw)
 
 
-def addon(calls, add_status):
+def _addon(calls, add_status):
     """Replies like the add-on: add_notes results by index, notes_info cards, reposition count."""
     def replies(msg):
         if msg.get("method") != "tools/call":
@@ -47,19 +47,19 @@ def addon(calls, add_status):
 
 class AddCardsTests(unittest.IsolatedAsyncioTestCase):
     def test_check_refuses_batch(self):
-        cards = [(1, card("Which eval step costs more: inference or scoring?")),
-                 (2, card("Which eval step costs more: inference or scoring?", stage=None)),
+        cards = [(1, _card("Which eval step costs more: inference or scoring?")),
+                 (2, _card("Which eval step costs more: inference or scoring?", stage=None)),
                  (3, {"unparsed": "{"})]
         errors = check(cards)
         self.assertEqual(errors, ["#3: not valid JSON", "#2: no stage chosen"])
 
     async def test_report_groups_and_first(self):
-        cards = [(2, card("Which eval step costs more: inference or scoring?")),
-                 (3, card("Which costs more to rerun: inference or scoring?", stage="01 Classification metrics", first=True)),
-                 (5, card("Which is cached: inference outputs or scores?")),
-                 (6, card("Which part is slower: inference or scoring?"))]
+        cards = [(2, _card("Which eval step costs more: inference or scoring?")),
+                 (3, _card("Which costs more to rerun: inference or scoring?", stage="01 Classification metrics", first=True)),
+                 (5, _card("Which is cached: inference outputs or scores?")),
+                 (6, _card("Which part is slower: inference or scoring?"))]
         calls = []
-        server = await fake_server(addon(calls, ["created", "skipped", "failed", "created"]), [])
+        server = await fake_server(_addon(calls, ["created", "skipped", "failed", "created"]), [])
         report = {"added": [], "duplicate": [], "failed": {}}
         async with server:
             async with Client(port=server.sockets[0].getsockname()[1]) as anki:
@@ -77,7 +77,7 @@ class AddCardsTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_sync_conflict_is_cancelled(self):
         calls = []
-        server = await fake_server(addon(calls, []), [])
+        server = await fake_server(_addon(calls, []), [])
         async with server:
             async with Client(port=server.sockets[0].getsockname()[1]) as anki:
                 with self.assertRaises(AnkiError):
