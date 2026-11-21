@@ -1,6 +1,7 @@
+# development and CI only: users run the shipped scripts on their own python3
 [tools]
-python = "3.13"
-node = "22"
+python = "latest"
+node = "lts"
 
 [env]
 SCRIPTS = "plugins/anki-notes/skills/anki-notes/scripts"

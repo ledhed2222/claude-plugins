@@ -4,12 +4,21 @@ The owner's own skill, not a wrapper around someone else's service: it turns wha
 
 This file is for working on the plugin in this repo. `claude plugin validate` warns that it isn't loaded for people who install the plugin; that is intended, so leave it here rather than moving it into a skill.
 
+## Compatibility
+
+The plugin must install and work on both Claude Code and claude.ai (web, desktop chat and mobile). Every change keeps both working:
+
+- Claude Code with Anki open is the only place cards reach Anki. Everywhere else the skill queues them in the `Anki inbox` doc, and that path must keep working without Anki, hooks or a local server.
+- Shipped scripts run on whatever `python3` the user's machine or the claude.ai sandbox has, with nothing installed: standard library only, and no language or library features newer than those interpreters ship. `mise.toml` pins the latest Python and Node for development and CI only, so passing tests there doesn't prove a script runs for users.
+- `SKILL.md` and its guides must make sense on both surfaces. Say which steps need Claude Code with Anki open, and give the claude.ai path for each.
+- Hooks run only in Claude Code, so nothing a user needs may depend on one.
+
 ## Layout
 
 - `skills/anki-notes/SKILL.md` -- the skill. Its card rules came from the owner reviewing real cards; keep them general. Rules for one subject belong in that deck's charter (its description in Anki), never here.
 - `skills/anki-notes/charter-template.md` -- the skeleton for a new deck's charter.
 - `skills/anki-notes/charters.md` -- how to write and change a deck's charter; `note-types.md` -- how to design a note type. The skill reads each only when it needs to.
-- `skills/anki-notes/scripts/` -- deterministic checks and writes the skill runs instead of following instructions by hand: `lint_cards.py` (card checks), `find_dupes.py` (close matches in the deck), `add_cards.py` (add, order, sync), `charter.py` (charter lint and one-section edits), `render_note.py` (note-type leak check), `apply_stage.py` (whole-stage plans). All share `ankimcp_client.py`, which talks to the add-on's HTTP server at `127.0.0.1:3141` directly, so those only work in Claude Code on the machine running Anki; `lint_cards.py` and `charter.py lint` without `--deck` need nothing but Python. Standard library only (see Async below). Keep them dependency-free: the plugin must install and run on Claude Code, claude.ai and Claude mobile with nothing else installed, and Team or Enterprise orgs can turn off the claude.ai sandbox's network, so a PyPI dependency would stop the linters there. Third-party libraries are fine in repo tooling that never ships to users.
+- `skills/anki-notes/scripts/` -- deterministic checks and writes the skill runs instead of following instructions by hand: `lint_cards.py` (card checks), `find_dupes.py` (close matches in the deck), `add_cards.py` (add, order, sync), `charter.py` (charter lint and one-section edits), `render_note.py` (note-type leak check), `apply_stage.py` (whole-stage plans). All share `ankimcp_client.py`, which talks to the add-on's HTTP server at `127.0.0.1:3141` directly, so those only work in Claude Code on the machine running Anki; `lint_cards.py` and `charter.py lint` without `--deck` need nothing but Python. Standard library only (see Compatibility and Async): Team or Enterprise orgs can turn off the claude.ai sandbox's network, so a PyPI dependency would stop the linters there. Third-party libraries are fine in repo tooling that never ships to users.
 - Script tests: `mise run test` from the repo root (it runs `python3 -m unittest` in `scripts/`; not `-I`, which hides the modules). They use a fake add-on server, never a real Anki. The `EvalCaseTests` classes cover what the eval cases no-giveaway, closed-list, inbox-path, charter-lean, charter-change-minimal and nt-no-leak check, and `test_eval_fixtures.py` runs the scripts on those cases' own fixtures (inbox blocks, mock charters), so a fixture change that a script can't read fails here. `claude plugin eval` has no script grader, so the cases themselves keep their LLM judges, and they don't allow Bash: the scripts would reach a real Anki on port 3141, past the mocks. CI runs the tests.
 - `hooks/hooks.json` -- one SessionStart hook (`startup`): if the add-on answers, it tells the session to empty the `Anki inbox` doc. It runs at the start of every Claude Code session, so keep it that cheap and silent when Anki is closed. It exits early when `EVAL_SKIP_INBOX_HOOK` is set.
 - `evals/` -- the eval suite; see below.
