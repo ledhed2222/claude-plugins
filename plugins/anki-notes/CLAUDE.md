@@ -2,6 +2,8 @@
 
 The owner's own skill, not a wrapper around someone else's service: it turns what Claude teaches into staged Anki flashcards. It writes to Anki only through `ankimcp`'s tools, so it lists `ankimcp` in `dependencies` (installed with it) instead of declaring an MCP server of its own.
 
+This file is for working on the plugin in this repo. `claude plugin validate` warns that it isn't loaded for people who install the plugin; that is intended, so leave it here rather than moving it into a skill.
+
 ## Layout
 
 - `skills/anki-notes/SKILL.md` -- the skill. Its card rules came from the owner reviewing real cards; keep them general. Rules for one subject belong in that deck's charter (its description in Anki), never here.
