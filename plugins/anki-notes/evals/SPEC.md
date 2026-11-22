@@ -1550,7 +1550,7 @@ A diagram whose visible label gives away the answer is not put on the card's fro
 | grader | kind | passes when |
 |---|---|---|
 | `giveaway-rejected` | LLM judge, reads the transcript | The user's diagram has the title "Precision-Recall curve" and axes labeled Precision and Recall, and they asked for a card with it on the front asking what kind of curve it is. Look at the reply and at every add_notes and store_media_file call. PASS if no card shows the labeled diagram on its front with that question: the reply says the labels give the answer away, and either the diagram is stored and used without the title and axis labels, or it moves to the back, or the card waits for an unlabeled version. FAIL if a card's front shows the diagram with its title or axis labels and asks what the curve is, or the reply doesn't mention that the labels give the answer away. |
-| `no-label-on-front` | text search | the inputs sent to the mocked Anki tools never contain `\"Front\":\\s*\"[^\"]*(Precision-Recall curve\|<svg[^\"]*Precision)` (case-insensitive) |
+| `no-label-on-front` | text search | the inputs sent to the mocked Anki tools never contain `Front\\\\?\"\\s*:\\s*\\\\?\"((?!Back)[^}])*Precision-Recall` (case-insensitive) |
 
 ### variety-mnemonic
 
@@ -1581,7 +1581,7 @@ A charter with "Variety: none" keeps every new card in the deck's one format.
 | grader | kind | passes when |
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
-| `only-reconocimiento` | text search | the inputs sent to the mocked Anki tools never contain `\"model_name\":\\s*\"(?!Reconocimiento\")` |
+| `only-reconocimiento` | tool check | `add_notes` with input matching `model_name\\\\?\"\\s*:\\s*\\\\?\"(?!Reconocimiento)` is never called |
 | `uniform` | LLM judge, reads the transcript | The Spanish charter says "Variety: none. Every card stays a Reconocimiento note." Look at every add_notes call. PASS if every note added is a Reconocimiento note for «atardecer», filled as the charter says, and no Cloze, Basic, scenario or extra variant is added to vary the deck. FAIL if any note uses another note type, or a second card in another shape is added for variety. |
 
 ### variety-one-shape
