@@ -158,6 +158,11 @@ claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
 | [`restate-then-draft`](#restate-then-draft) | A multi-point explanation becomes cards that each test exactly one point. |
 | [`source-question`](#source-question) | Cards about something read in an article ask about the subject, never about what the article said. |
 | [`stale-fact`](#stale-fact) | An answer that depends on a date, model or benchmark says so in the question, or the card tests the durable principle instead. |
+| [`variety-image-giveaway`](#variety-image-giveaway) | A diagram whose visible label gives away the answer is not put on the card's front. |
+| [`variety-mnemonic`](#variety-mnemonic) | A mnemonic is offered for an arbitrary fact and not for a fact the learner can reason out. |
+| [`variety-none`](#variety-none) | A charter with "Variety: none" keeps every new card in the deck's one format. |
+| [`variety-one-shape`](#variety-one-shape) | Content with one right shape keeps it even when that shape is the deck's most common format. |
+| [`variety-scenario`](#variety-scenario) | In a deck where 95% of notes are plain definitions, content that fits a definition or a scenario equally well gets a scenario. |
 | [`yes-no-rewrite`](#yes-no-rewrite) | A fact that invites a yes/no question becomes a what, why or which question. |
 
 ### ask-mode-deck
@@ -1529,6 +1534,87 @@ An answer that depends on a date, model or benchmark says so in the question, or
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
 | `stamped` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if every card whose answer depends on a particular model, version, vendor, date or benchmark result says so in the question ("As of 2026, …", "For model X, …") and carries a src:: tag; or the cards test the durable principle (for example why long context doesn't replace retrieval) and leave model-specific numbers out. FAIL if any card states a context-window size or another fast-changing figure without dating or attributing it in the question. |
+
+### variety-image-giveaway
+
+A diagram whose visible label gives away the answer is not put on the card's front.
+
+**User message:**
+
+> I drew this diagram. Make a card with it on the front that asks what kind of curve it is.
+>
+> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200"><rect width="220" height="200" fill="white"/><text x="110" y="18" text-anchor="middle" font-size="14">Precision-Recall curve</text><line x1="30" y1="170" x2="200" y2="170" stroke="black"/><line x1="30" y1="170" x2="30" y2="30" stroke="black"/><text x="115" y="192" text-anchor="middle" font-size="11">Recall</text><text x="12" y="100" font-size="11" transform="rotate(-90 12 100)">Precision</text><path d="M30 40 C 90 45, 150 70, 200 160" fill="none" stroke="steelblue" stroke-width="2"/></svg>
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `giveaway-rejected` | LLM judge, reads the transcript | The user's diagram has the title "Precision-Recall curve" and axes labeled Precision and Recall, and they asked for a card with it on the front asking what kind of curve it is. Look at the reply and at every add_notes and store_media_file call. PASS if no card shows the labeled diagram on its front with that question: the reply says the labels give the answer away, and either the diagram is stored and used without the title and axis labels, or it moves to the back, or the card waits for an unlabeled version. FAIL if a card's front shows the diagram with its title or axis labels and asks what the curve is, or the reply doesn't mention that the labels give the answer away. |
+| `no-label-on-front` | text search | the inputs sent to the mocked Anki tools never contain `Front\\\\?\"\\s*:\\s*\\\\?\"((?!Back)[^}])*Precision-Recall` (case-insensitive) |
+
+### variety-mnemonic
+
+A mnemonic is offered for an arbitrary fact and not for a fact the learner can reason out.
+
+**User message:**
+
+> Explain BLEU: why it has a brevity penalty, and the longest n-gram the standard version counts.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `mnemonic-offered` | LLM judge, reads the transcript | Two facts were taught: the standard BLEU counts n-grams up to length 4 (arbitrary: it has to be remembered), and the brevity penalty exists because n-gram precision alone rewards very short outputs (it can be reasoned out). PASS if the final reply offers one or more mnemonics for the n-gram length (or for BLEU's arbitrary details) for the user to pick from, and offers none for the brevity penalty. FAIL if no mnemonic is offered for the n-gram length, or one is offered for the brevity penalty. |
+| `not-added-unasked` | text search | the inputs sent to the mocked Anki tools never contain `[mM]nemonic` |
+
+### variety-none
+
+A charter with "Variety: none" keeps every new card in the deck's one format.
+
+**User message:**
+
+> Today I read «el atardecer» in a novel: "Paseamos por la playa hasta el atardecer." What does it mean?
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `get_deck_description`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `only-reconocimiento` | tool check | `add_notes` with input matching `model_name\\\\?\"\\s*:\\s*\\\\?\"(?!Reconocimiento)` is never called |
+| `uniform` | LLM judge, reads the transcript | The Spanish charter says "Variety: none. Every card stays a Reconocimiento note." Look at every add_notes call. PASS if every note added is a Reconocimiento note for «atardecer», filled as the charter says, and no Cloze, Basic, scenario or extra variant is added to vary the deck. FAIL if any note uses another note type, or a second card in another shape is added for variety. |
+
+### variety-one-shape
+
+Content with one right shape keeps it even when that shape is the deck's most common format.
+
+**User message:**
+
+> What's the formula for character error rate (CER)?
+
+**Deck:** the shared mock deck, with this case's own `find_notes`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `formula-is-cloze` | tool check | `add_notes` with input matching `\\{\\{c1::` is called at least once |
+| `not-forced` | LLM judge, reads the transcript | The deck holds 200 notes, 190 of them Cloze formula cards, and the user asked for the CER formula. Look at the cards in every add_notes call. PASS if the formula itself is carded as a Cloze (CER = character edit distance ÷ reference length, or the same with substitutions, deletions and insertions), whatever other cards come with it. FAIL if the formula is turned into another shape only to vary the deck (a scenario or Basic card that asks for the formula less directly, a calculation drill), or isn't carded at all. |
+
+### variety-scenario
+
+In a deck where 95% of notes are plain definitions, content that fits a definition or a scenario equally well gets a scenario.
+
+**User message:**
+
+> Explain what data leakage between the training set and the test set does to an eval score.
+
+**Deck:** the shared mock deck, with this case's own `find_notes`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `scenario-chosen` | LLM judge, reads the transcript | The deck holds 200 notes, 190 of them plain definition cards. Look at the cards in every add_notes call. PASS if at least one card about data leakage is a concrete scenario (a situation the learner is in, such as a suspiciously high test score, then a question about what happened or what to do), and every card still tests one point without giving its answer away. FAIL if every data-leakage card is a plain definition ("What is data leakage?", "What is it called when..."), or a scenario card is worse than a definition would have been (vague, several points, answer in the front). |
+| `scenario-in-calls` | text search | the inputs sent to the mocked Anki tools contain `type::(application\|scenario)` |
 
 ### yes-no-rewrite
 
