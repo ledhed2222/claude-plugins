@@ -2,6 +2,9 @@
 """Turn a deck theme spec into note types, CSS and a preview, and check legibility.
 
 Usage: python3 -I build_theme.py <theme.json> <out dir>
+       python3 -I build_theme.py --compare <page.html> <out dir>...
+         writes one page showing each built theme's preview.html, labeled by its out dir's name,
+         so the user compares the options in a single browser tab
 
 theme.json:
 {
@@ -29,7 +32,8 @@ Writes to <out dir>:
   preview.html  a sample note, front and back, in light and night mode
   _<family>-<subset>-<weight>[-italic].woff2
                 each font file, fetched from npm by fetch_font.py (next to preview.html,
-                so the preview shows it); media.json lists them for store_media_file(path=...)
+                so the preview shows it); media.json lists them for store_media_file(path=...),
+                which the add-on refuses until its media_allowed_types includes "font/woff2"
 
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
 background in either mode, if a font lacks one of the deck's subsets, a weight
@@ -38,6 +42,7 @@ or italic, if a font can't be fetched, or if the spec is malformed. Standard lib
 import asyncio
 import json
 import os
+import html
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
@@ -181,6 +186,21 @@ body {{ margin: 0; background: #888; }} .grid {{ display: grid; grid-template-co
 """
 
 
+def compare_page(page, dirs):
+    base = os.path.dirname(os.path.abspath(page))
+    sections = "".join(
+        f'<h2>{html.escape(os.path.basename(os.path.normpath(d)))}</h2>'
+        f'<iframe src="{html.escape(os.path.relpath(os.path.join(os.path.abspath(d), "preview.html"), base))}"></iframe>'
+        for d in dirs)
+    # an iframe per theme keeps each theme's stylesheet from restyling the others
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8" /><title>Theme options</title>
+<style>body {{ margin: 0 16px; font-family: {SYSTEM}; }}
+iframe {{ width: 100%; height: 640px; border: 0; }}</style></head>
+<body>{sections}</body></html>
+"""
+
+
 def _read_json(path):
     with open(path) as f:
         return json.load(f)
@@ -192,6 +212,11 @@ def _write(path, text):
 
 
 async def main():
+    if len(sys.argv) > 3 and sys.argv[1] == "--compare":
+        page, dirs = sys.argv[2], sys.argv[3:]
+        await asyncio.to_thread(_write, page, compare_page(page, dirs))
+        print(f"wrote {page} comparing {len(dirs)} theme(s)")
+        return
     if len(sys.argv) != 3:
         sys.exit(__doc__)
     theme = await asyncio.to_thread(_read_json, sys.argv[1])

@@ -25,6 +25,7 @@ Only Claude Code writes to Anki, because it reaches the AnkiMCP add-on on your o
 You need:
 
 - [Anki](https://apps.ankiweb.net) 25.07 or newer, with the [AnkiMCP](https://ankimcp.ai) add-on (Tools → Add-ons → Get Add-ons, code `124672614`).
+- For deck themes with their own fonts: `"font/woff2"` in the add-on's `media_allowed_types` (Tools → Add-ons → AnkiMCP → Config, then restart Anki). Without it, themed decks show your system font.
 
 In Claude Code:
 

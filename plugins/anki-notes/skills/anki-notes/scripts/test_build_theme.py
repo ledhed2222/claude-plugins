@@ -1,6 +1,6 @@
 import unittest
 
-from build_theme import check, contrast, css, font_faces, models, used_fonts
+from build_theme import check, compare_page, contrast, css, font_faces, models, used_fonts
 
 GOOD = {
     "deck": "Spanish", "mood": "warm",
@@ -68,6 +68,11 @@ class ThemeTests(unittest.TestCase):
             for t in m["card_templates"]:
                 self.assertNotIn("{{Back}}", t["Front"])
                 self.assertNotIn("{{Extra}}", t["Front"])
+
+    def test_compare_page_frames_each_preview_relative_to_the_page(self):
+        page = compare_page("/tmp/themes/compare.html", ["/tmp/themes/literata-paper", "/tmp/themes/lora/"])
+        self.assertIn('<h2>literata-paper</h2><iframe src="literata-paper/preview.html">', page)
+        self.assertIn('<h2>lora</h2><iframe src="lora/preview.html">', page)
 
 
 if __name__ == "__main__":
