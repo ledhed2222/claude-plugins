@@ -29,7 +29,8 @@ Writes to <out dir>:
   preview.html  a sample note, front and back, in light and night mode
   _<family>-<subset>-<weight>[-italic].woff2
                 each font file, fetched from npm by fetch_font.py (next to preview.html,
-                so the preview shows it); media.json lists them for store_media_file(path=...)
+                so the preview shows it); media.json lists them for store_media_file(path=...),
+                which the add-on refuses until its media_allowed_types includes "font/woff2"
 
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
 background in either mode, if a font lacks one of the deck's subsets, a weight
