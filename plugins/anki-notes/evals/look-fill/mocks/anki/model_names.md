@@ -1,0 +1,1 @@
+{"modelNames": ["Basic", "Basic (and reversed card)", "Cloze", "AI Engineering · Basic", "AI Engineering · Cloze"], "total": 5, "message": "Found 5 note types", "commonTypes": {"basic": "Basic", "basicReversed": "Basic (and reversed card)", "cloze": "Cloze"}}

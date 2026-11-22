@@ -1,0 +1,1 @@
+{"filename": "{{input.filename}}", "filepath": "/Users/me/Library/Application Support/Anki2/User 1/collection.media/{{input.filename}}", "size": 24816, "message": "Successfully stored media file \"{{input.filename}}\" (24816 bytes)", "details": {"source_type": "path", "original_filename": "{{input.filename}}", "actual_filename": "{{input.filename}}"}}

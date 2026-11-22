@@ -12,6 +12,40 @@ Read this only when a charter calls for a new note type or a change to one. Whet
 - **Name fields for good.** Templates refer to fields by exact name, accents included.
 - Close void tags in templates: `<br />`, `<hr />`.
 
+## Themes
+
+A theme gives a deck its own look, built from how the user says studying it feels and how they'd like it to feel. The point is enjoyment, which keeps people reviewing; never claim it improves recall. If someone says a subject makes them anxious, design for how they want to feel, not for the anxiety.
+
+A theme is a spec, `theme.json`, and `scripts/build_theme.py` (its docstring has the format) turns it into the stylesheet, two note types and a preview. Never hand-write theme CSS:
+
+- **Note types:** `<Deck> · Basic` and `<Deck> · Cloze`, with exactly the stock fields (Front and Back, Text and Extra). The skill fills them as before, and moving the deck's existing notes onto them (Change Note Type, in the browser, by the user) keeps every review. This is the one case where a note type that only changes looks is worth it.
+- **What it varies:** the background, text, accent and rule colors, in light and night mode, and up to two fonts. Layout, sizes and spacing stay fixed.
+- **Legibility is enforced:** the script refuses any text or accent color below 4.5:1 contrast against its background in either mode. Pick new colors; don't argue with the check.
+- **Alphabets:** set `subsets` to every script the deck's cards use (`latin` covers Spanish, French and German; add `cyrillic` for Russian or Ukrainian, `greek`, `vietnamese`, and the `-ext` subsets for rarer accented letters). Each is a separate small file that a device only loads when a card uses it. Languages these subsets don't cover (Chinese, Japanese, Korean, Arabic, Hebrew, Indic scripts) keep the system font: set both fonts to null.
+- **Fonts** are any Google Fonts family, all openly licensed. `build_theme.py` fetches them itself from npm with `fetch_font.py` (npm is reachable from the claude.ai sandbox when Google's font servers aren't); never download fonts another way. Before proposing a family, run `fetch_font.py --info "<Family>"`: it prints the category, alphabets, weights and styles, and the build fails if a font lacks one of the deck's alphabets (Fraunces and Atkinson Hyperlegible have no Cyrillic, for example). The body font gets real bold (`weights: [400, 700]`) since cards bold key terms; set `italic: true` when cards quote or use italics. The build writes each file as `_<family>-<subset>-<weight>[-italic].woff2` (the leading `_` keeps Anki's Check Media from deleting it) and lists them in `media.json`; when saving, call `store_media_file` once per entry with its `filename` and `path` (Claude Code and Anki share a machine). Away from Anki, the queued charter keeps the `theme.json` and the fonts are fetched again when it's saved. Everything syncs to every device, so two families at most.
+
+### Choosing fonts
+
+Pick from what the deck's cards are made of, then let the mood choose within that:
+
+- **The body font is what the user reads hundreds of times a day.** Choose a face made for reading at text size, in the category that fits the material. Display faces, such as Fraunces at its expressive settings, go only on the deck label.
+- **Literary material** (vocabulary in example sentences, quotations, history, philosophy): a text serif, with italics. For example Literata, Source Serif 4, Lora, EB Garamond, PT Serif.
+- **Technical material** (engineering, code, data): a clean sans for the body and a monospace for the label and highlighted terms. For example IBM Plex Sans with IBM Plex Mono, or Inter with JetBrains Mono.
+- **Formulas and symbols** (math, chemistry): a serif with clear numerals and distinct `l`, `1` and `I`, like Source Serif 4 or Literata.
+- **Mood within the category:** warm and unhurried leans to Lora or a soft serif label; calm and quiet to Literata or Source Serif 4 with a muted accent; playful to a rounded sans like Nunito on the label; precise to Plex. If the mood answer was skipped, the material alone decides.
+
+These are starting points, not a list to stay inside. Every family above was checked with `--info`; check anything else the same way.
+
+- **Built in:** dots on the deck label for the stage (`●○○` in stage 01), and a small "rescued" badge on the back of a card tagged `rescued`.
+- **Motion** is off unless the user turns it on after seeing it: a 120 ms fade of the answer and a single shimmer on the rescued badge, both off when the device asks for reduced motion. Nothing loops and nothing moves.
+- **Language decks:** suggest Anki's built-in speech, `{{tts es_ES:Field}}` in the template, which reads a field aloud with the device's own voices. It belongs in a note type with a dedicated sentence field, not in the Basic copy.
+
+### Picking and changing a theme
+
+To pick one: draft two or three `theme.json` files, each a different font pairing as well as a different palette (one quieter, one bolder; for a literary deck, say, Literata, Lora with a Nunito label, and Source Serif 4). Build each with the deck's sample note as its `sample` (without one, the preview shows a generic English card) and show the previews on it in the deck's own language (in Claude Code, `preview.html` from the build, which loads the fetched fonts; elsewhere, draw the sample cards inline). Ask which they want with the app's question tool, naming each option by its fonts and feel ("Literata, warm paper"), and offering "none" too. If the user likes one palette but another's fonts, combine them and rebuild. On a pick, ask whether to turn motion on. On save, `create_model` with each object in the build's `models.json`. If the deck uses note types the user keeps in a repo, the theme goes into that repo's stylesheet instead, and the user applies it.
+
+To change a theme, edit its `theme.json` (its mood and colors are in the comment at the top of the CSS), rebuild, and apply with `update_model_styling` to both note types.
+
 ## Propose before building
 
 Check the design first: write the templates (as `model_templates` returns them) and a sample note to a JSON file and run `python3 -I <this skill dir>/scripts/render_note.py <spec.json>`, or for an existing type `render_note.py <note.json> --model <type>`. It renders every card, fails when a front shows its answer or a back reuses `{{FrontSide}}` under a scripted front that hides it, and can't run JavaScript, so a scripted type still needs a preview in Anki. Show the user the type's name and fields, how many cards each note makes and what each asks, the templates, and one sample note as each of its cards' fronts and backs would show it. Build only on a yes.
