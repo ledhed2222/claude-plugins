@@ -69,6 +69,15 @@ Bad → good:
 | Cloze: A {{c1::noise floor}} is how much outputs differ across {{c2::reruns}}… (coined term) | Q: You rerun an unchanged eval and the score moves 3 points. A prompt change then gains 2. What can you conclude? A: **Nothing yet: the gain is within run-to-run variation.** |
 | Q: An automated check fails when a gold value appears on an input page. What is it called? A: A truth-leak check. | Drop it: the name is session jargon, and the lesson (don't put answers in the input) is obvious. |
 
+## Vary the shape
+
+A deck where every card is the same plain question gets static. Aim for no more than about 85% of a deck's notes in one format (note type, `type::` tag, with or without media), or the charter's `Variety:` line where it has one; `Variety: none` means keep the deck uniform.
+
+- **Variety is a tiebreaker, never a reason to write a worse card.** When the content has one right shape, it gets that shape. Only when two shapes would teach equally well does the under-used one win.
+- **Shapes to pick from**, within what the charter allows: a definition, a contrast, a "you see X, what do you do?" scenario, predict-the-result, spot-the-error, a cloze; and recognition or production of the same item where the charter has both note types.
+- **Media only when it carries part of the answer**: a diagram the user supplies or one you draw, or audio in a language deck. Never decorative, and never one whose visible content gives the answer away on the front.
+- **Mnemonics are offered, not added**: for an arbitrary fact (a name, a number, an ordered list), propose one or two in your reply and put the one the user picks in the `Why/Example` line or `Extra`. Not for a card the user can reason their way to.
+
 ## Last checks before adding
 
 Run every draft through these. They come from the spaced-repetition literature rather than from the user's reviews of real cards, so the rules above win if the two ever disagree.
@@ -84,7 +93,7 @@ Cards are only written to Anki from Claude Code, through the `anki` MCP server o
 
 The scripts named below are in this skill's `scripts/` directory; run each as `python3 -I <this skill dir>/scripts/<name>.py`, with no argument for its usage. They read and write a drafts file: a JSON list of cards in the inbox's format (below), written to a scratch file. All of them except `lint_cards.py` and `charter.py lint` without `--deck` need the add-on, so they only run in Claude Code on the machine running Anki.
 
-1. **Read the charter** of the subject deck. Then restate what was just taught as a few one-point sentences, and draft cards so that each one tests exactly one of them, against the charter and the rules above. A point you can't state in one sentence needs splitting before it becomes a card.
+1. **Read the charter** of the subject deck. Then restate what was just taught as a few one-point sentences, and draft cards so that each one tests exactly one of them, against the charter and the rules above. A point you can't state in one sentence needs splitting before it becomes a card. Before choosing shapes, run `format_mix.py "<subject>"`; if its last line says the top format is over the target, follow "Vary the shape". Away from Anki the mix can't be read, so pick the best shape for each card.
 2. **Check the deck** for overlap and prerequisites. Run `find_dupes.py <drafts.json>`: it lists, for each draft, the deck's notes worded most like it, across every note type; decide from those which drafts repeat a card or need a near-neighbor contrast. For prerequisites, use `find_notes` with `deck:"<subject>"` plus key terms, `include_first_field: true`. Search each term as a whole word with `w:term`, so a short stem doesn't match unrelated words, and include its other forms (`w:embedding or w:embeddings`), since `w:` doesn't match plurals or other inflections. For a word in a language deck, also search its dictionary form, because the deck may already hold another inflection of it. Drop drafts that repeat a card; write any missing prerequisite card first.
 3. **Pick the stage**: the earliest stage subdeck that already teaches everything the card relies on. If no stage fits, propose a new one to the user instead of guessing.
 4. **Lint** the drafts: `lint_cards.py <drafts.json> --prefix <charter's tag prefix>`, adding `--skip <checks>` when the charter's Conventions has a `Lint skip:` line. Fix every error and every warning, or say in your reply why a warning is wrong for that card.
