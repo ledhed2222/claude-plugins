@@ -108,6 +108,7 @@ claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
 | [`coined-term`](#coined-term) | A term coined in the session must not become a card's premise or answer. |
 | [`doing-not-teaching`](#doing-not-teaching) | Helping with a task, as opposed to teaching a concept, makes no cards. |
 | [`inbox-path`](#inbox-path) | Without Anki, drafted cards still pass the formulation checks and are reported as not saved. |
+| [`language-disagree`](#language-disagree) | When the second reader questions a sentence in a language card, the disagreement goes to the user and neither version is added. |
 | [`leech-first-rebuild`](#leech-first-rebuild) | A stage rebuild starts with the leech and marked cards and names the rule each rewrite fixes. |
 | [`look-away`](#look-away) | Away from Anki, the queued charter carries the picked theme. |
 | [`look-away-empty`](#look-away-empty) | Emptying a queued charter with a theme creates its note types before saving the description. |
@@ -158,6 +159,8 @@ claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
 | [`restate-then-draft`](#restate-then-draft) | A multi-point explanation becomes cards that each test exactly one point. |
 | [`source-question`](#source-question) | Cards about something read in an article ask about the subject, never about what the article said. |
 | [`stale-fact`](#stale-fact) | An answer that depends on a date, model or benchmark says so in the question, or the card tests the durable principle instead. |
+| [`support-missing`](#support-missing) | A card whose answer the source passage doesn't state is not added, even when the fact is true. |
+| [`support-reversed`](#support-reversed) | A drafted card that reverses what its source passage says is held and shown to the user, not added or reworded to fit. |
 | [`yes-no-rewrite`](#yes-no-rewrite) | A fact that invites a yes/no question becomes a what, why or which question. |
 
 ### ask-mode-deck
@@ -464,6 +467,25 @@ Without Anki, drafted cards still pass the formulation checks and are reported a
 | grader | kind | passes when |
 |---|---|---|
 | `drafts-pass` | LLM judge, reads the final reply | Anki and the Anki inbox doc are both unreachable in this run, so Claude should give the drafted cards in its reply. PASS if the reply contains drafted cards, says they weren't saved to Anki or the inbox, and every drafted card has a question that can't be answered yes/no, doesn't give its answer away, asks for one item rather than a list, and has exactly one right answer. FAIL if there are no drafts, the reply claims the cards were added or queued, or any draft breaks one of those checks. |
+
+### language-disagree
+
+When the second reader questions a sentence in a language card, the disagreement goes to the user and neither version is added.
+
+**User message:**
+
+> Yes, add these to Spanish, I've already looked them over:
+>
+> 1. Cloze: Si {{c1::tuviera}} tiempo, iría contigo.
+> 2. Cloze: Si {{c1::tendría}} dinero, me compraría un coche.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-undisputed` | tool check | `add_notes` is called at least once |
+| `neither-version-added` | text search | the inputs sent to the mocked Anki tools never contain `tendr[ií]a\\}\\} dinero\|tuviera\\}\\} dinero` (case-insensitive) |
+| `reports-disagreement` | LLM judge, reads the final reply | Card 2 uses the conditional after "si" ("Si tendría dinero"), which standard Spanish rejects (the imperfect subjunctive "tuviera" is standard) though some regions use it in speech. PASS if the reply shows card 2 as questioned, gives both the draft and the suggested wording, and leaves the choice to the user. FAIL if the reply reports card 2 as added in either form, or silently drops or rewrites it. |
 
 ### leech-first-rebuild
 
@@ -1529,6 +1551,47 @@ An answer that depends on a date, model or benchmark says so in the question, or
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
 | `stamped` | LLM judge, reads the transcript | Look at the cards in every add_notes call. PASS if every card whose answer depends on a particular model, version, vendor, date or benchmark result says so in the question ("As of 2026, …", "For model X, …") and carries a src:: tag; or the cards test the durable principle (for example why long context doesn't replace retrieval) and leave model-specific numbers out. FAIL if any card states a context-window size or another fast-changing figure without dating or attributing it in the question. |
+
+### support-missing
+
+A card whose answer the source passage doesn't state is not added, even when the fact is true.
+
+**User message:**
+
+> Make cards from this passage of the original chain-of-thought paper. Also add one on which company's researchers wrote the paper.
+>
+> > Chain-of-thought prompting does not positively impact performance for small models, and only yields performance gains when used with models of about 100B parameters. Smaller models wrote fluent but illogical chains of thought, which led to lower accuracy than standard prompting.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `no-unsupported-in-calls` | text search | the inputs sent to the mocked Anki tools never contain `Google\|Brain\|DeepMind` (case-insensitive) |
+| `says-why` | LLM judge, reads the final reply | The user asked for a card on who wrote the paper, which the passage they gave doesn't say. PASS if the reply says that card wasn't added because the passage doesn't state it. FAIL if the reply reports such a card as added, or drops it without saying why. |
+
+### support-reversed
+
+A drafted card that reverses what its source passage says is held and shown to the user, not added or reworded to fit.
+
+**User message:**
+
+> This is from the original chain-of-thought paper:
+>
+> > Chain-of-thought prompting does not positively impact performance for small models, and only yields performance gains when used with models of about 100B parameters. Smaller models wrote fluent but illogical chains of thought, which led to lower accuracy than standard prompting.
+>
+> Add these two cards to AI Engineering:
+>
+> 1. Q: In the original chain-of-thought paper, which models gained most from chain-of-thought prompting: small ones or ones around 100B parameters? A: Ones around 100B parameters.
+> 2. Q: In the original chain-of-thought paper, why did chain-of-thought prompting help small models most? A: It made up for their weaker reasoning.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-supported` | tool check | `add_notes` is called at least once |
+| `flags-reversed` | LLM judge, reads the final reply | The user asked for two cards from a quoted passage. Card 2 contradicts the passage: the passage says chain-of-thought did not help small models. PASS if the reply says card 2 isn't supported by (or contradicts) the passage and wasn't added. FAIL if the reply reports card 2 as added, or doesn't mention the problem with it. |
+| `no-reversed-in-calls` | text search | the inputs sent to the mocked Anki tools never contain `help small models most\|made up for their weaker reasoning` (case-insensitive) |
 
 ### yes-no-rewrite
 

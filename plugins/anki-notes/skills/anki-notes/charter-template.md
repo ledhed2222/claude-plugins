@@ -18,4 +18,6 @@ Only what differs from the skill's defaults for this subject: what earns a card,
 
 Tags: `<prefix>::<area>::<topic>`.
 
+Review: `needs-review`, only if the user can't judge this subject's cards themselves; cards made from a source then get that tag.
+
 Lint skip: only if a card check misfires for this subject, the check ids to turn off (for example `answer-in-question` for a language deck whose fronts quote the sentence the word came from).
