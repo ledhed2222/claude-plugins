@@ -1,7 +1,7 @@
 {
   "name": "ankimcp",
-  "version": "0.1.0",
-  "description": "Connects Claude Code to the AnkiMCP add-on's local MCP server (unofficial).",
+  "version": "0.2.0",
+  "description": "Connects Claude Code to a self-hosted anki-sync-mcp server (unofficial).",
   "author": {
     "name": "ledhed2222"
   },
@@ -13,5 +13,13 @@
     "flashcards",
     "spaced-repetition",
     "mcp"
-  ]
+  ],
+  "userConfig": {
+    "server_url": {
+      "type": "string",
+      "title": "Server URL",
+      "description": "MCP endpoint of your anki-sync-mcp server, e.g. https://anki.example.com/mcp",
+      "required": true
+    }
+  }
 }

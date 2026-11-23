@@ -1,13 +1,13 @@
 # ankimcp
 
-A Claude Code plugin that connects to the MCP server run by the [AnkiMCP](https://ankimcp.ai) Anki add-on, so the server can be enabled from `settings.json` instead of a per-machine `claude mcp add`.
+A Claude Code plugin that connects to a self-hosted [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp) server, so the server can be enabled from `settings.json` instead of a per-machine `claude mcp add`.
 
-Unofficial; not affiliated with AnkiMCP or Anki.
+Unofficial; not affiliated with Anki or AnkiWeb.
 
 ## Requirements
 
-- Anki 25.07 or newer, with the AnkiMCP add-on installed (AnkiWeb code `124672614`).
-- Anki must be running: the add-on serves MCP at `http://127.0.0.1:3141/` only while Anki is open.
+- A running anki-sync-mcp server in built-in OAuth mode (`MCP_AUTH_MODE=builtin`), reachable over HTTPS. See its README for setup.
+- `http://localhost:33418/callback` added to the server's `MCP_OAUTH_REDIRECT_URIS`. The plugin pins Claude Code's OAuth callback to port 33418 so the server can allow-list it exactly.
 
 ## Install
 
@@ -30,3 +30,5 @@ Or declare it in `settings.json`:
   }
 }
 ```
+
+When the plugin is enabled, Claude Code asks for the server URL, for example `https://anki.example.com/mcp`. Then run `/mcp` and sign in with the server's owner password.

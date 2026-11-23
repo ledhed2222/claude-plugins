@@ -13,7 +13,7 @@
     {
       "name": "ankimcp",
       "source": "./plugins/ankimcp",
-      "description": "Connects Claude Code to the AnkiMCP add-on's local MCP server (unofficial)."
+      "description": "Connects Claude Code to a self-hosted anki-sync-mcp server (unofficial)."
     },
     {
       "name": "anki-notes",
