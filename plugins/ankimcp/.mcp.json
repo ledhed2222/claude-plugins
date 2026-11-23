@@ -2,7 +2,10 @@
   "mcpServers": {
     "anki": {
       "type": "http",
-      "url": "http://127.0.0.1:3141/"
+      "url": "${user_config.server_url}",
+      "oauth": {
+        "callbackPort": 33418
+      }
     }
   }
 }
