@@ -1,7 +1,7 @@
 {
   "name": "ankimcp",
   "version": "0.2.0",
-  "description": "Connects Claude Code to a self-hosted anki-sync-mcp server (unofficial).",
+  "description": "Connects Claude Code to an Anki MCP server: the local AnkiMCP add-on or a self-hosted anki-sync-mcp (unofficial).",
   "author": {
     "name": "ledhed2222"
   },
@@ -18,7 +18,7 @@
     "server_url": {
       "type": "string",
       "title": "Server URL",
-      "description": "MCP endpoint of your anki-sync-mcp server, e.g. https://anki.example.com/mcp",
+      "description": "http://127.0.0.1:3141/ for the local AnkiMCP add-on, or your anki-sync-mcp endpoint, e.g. https://anki.example.com/mcp",
       "required": true
     }
   }
