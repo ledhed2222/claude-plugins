@@ -4,7 +4,7 @@
 Usage:
   python3 -I apply_stage.py plan <plan.json> --server local|remote [--decks <reply.json> --note-types <reply.json>]
   python3 -I apply_stage.py record <plan.json> --server local|remote <new-reply.json>...
-  python3 -I apply_stage.py place <plan.json> --server local|remote [--decks <reply.json>] [--cards <reply.json>] [--sync]
+  python3 -I apply_stage.py place <plan.json> --server local|remote [--decks <reply.json>] [--cards <reply.json>]... [--sync]
 
 Plan: {"deck": "AI Engineering::02 Eval basics", "tags": ["src::..."],
        "items": [{"new": {"model": "Basic", "fields": {...}, "tags": [...]}},
@@ -29,7 +29,9 @@ make them yourself, in order, saving each reply to its own file.
   place   moves every new/keep/rewrite note's cards into the deck, unsuspends
           them and orders the new ones. It needs their card ids: without
           --cards it prints the lookup call (notes_info, or anki_cards_search
-          on remote) to save first. --sync adds the sync at the end.
+          on remote) to save first. On remote, page that search while
+          has_more (the next offset is this one plus the reply's limit) and
+          pass each page with its own --cards. --sync adds the sync at the end.
 """
 import asyncio
 import json
@@ -106,14 +108,14 @@ def ordered_notes(plan, applied):
     return out
 
 
-def placing(plan, server, notes, cards_reply, deck_id=None):
+def placing(plan, server, notes, cards_replies, deck_id=None):
     """The lookup call when card ids are missing, else the move, unsuspend and reposition calls."""
-    if not cards_reply:
+    if not cards_replies:
         if server == LOCAL:
             return [dict(call("notes_info", notes=notes, excerpt_chars=1), note="save this reply, then run place again with --cards <it>")]
-        return [dict(call("anki_cards_search", query="nid:" + ",".join(map(str, notes)), limit=1000),
-                     note="save this reply, then run place again with --cards <it>")]
-    known = card_ids([cards_reply])
+        return [dict(call("anki_cards_search", query="nid:" + ",".join(map(str, notes)), limit=100),
+                     note="page while has_more, save each page, then run place again with --cards <page> for each")]
+    known = card_ids(cards_replies)
     missing = [n for n in notes if n not in known]
     if missing:
         sys.exit(f"no cards in the saved reply for notes {missing}")
@@ -129,6 +131,10 @@ def placing(plan, server, notes, cards_reply, deck_id=None):
 
 def _flag(args, name):
     return args[args.index(name) + 1] if name in args else None
+
+
+def _flags(args, name):
+    return [args[i + 1] for i, a in enumerate(args[:-1]) if a == name]
 
 
 async def _read_text(path, missing):
@@ -159,7 +165,7 @@ async def main():
     if plan is None:
         sys.exit(f"no plan at {plan_path}")
     _check_items(plan["items"])
-    flagged = {a for f in ("--server", "--decks", "--note-types", "--cards") if f in args for a in (f, _flag(args, f))}
+    flagged = {a for f in ("--server", "--decks", "--note-types", "--cards") for v in _flags(args, f) for a in (f, v)}
     try:
         deck_ids = decks(await read([_flag(args, "--decks")])) if _flag(args, "--decks") else {}
         if args[0] == "plan":
@@ -209,8 +215,8 @@ async def main():
         else:
             if server == REMOTE and plan["deck"] not in deck_ids:
                 sys.exit("remote needs --decks (anki_decks_list) with the stage deck in it")
-            cards_reply = (await read([_flag(args, "--cards")]))[0] if _flag(args, "--cards") else None
-            calls = placing(plan, server, notes, cards_reply, deck_ids.get(plan["deck"]))
+            cards_replies = await read(_flags(args, "--cards"))
+            calls = placing(plan, server, notes, cards_replies, deck_ids.get(plan["deck"]))
     except ReplyError as e:
         sys.exit(f"a saved reply is an error: {e}")
     if "--sync" in args and not (calls and calls[0].get("note")):
