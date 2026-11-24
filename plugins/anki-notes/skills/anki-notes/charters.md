@@ -18,6 +18,7 @@ Go through these for the subject and write down only the answers that differ fro
 - **Note types and direction.** The default asks description→name with Basic and Cloze. In a language, recognizing a word and producing it are separate skills, so a language deck may want both directions or a custom note type (see "Choosing note types").
 - **Context and personal hooks.** The topic label on the front, or a different cue. Example sentences from the user's own life, work or reading stick better than textbook ones. Images or audio where they carry the answer (pronunciation, a diagram, a map).
 - **Variety.** Which card shapes suit the subject, and whether the deck should stay uniform on purpose (vocabulary in fixed recognition and production types): a `Variety:` line, only when it differs from the skill's default.
+- **Media.** Whether pictures or sound carry the subject (a wine's colour, a car's silhouette, a word's pronunciation) and what kind: a `Media:` line, only when it differs from the skill's default of looking for media on visual, structural or audible cards. `Media: none` turns it off.
 - **What goes stale.** Fast-moving fields (models, libraries, prices, law) need a date or version in the question; stable ones (grammar, math) don't. Say which this is.
 - **Tags.** A prefix no other deck uses (`aie`, `es`) and the areas under it (`es::grammar`, `es::vocab`), so a topic can be found across stages.
 - **Sources.** Where the material comes from: sessions with Claude, a textbook (its chapters can shape the stages), the user's reading and lookups.

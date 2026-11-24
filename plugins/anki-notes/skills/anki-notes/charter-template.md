@@ -20,4 +20,6 @@ Tags: `<prefix>::<area>::<topic>`.
 
 Variety: only if it differs from the skill's ~85% cap on one format: another cap, the shapes allowed, or `none` for a deck that stays uniform on purpose.
 
+Media: only if it differs from the skill's default: the kinds that suit the deck (diagrams, photos of a given thing, pronunciation), or `none`.
+
 Lint skip: only if a card check misfires for this subject, the check ids to turn off (for example `answer-in-question` for a language deck whose fronts quote the sentence the word came from).

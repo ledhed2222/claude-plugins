@@ -62,6 +62,8 @@ If Anki can't be reached, Claude shows the approved charter in the chat and save
 - **Ask decks:** Claude ends with a one-line offer ("2 possible cards for Spanish: … — add them?") and adds them only if you say yes.
 - **Anki unreachable:** Claude says it couldn't reach Anki, that nothing was saved, and shows the drafted cards. Say "I've restarted Anki" (or "try again") and it adds them.
 
+**Feedback on a card:** every note type the plugin creates has a `Feedback` field that never shows on a card. When a card is badly made, edit the note during review (on desktop or phone) and type why in that field; search `Feedback:_*` in Anki's browser to see them all. A later version will let Claude go through them with you and improve the deck's charter.
+
 Claude never deletes cards. Cards that should go are tagged `to-delete`; search `tag:to-delete` in Anki's browser to review and delete them.
 
 ## Rebuilding a whole stage

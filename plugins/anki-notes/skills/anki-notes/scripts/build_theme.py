@@ -27,7 +27,8 @@ theme.json:
 Writes to <out dir>:
   models.json   create_model arguments (local server) for "<deck> · Basic" and "<deck> · Cloze",
                 with the stock fields (Front/Back, Text/Extra), so the skill fills
-                them as before and Change Note Type keeps review history
+                them as before and Change Note Type keeps review history, plus a
+                last field, Feedback, that no template shows
   models-remote.json
                 the same for the remote server: anki_note_types_change_preview
                 (operation "create") and anki_note_types_create arguments, with
@@ -36,14 +37,17 @@ Writes to <out dir>:
   preview.html  a sample note, front and back, in light and night mode
   _<family>-<subset>-<weight>[-italic].woff2
                 each font file, fetched from npm by fetch_font.py (next to preview.html,
-                so the preview shows it); media.json lists them for store_media_file(path=...),
-                which the add-on refuses until its media_allowed_types includes "font/woff2"
+                so the preview shows it); media.json lists them as store_media_file(filename, path)
+                arguments (local), which the add-on refuses until its media_allowed_types includes
+                "font/woff2", and media-remote.json as anki_media_store(filename, url) arguments (remote),
+                each url the same file on jsdelivr pinned to the package's version
 
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
 background in either mode, if a font lacks one of the deck's subsets, a weight
 or italic, if a font can't be fetched, or if the spec is malformed. Standard library only.
 """
 import asyncio
+import hashlib
 import json
 import os
 import html
@@ -155,17 +159,19 @@ def css(theme, files=()):
 {motion}"""
 
 
+# the reviewer's note on a badly made card; no template shows it, so it never reaches a card
+FEEDBACK = "Feedback"
 LABEL = '<div class="deck-label" data-deck="{{Deck}}">{{Subdeck}}</div>'
 
 
 def models(theme, stylesheet):
     deck = theme["deck"]
     return [
-        {"model_name": f"{deck} · Basic", "in_order_fields": ["Front", "Back"], "is_cloze": False, "css": stylesheet,
+        {"model_name": f"{deck} · Basic", "in_order_fields": ["Front", "Back", FEEDBACK], "is_cloze": False, "css": stylesheet,
          "card_templates": [{"Name": "Card 1",
                              "Front": LABEL + "\n<div class=\"question\">{{Front}}</div>",
                              "Back": "{{FrontSide}}\n<hr id=\"answer\" />\n<div class=\"answer\" data-tags=\"{{Tags}}\">{{Back}}</div>"}]},
-        {"model_name": f"{deck} · Cloze", "in_order_fields": ["Text", "Extra"], "is_cloze": True, "css": stylesheet,
+        {"model_name": f"{deck} · Cloze", "in_order_fields": ["Text", "Extra", FEEDBACK], "is_cloze": True, "css": stylesheet,
          "card_templates": [{"Name": "Cloze",
                              "Front": LABEL + "\n<div class=\"question\">{{cloze:Text}}</div>",
                              "Back": LABEL + "\n<div class=\"question\">{{cloze:Text}}</div>\n<hr id=\"answer\" />\n<div class=\"answer\" data-tags=\"{{Tags}}\">{{Extra}}</div>"}]},
@@ -177,6 +183,12 @@ def remote_models(theme, stylesheet):
     return [{"name": m["model_name"], "kind": "cloze" if m["is_cloze"] else "standard", "fields": m["in_order_fields"], "css": m["css"],
              "templates": [{"name": t["Name"], "question_format": t["Front"], "answer_format": t["Back"]} for t in m["card_templates"]]}
             for m in models(theme, stylesheet)]
+
+
+def remote_media(f):
+    """anki_media_store arguments for one font file: the server downloads it from its pinned jsdelivr url,
+    so the file never passes through Claude. The key follows the url, which names an exact version."""
+    return {"filename": f["filename"], "url": f["url"], "idempotency_key": "media-" + hashlib.sha256(f["url"].encode()).hexdigest()[:32]}
 
 
 def preview(theme, stylesheet, sample):
@@ -247,11 +259,15 @@ async def main():
         sys.exit(f"font problem: {e}. Pick another family (check it with fetch_font.py --info) or set it to null.")
     files = [f for group in fetched for f in group]
     media = [{"filename": f["filename"], "path": f["path"]} for f in files]
+    if any(not f["url"] for f in files):
+        sys.exit("font problem: a Fontsource package has no version, so its files have no pinned url")
+    media_remote = [remote_media(f) for f in files]
     stylesheet = css(theme, files)
     sample = theme.get("sample") or {"stage": "01 Basics", "front": "Which eval step costs more: inference or scoring?",
                                       "back": "<b>Inference.</b>", "tags": ["rescued"]}
     await asyncio.gather(
         asyncio.to_thread(_write, os.path.join(out, "media.json"), json.dumps(media, indent=1)),
+        asyncio.to_thread(_write, os.path.join(out, "media-remote.json"), json.dumps(media_remote, indent=1)),
         asyncio.to_thread(_write, os.path.join(out, "theme.css"), stylesheet),
         asyncio.to_thread(_write, os.path.join(out, "models.json"),
                           json.dumps(models(theme, stylesheet), ensure_ascii=False, indent=1)),
@@ -262,7 +278,8 @@ async def main():
     for mode in MODES:
         p = theme[mode]
         print(f"{mode}: text {contrast(p['text'], p['bg']):.1f}:1, accent {contrast(p['accent'], p['bg']):.1f}:1")
-    print(f"wrote theme.css, models.json, models-remote.json, preview.html, media.json and {len(media)} font file(s) to {out}")
+    print(f"wrote theme.css, models.json, models-remote.json, preview.html, media.json, media-remote.json "
+          f"and {len(media)} font file(s) to {out}")
 
 
 if __name__ == "__main__":

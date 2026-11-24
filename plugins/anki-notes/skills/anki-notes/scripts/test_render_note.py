@@ -52,6 +52,18 @@ class EvalCaseTests(unittest.TestCase):
         self.assertEqual(shown[0][1], "Q?")
 
 
+class FeedbackFieldTests(unittest.TestCase):
+    def test_feedback_never_in_a_template(self):
+        note = {"Front": "Which tier is bottled?", "Back": "The solera", "Feedback": "too vague"}
+        self.assertEqual(_errors(_BASIC, note), [])
+        shown = {"Card 1": {"Front": "{{Front}}", "Back": "{{FrontSide}}<hr id=answer>{{Back}}<br>{{Feedback}}"}}
+        self.assertTrue(any("Feedback" in m for m in _errors(shown, note)))
+
+    def test_missing_feedback_is_a_warning(self):
+        findings = check(_BASIC, {"Front": "Which tier is bottled?", "Back": "The solera"})[0]
+        self.assertIn("warn", [s for s, m in findings if "Feedback" in m])
+
+
 class RenderSavedTemplatesContract:
     """render_note.py --templates with each server's saved note-type reply."""
     server = None

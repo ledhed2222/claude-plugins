@@ -40,6 +40,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
+from lint_cards import unsafe_html  # noqa: E402
 from replies import LOCAL, REMOTE, SERVERS, ReplyError, call, card_ids, decks, key, note_type_names, print_plan, read  # noqa: E402
 
 _KINDS = ("new", "keep", "rewrite", "delete")
@@ -59,6 +60,10 @@ def _check_items(items):
             sys.exit(f"item {i}: delete needs note ids")
         if ("fields" in item or "tags" in item) and kind != "rewrite":
             sys.exit(f"item {i}: fields and tags only go with rewrite")
+        fields = item["new"]["fields"] if kind == "new" else item.get("fields") or {}
+        unsafe = [f"{name}: {p}" for name, val in fields.items() for p in unsafe_html(val or "")]
+        if unsafe:
+            sys.exit(f"item {i}: unsafe HTML: {'; '.join(unsafe)}")
 
 
 def writes(plan, server, applied, deck_id=None, type_ids=None):

@@ -1,6 +1,6 @@
 {
   "name": "anki-notes",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Turns what Claude teaches you into staged Anki flashcards, with per-deck charters, through a local or hosted Anki MCP server.",
   "author": {
     "name": "ledhed2222"

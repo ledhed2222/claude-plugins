@@ -58,6 +58,25 @@ class LintTests(unittest.TestCase):
         self.assertTrue(any("empty" in m for m in _msgs(_basic("", "A."))))
         self.assertTrue(any("void" in m for m in _msgs(_basic("Q?", "A.<br>B."))))
 
+    def test_feedback_not_on_stock_types(self):
+        card = _basic("Which eval step costs more: inference or scoring?", "<b>Inference.</b>")
+        card["fields"]["Feedback"] = ""
+        self.assertTrue(any("Feedback" in m for m in _msgs(card)))
+        self.assertEqual(lint(dict(card, model="AI Engineering · Basic")), [])
+
+    def test_svg_only_through_img(self):
+        def errs(back):
+            return [(s, m) for s, m in lint(_basic("Which tier is bottled?", back), skip=("unsafe-html",)) if "unsafe-html" in m]
+        for ok in ('<b>The solera.</b><br /><img src="solera-tiers.svg">', "<img src='a.svg' />", '<img alt="x" src="Solera Tiers.SVG">',
+                   '<img src="flor.jpg">'):
+            self.assertEqual(errs(ok), [], ok)
+        for bad in ('<svg viewBox="0 0 10 10"><script>alert(1)</script></svg>', '<object data="a.svg"></object>',
+                    '<embed src="a.svg">', '<iframe src="a.svg"></iframe>', '<a href="a.svg">diagram</a>',
+                    '<img src="data:image/svg+xml;base64,PHN2Zz4=">', '<img src="https://x.org/a.svg">',
+                    '<img src="a.svg" onerror="alert(1)">', '<img src="flor.jpg" onload="x()">', '<b onclick="x()">A</b>'):
+            found = errs(bad)
+            self.assertTrue(found and all(s == "error" for s, _ in found), bad)  # skip can't turn it off
+
     def test_skip(self):
         card = _basic("Does temperature 0 make outputs identical?", "No.")
         self.assertEqual([m for m in _msgs(card, skip=("yes-no",)) if "yes/no" in m], [])

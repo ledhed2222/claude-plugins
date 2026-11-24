@@ -64,7 +64,6 @@ From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a
 
 **Cause unknown:**
 
-- `variety-mnemonic` (0.67, #34): adds the cards, but `mnemonic-offered` fails in all 3 runs: the judge doesn't see a mnemonic offered for the arbitrary fact (BLEU counts n-grams up to length 4), though `SKILL.md`'s "Vary the shape" asks for one. The case first ran on 2026-11-24, after its `focus: reply` grader was fixed. Read a transcript (`--keep-temp`) to tell whether the skill skips the offer or the judge misreads it.
 
 - `nt-propose` (0.67): proposals have a hint field, the answer typed once and a sample note, yet the judge fails all three runs. Re-run with `--keep-temp` to see which of its five rules fails.
 - `nt-fill` (0.94) and `project-specific` (0.89): one run added no card.
@@ -121,6 +120,13 @@ claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
 | [`look-repo`](#look-repo) | Theming a deck whose note types live in a repo proposes a change to the repo's stylesheet, not new or restyled note types. |
 | [`look-save`](#look-save) | Saving a picked theme creates both note types from models.json, then the deck, with the charter naming them. |
 | [`look-skip`](#look-skip) | Skipping the look question still gets themes drafted from the subject, with "none" offered. |
+| [`media-abstract-none`](#media-abstract-none) | A batch of abstract facts gets no media. |
+| [`media-charter-none`](#media-charter-none) | A charter with "Media: none" gets no media, even for a structural topic. |
+| [`media-diagram-process`](#media-diagram-process) | Content about a tiered aging system gets a drawn diagram, stored and used on a card, without the user asking. |
+| [`media-mixed-batch`](#media-mixed-batch) | In a batch where one topic is visual among abstract facts, media goes only on the visual topic''s cards. |
+| [`media-no-repeat`](#media-no-repeat) | One diagram backs at most three cards, even when many cards cover the same structure. |
+| [`media-photo-by-sight`](#media-photo-by-sight) | Content about something recognized by sight gets a photo proposed or added, from a clean source and credited, without the user asking. |
+| [`media-unlicensed-photo`](#media-unlicensed-photo) | A photo with no clean licence is not used; Claude says why and offers a drawn diagram or a photo the user owns. |
 | [`metric-concept`](#metric-concept) | Teaching an AI-engineering concept in an Automatic deck should produce one-fact, self-contained cards with no arithmetic drills. |
 | [`missing-prereq`](#missing-prereq) | A card may only rely on concepts the deck already teaches; missing ones are taught first or flagged. |
 | [`name-the-options`](#name-the-options) | A two-option idea becomes a card that names both options in its question. |
@@ -864,6 +870,115 @@ Skipping the look question still gets themes drafted from the subject, with "non
 |---|---|---|
 | `builds-themes` | tool check | `Bash` with input matching `build_theme\.py` is called at least 2 times |
 | `drafts-and-offers-none` | LLM judge, reads the transcript | PASS if Claude drafts two or three themes based on the subject (Portuguese, Lisbon) even though the user skipped the feeling question, shows them, and offers "none" (keeping Anki's default look) as a choice. FAIL if it drafts no themes, drafts only one, asks the feeling question again, or never offers "none". |
+
+### media-abstract-none
+
+A batch of abstract facts gets no media.
+
+**User message:**
+
+> Explain two things for my AI Engineering deck: why an eval's noise floor matters before you trust a score change, and why a cache key for model outputs must include a hash of the prompt.
+
+**Deck:** the shared mock deck.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `no-img` | text search | the inputs sent to the mocked Anki tools never contain `<img` |
+| `no-store` | tool check | `store_media_file` is never called |
+
+### media-charter-none
+
+A charter with "Media: none" gets no media, even for a structural topic.
+
+**User message:**
+
+> I'm building my Sherry deck. Explain how a solera works: the tiers of casks, which tier the wine is drawn from for bottling, how each tier is topped up from the one above, and why that keeps the style consistent from year to year.
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `get_deck_description`, `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `no-img` | text search | the inputs sent to the mocked Anki tools never contain `<img` |
+| `no-store` | tool check | `store_media_file` is never called |
+
+### media-diagram-process
+
+Content about a tiered aging system gets a drawn diagram, stored and used on a card, without the user asking.
+
+**User message:**
+
+> I'm building my Sherry deck. Explain how a solera works: the tiers of casks, which tier the wine is drawn from for bottling, how each tier is topped up from the one above, and why that keeps the style consistent from year to year.
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `get_deck_description`, `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `card-uses-image` | tool check | `add_notes` with input matching `<img src=\\\\?\"[^\"\\\\]*\\.svg` is called at least once |
+| `no-image-on-front` | text search | the inputs sent to the mocked Anki tools never contain `\"(Front\|Text)\\\\?\"\\s*:\\s*\\\\?\"([^\"\\\\]\|\\\\[^\"])*<img` |
+| `reports-media` | LLM judge, reads the final reply | The user asked how a solera works, in a deck whose charter adds cards automatically, and Claude was expected to draw a diagram of the tiers without being asked. PASS if Claude's reply reports that it added a diagram of the solera's tiers and says which card or cards it is on. FAIL if the reply doesn't mention a diagram, or says it added none. |
+| `stores-svg` | tool check | `store_media_file` with input matching `\\.svg` is called at least once |
+
+### media-mixed-batch
+
+In a batch where one topic is visual among abstract facts, media goes only on the visual topic''s cards.
+
+**User message:**
+
+> Teach me these for my Sherry deck: sherry is made mostly from the Palomino grape; fino is fortified to about 15% and oloroso to about 17%; a solera is tiers of casks where wine is drawn from the bottom tier and each tier is refilled from the one above; and Pedro Ximénez grapes are sun-dried before pressing.
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `get_deck_description`, `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `media-only-on-solera` | LLM judge, reads the transcript | The batch has one structural topic (the solera's tiers) and three abstract facts (the grape, fortification levels, sun-drying PX grapes). Look at every add_notes call. PASS if any card carrying an <img> is about the solera, and no card about the grape, the fortification percentages or PX sun-drying has an image. A solera diagram is expected but not required. FAIL if an image is put on any card that isn't about the solera, or an image is spread across the batch. |
+
+### media-no-repeat
+
+One diagram backs at most three cards, even when many cards cover the same structure.
+
+**User message:**
+
+> I'm building my Sherry deck. Explain how a solera works: the tiers of casks, which tier the wine is drawn from for bottling, how each tier is topped up from the one above, and why that keeps the style consistent from year to year. Also cover the criaderas and the solera tier by name, the saca (how much is drawn per year), the rocío (refilling), the minimum number of tiers, and how the average age of the bottled wine relates to the number of tiers.
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `get_deck_description`, `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `adds-cards` | tool check | `add_notes` is called at least once |
+| `max-three` | LLM judge, reads the transcript | Claude was asked to cover a solera in depth, which makes several cards about one structure. Look at every add_notes call and count, for each image file (<img src="...">), how many notes use it. PASS if no single image file is used on more than three notes. FAIL if the same image appears on four or more notes. |
+
+### media-photo-by-sight
+
+Content about something recognized by sight gets a photo proposed or added, from a clean source and credited, without the user asking.
+
+**User message:**
+
+> For my Sherry deck: what does flor look like in the cask, and how can I tell a cask under flor from one without it?
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `get_deck_description`, `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `no-invented-url` | tool check | `store_media_file` with input matching `https?://(?!upload\\.wikimedia\\.org)` is never called |
+| `photo-proposed` | LLM judge, reads the final reply | The user asked what flor (the yeast film on fino and manzanilla) looks like, in a deck whose charter adds cards automatically. Claude has no web tool in this session. PASS if Claude proposes or adds a picture for the card about flor's appearance without being asked: a freely licensed photo (it names Wikimedia Commons or asks the user for a photo of their own) or a diagram it draws, and it says which. A photo it couldn't fetch is offered, not pretended. FAIL if the flor cards are text only and no image is mentioned, or if Claude claims to have added a photo it never stored, or cites an image from an unlicensed source. |
+
+### media-unlicensed-photo
+
+A photo with no clean licence is not used; Claude says why and offers a drawn diagram or a photo the user owns.
+
+**User message:**
+
+> Add a card to my Sherry deck about what flor looks like, with this photo I found on a winery's website: https://www.bodegas-example.com/images/flor-in-cask.jpg
+
+**Deck:** the shared mock deck, with this case's own `find_notes`, `get_deck_description`, `list_decks`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `not-stored` | tool check | `store_media_file` with input matching `bodegas-example` is never called |
+| `says-why-offers` | LLM judge, reads the final reply | The user asked Claude to use a photo from a winery's website, whose licence is unknown. PASS if Claude does not use that photo, says plainly that it can't because the photo isn't freely licensed (or its licence is unknown), and offers an alternative: a diagram it draws, a freely licensed photo such as one from Wikimedia Commons, or a photo the user took themselves. FAIL if Claude stores or attaches the winery's photo, or refuses without offering any alternative. |
 
 ### metric-concept
 

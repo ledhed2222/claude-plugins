@@ -9,8 +9,8 @@ Cases:
   tool (remote) or none is (local). The skill picks the server by tool name.
 - Every allowed ankimcp tool has a mock (the case's or the shared one), so no
   call can reach a real Anki, and every mocked tool is in _tools.json.
-- A case tagged charter, note-type or questionnaire allows Read, or the
-  skill can't open charters.md or note-types.md.
+- A case tagged charter, note-type, questionnaire or media allows Read, or the
+  skill can't open charters.md, note-types.md or media.md.
 - An llm grader's focus is last_message or trace (the harness refuses anything else),
   and one with focus: trace is paired with a grader that sees every call
   (tool_used, tool_order, or regex on mock_calls).
@@ -29,7 +29,7 @@ from pathlib import Path
 _HERE = Path(__file__).resolve().parent
 _PLUGINS = '["../..", "../../../ankimcp"]'
 _TOOL_PREFIX = "mcp__plugin_ankimcp_anki__"
-_NEEDS_READ = {"charter", "note-type", "questionnaire"}  # the skill reads charters.md / note-types.md
+_NEEDS_READ = {"charter", "note-type", "questionnaire", "media"}  # the skill reads charters.md / note-types.md / media.md
 
 
 def _frontmatter(text):

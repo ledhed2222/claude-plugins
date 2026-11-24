@@ -2,7 +2,7 @@ import re
 import unittest
 
 from both_servers import check_call
-from build_theme import check, compare_page, contrast, css, font_faces, models, remote_models, used_fonts
+from build_theme import check, compare_page, contrast, css, font_faces, models, remote_media, remote_models, used_fonts
 from replies import LOCAL, REMOTE
 
 GOOD = {
@@ -12,6 +12,10 @@ GOOD = {
     "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"},
     "motion": False,
 }
+
+
+_FONT = {"filename": "_fraunces-latin-400.woff2",
+         "url": "https://cdn.jsdelivr.net/npm/@fontsource/fraunces@5.2.8/files/fraunces-latin-400-normal.woff2"}
 
 
 class ThemeTests(unittest.TestCase):
@@ -61,10 +65,16 @@ class ThemeTests(unittest.TestCase):
 
     def test_models_keep_stock_fields(self):
         basic, cloze = models(GOOD, "")
-        self.assertEqual(basic["in_order_fields"], ["Front", "Back"])
-        self.assertEqual(cloze["in_order_fields"], ["Text", "Extra"])
+        self.assertEqual(basic["in_order_fields"], ["Front", "Back", "Feedback"])
+        self.assertEqual(cloze["in_order_fields"], ["Text", "Extra", "Feedback"])
         self.assertTrue(cloze["is_cloze"])
         self.assertEqual(basic["model_name"], "Spanish · Basic")
+
+    def test_feedback_is_last_and_in_no_template(self):
+        for m in models(GOOD, ""):
+            self.assertEqual(m["in_order_fields"][-1], "Feedback")
+            for t in m["card_templates"]:
+                self.assertNotIn("Feedback", t["Front"] + t["Back"])
 
     def test_no_front_shows_the_answer(self):
         for m in models(GOOD, ""):
@@ -112,6 +122,15 @@ class ThemeModelsContract:
         self.assertEqual(len(calls), 2 if self.server == LOCAL else 4)
         self.assertEqual([p for c in calls for p in check_call(self.server, c)], [])
 
+    def media_calls(self):
+        """Storing a theme's font files, as media.json (local) or media-remote.json (remote) gives them."""
+        if self.server == LOCAL:
+            return [{"tool": "store_media_file", "args": {"filename": "_fraunces-latin-400.woff2", "path": "/tmp/t/_fraunces-latin-400.woff2"}}]
+        return [{"tool": "anki_media_store", "args": remote_media(_FONT)}]
+
+    def test_media_calls_match_the_schema(self):
+        self.assertEqual([p for c in self.media_calls() for p in check_call(self.server, c)], [])
+
     def test_create_calls_match_the_schema(self):
         calls = self.create_calls()
         self.assertTrue(calls)
@@ -134,6 +153,14 @@ class LocalThemeModels(ThemeModelsContract, unittest.TestCase):
 
 class RemoteThemeModels(ThemeModelsContract, unittest.TestCase):
     server = REMOTE
+
+    def test_media_is_a_pinned_url_keyed_on_it(self):
+        args = remote_media(_FONT)
+        self.assertEqual(set(args), {"filename", "url", "idempotency_key"})
+        self.assertRegex(args["url"], r"^https://cdn\.jsdelivr\.net/npm/@fontsource/fraunces@\d+\.\d+\.\d+/files/")
+        other = remote_media(dict(_FONT, url=_FONT["url"].replace("5.2.8", "5.2.9")))
+        self.assertNotEqual(args["idempotency_key"], other["idempotency_key"])
+        self.assertEqual(args, remote_media(_FONT))
 
     def test_cloze_copy_is_created_as_cloze(self):
         kinds = {m["name"]: m["kind"] for m in remote_models(GOOD, "")}
