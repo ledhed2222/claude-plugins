@@ -19,10 +19,10 @@ Read this when a draft would teach better with a picture or a sound. "Vary the s
 
 Search with whatever web tool you have, through Commons' API, which returns each file's licence:
 
-`https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=5&gsrsearch=<terms>&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=800`
+`https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=5&gsrsearch=<terms>&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=960`
 
 - **Use a file only if `extmetadata.LicenseShortName` is CC0, Public domain, CC BY or CC BY-SA** (any version). Anything else, a missing licence, NC or ND, or "fair use", is out. So are images from anywhere but Commons or the user, and generated images presented as photos.
-- Take the 800-pixel `thumburl` (JPEG or PNG), not the original: it stays well under the server's media size limit.
+- Take the `thumburl` (JPEG or PNG, 960 pixels wide; Commons serves only set widths), not the original, which is often over the server's 1 MB media limit. Make it the photo's URL by changing its host from `thumb.wikimedia.org` to `upload.wikimedia.org` and dropping everything from `?`: the remote server downloads only from `upload.wikimedia.org`, which serves the same file, and the query is just tracking.
 - **Credit** it on the back, after the answer, in the deck's context line (`Why/Example`, or the field Conventions names): `<small>Photo: <Artist>, <licence>, Wikimedia Commons</small>`, with the artist's name as plain text.
 - **If no file qualifies**, say so, and offer to draw a diagram or ask the user for a photo of their own. Never use one that doesn't.
 - With no web tool, propose the photo instead: say what it would show and the Commons search, and add it when the user supplies the file.
@@ -31,8 +31,8 @@ Search with whatever web tool you have, through Commons' API, which returns each
 
 Files are SVG for diagrams, and JPEG or PNG for photos: both servers accept them and every Anki app shows them.
 
-- **local:** write the file, then `store_media_file(filename, path)` with its absolute path; for a Commons photo, `store_media_file(filename, url)` with the `thumburl`.
-- **remote:** for a Commons photo, `anki_media_store(filename, url, idempotency_key)` with the `thumburl`: the server downloads it. For a diagram you drew, `anki_media_store(filename, content_base64, idempotency_key)` with the file's bytes as base64 (`base64 < file | tr -d '\n'`); an SVG is a few kilobytes, so that's quick. Never send a photo as base64: it takes minutes.
+- **local:** write the file, then `store_media_file(filename, path)` with its absolute path; for a Commons photo, `store_media_file(filename, url)` with the photo's URL.
+- **remote:** for a Commons photo, `anki_media_store(filename, url, idempotency_key)` with the photo's URL: the server downloads it. For a diagram you drew, `anki_media_store(filename, content_base64, idempotency_key)` with the file's bytes as base64 (`base64 < file | tr -d '\n'`); an SVG is a few kilobytes, so that's quick. Never send a photo as base64: it takes minutes.
 
 Then refer to it in a field as `<img src="solera-tiers.svg">`: an SVG only ever goes on a card through an `<img>` with a plain filename, never inline as `<svg>` and never through `<object>`, `<embed>`, `<iframe>` or a link, because those can run script in it. `lint_cards.py` and `apply_stage.py` refuse anything else, and no skip turns that off. Put it on the back, unless the card is a spotting card that shows the picture and asks what it is.
 
