@@ -2,7 +2,7 @@ import re
 import unittest
 
 from both_servers import check_call
-from build_theme import check, compare_page, contrast, css, font_faces, models, remote_models, used_fonts
+from build_theme import check, compare_page, contrast, css, font_faces, models, remote_media, remote_models, used_fonts
 from replies import LOCAL, REMOTE
 
 GOOD = {
@@ -112,6 +112,15 @@ class ThemeModelsContract:
         self.assertEqual(len(calls), 2 if self.server == LOCAL else 4)
         self.assertEqual([p for c in calls for p in check_call(self.server, c)], [])
 
+    def media_calls(self):
+        """Storing a theme's font files, as media.json (local) or media-remote.json (remote) gives them."""
+        if self.server == LOCAL:
+            return [{"tool": "store_media_file", "args": {"filename": "_fraunces-latin-400.woff2", "path": "/tmp/t/_fraunces-latin-400.woff2"}}]
+        return [{"tool": "anki_media_store", "args": remote_media("_fraunces-latin-400.woff2", b"wOF2font")}]
+
+    def test_media_calls_match_the_schema(self):
+        self.assertEqual([p for c in self.media_calls() for p in check_call(self.server, c)], [])
+
     def test_create_calls_match_the_schema(self):
         calls = self.create_calls()
         self.assertTrue(calls)
@@ -134,6 +143,12 @@ class LocalThemeModels(ThemeModelsContract, unittest.TestCase):
 
 class RemoteThemeModels(ThemeModelsContract, unittest.TestCase):
     server = REMOTE
+
+    def test_media_key_follows_the_content(self):
+        a, b = remote_media("_x.woff2", b"one"), remote_media("_x.woff2", b"two")
+        self.assertEqual(a["content_base64"], "b25l")
+        self.assertNotEqual(a["idempotency_key"], b["idempotency_key"])
+        self.assertEqual(a, remote_media("_x.woff2", b"one"))
 
     def test_cloze_copy_is_created_as_cloze(self):
         kinds = {m["name"]: m["kind"] for m in remote_models(GOOD, "")}

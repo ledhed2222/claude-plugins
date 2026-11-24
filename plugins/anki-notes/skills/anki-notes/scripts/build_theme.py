@@ -36,14 +36,17 @@ Writes to <out dir>:
   preview.html  a sample note, front and back, in light and night mode
   _<family>-<subset>-<weight>[-italic].woff2
                 each font file, fetched from npm by fetch_font.py (next to preview.html,
-                so the preview shows it); media.json lists them for store_media_file(path=...),
-                which the add-on refuses until its media_allowed_types includes "font/woff2"
+                so the preview shows it); media.json lists them as store_media_file(filename, path)
+                arguments (local), which the add-on refuses until its media_allowed_types includes
+                "font/woff2", and media-remote.json as anki_media_store arguments (remote)
 
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
 background in either mode, if a font lacks one of the deck's subsets, a weight
 or italic, if a font can't be fetched, or if the spec is malformed. Standard library only.
 """
 import asyncio
+import base64
+import hashlib
 import json
 import os
 import html
@@ -179,6 +182,12 @@ def remote_models(theme, stylesheet):
             for m in models(theme, stylesheet)]
 
 
+def remote_media(filename, data):
+    """anki_media_store arguments for one font file; the key follows the content, so a retry can't store it twice."""
+    return {"filename": filename, "content_base64": base64.b64encode(data).decode("ascii"),
+            "idempotency_key": "media-" + hashlib.sha256(data).hexdigest()[:32]}
+
+
 def preview(theme, stylesheet, sample):
     def render(mode, side):
         cls = "card" + (" nightMode" if mode == "night" else "")
@@ -217,6 +226,11 @@ def _read_json(path):
         return json.load(f)
 
 
+def _read_bytes(path):
+    with open(path, "rb") as f:
+        return f.read()
+
+
 def _write(path, text):
     with open(path, "w") as f:
         f.write(text)
@@ -247,11 +261,14 @@ async def main():
         sys.exit(f"font problem: {e}. Pick another family (check it with fetch_font.py --info) or set it to null.")
     files = [f for group in fetched for f in group]
     media = [{"filename": f["filename"], "path": f["path"]} for f in files]
+    contents = await asyncio.gather(*(asyncio.to_thread(_read_bytes, f["path"]) for f in files))
+    media_remote = [remote_media(f["filename"], data) for f, data in zip(files, contents)]
     stylesheet = css(theme, files)
     sample = theme.get("sample") or {"stage": "01 Basics", "front": "Which eval step costs more: inference or scoring?",
                                       "back": "<b>Inference.</b>", "tags": ["rescued"]}
     await asyncio.gather(
         asyncio.to_thread(_write, os.path.join(out, "media.json"), json.dumps(media, indent=1)),
+        asyncio.to_thread(_write, os.path.join(out, "media-remote.json"), json.dumps(media_remote, indent=1)),
         asyncio.to_thread(_write, os.path.join(out, "theme.css"), stylesheet),
         asyncio.to_thread(_write, os.path.join(out, "models.json"),
                           json.dumps(models(theme, stylesheet), ensure_ascii=False, indent=1)),
@@ -262,7 +279,8 @@ async def main():
     for mode in MODES:
         p = theme[mode]
         print(f"{mode}: text {contrast(p['text'], p['bg']):.1f}:1, accent {contrast(p['accent'], p['bg']):.1f}:1")
-    print(f"wrote theme.css, models.json, models-remote.json, preview.html, media.json and {len(media)} font file(s) to {out}")
+    print(f"wrote theme.css, models.json, models-remote.json, preview.html, media.json, media-remote.json "
+          f"and {len(media)} font file(s) to {out}")
 
 
 if __name__ == "__main__":
