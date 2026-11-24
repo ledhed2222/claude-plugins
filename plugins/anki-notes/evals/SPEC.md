@@ -64,7 +64,6 @@ From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a
 
 **Cause unknown:**
 
-- `variety-mnemonic` (0.67, #34): adds the cards, but `mnemonic-offered` fails in all 3 runs: the judge doesn't see a mnemonic offered for the arbitrary fact (BLEU counts n-grams up to length 4), though `SKILL.md`'s "Vary the shape" asks for one. The case first ran on 2026-11-24, after its `focus: reply` grader was fixed. Read a transcript (`--keep-temp`) to tell whether the skill skips the offer or the judge misreads it.
 
 - `nt-propose` (0.67): proposals have a hint field, the answer typed once and a sample note, yet the judge fails all three runs. Re-run with `--keep-temp` to see which of its five rules fails.
 - `nt-fill` (0.94) and `project-specific` (0.89): one run added no card.

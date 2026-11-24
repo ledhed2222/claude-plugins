@@ -102,6 +102,9 @@ def lint(card, prefix=None, skip=()):
             if re.search(r"<(br|hr)\s*>", val):
                 add("warn", "void-tag", f"{name}: close void tags (<br />)")
 
+    if model in ("Basic", "Cloze") and "Feedback" in f:
+        add("error", "fields", f"stock {model} has no Feedback field; only the note types the skill creates do")
+
     for name, val in f.items():
         # not skippable: a charter's Lint skip must never let script into a card
         out += [("error", f"unsafe-html: {name}: {p}") for p in unsafe_html(val or "")]

@@ -58,6 +58,12 @@ class LintTests(unittest.TestCase):
         self.assertTrue(any("empty" in m for m in _msgs(_basic("", "A."))))
         self.assertTrue(any("void" in m for m in _msgs(_basic("Q?", "A.<br>B."))))
 
+    def test_feedback_not_on_stock_types(self):
+        card = _basic("Which eval step costs more: inference or scoring?", "<b>Inference.</b>")
+        card["fields"]["Feedback"] = ""
+        self.assertTrue(any("Feedback" in m for m in _msgs(card)))
+        self.assertEqual(lint(dict(card, model="AI Engineering · Basic")), [])
+
     def test_svg_only_through_img(self):
         def errs(back):
             return [(s, m) for s, m in lint(_basic("Which tier is bottled?", back), skip=("unsafe-html",)) if "unsafe-html" in m]
