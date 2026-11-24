@@ -1,0 +1,97 @@
+{
+ "items": [
+  {
+   "id": 1795483120814,
+   "note_type_id": 1795483119905,
+   "note_type_name": "Basic",
+   "note_type_name_truncated": false,
+   "fields": [
+    {
+     "name": "Front",
+     "name_truncated": false,
+     "value": "What does a binary classifier do?",
+     "value_truncated": false
+    },
+    {
+     "name": "Back",
+     "name_truncated": false,
+     "value": "Sorts each input into one of <b>two classes</b>.",
+     "value_truncated": false
+    }
+   ],
+   "fields_omitted": 0,
+   "tags": [
+    "aie::metrics::basics",
+    "src::metrics",
+    "type::definition"
+   ],
+   "card_ids": [
+    1795483120814
+   ],
+   "modified": 1795483120
+  },
+  {
+   "id": 1795483120815,
+   "note_type_id": 1795483119905,
+   "note_type_name": "Basic",
+   "note_type_name_truncated": false,
+   "fields": [
+    {
+     "name": "Front",
+     "name_truncated": false,
+     "value": "Which curve plots recall against the false positive rate?",
+     "value_truncated": false
+    },
+    {
+     "name": "Back",
+     "name_truncated": false,
+     "value": "<img src=\"roc.png\">",
+     "value_truncated": false
+    }
+   ],
+   "fields_omitted": 0,
+   "tags": [
+    "aie::metrics::curves",
+    "src::metrics",
+    "type::application"
+   ],
+   "card_ids": [
+    1795483120815
+   ],
+   "modified": 1795483120
+  },
+  {
+   "id": 1795483120816,
+   "note_type_id": 1795483119909,
+   "note_type_name": "Cloze",
+   "note_type_name_truncated": false,
+   "fields": [
+    {
+     "name": "Text",
+     "name_truncated": false,
+     "value": "Precision {{c1::rises}}, recall {{c2::falls}}",
+     "value_truncated": false
+    },
+    {
+     "name": "Back Extra",
+     "name_truncated": false,
+     "value": "",
+     "value_truncated": false
+    }
+   ],
+   "fields_omitted": 0,
+   "tags": [
+    "aie::metrics::tradeoffs"
+   ],
+   "card_ids": [
+    1795483120816,
+    1795483120817
+   ],
+   "modified": 1795483120
+  }
+ ],
+ "offset": 0,
+ "limit": 100,
+ "total": 3,
+ "has_more": false
+}

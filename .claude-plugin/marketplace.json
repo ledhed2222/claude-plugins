@@ -18,7 +18,7 @@
     {
       "name": "anki-notes",
       "source": "./plugins/anki-notes",
-      "description": "Turns what Claude teaches you into staged Anki flashcards, with an inbox doc for cards drafted away from Anki."
+      "description": "Turns what Claude teaches you into staged Anki flashcards, through a local or hosted Anki MCP server."
     }
   ]
 }

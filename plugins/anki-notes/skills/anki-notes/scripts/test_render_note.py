@@ -1,6 +1,8 @@
 import unittest
 
+from both_servers import raw, run_script
 from render_note import check
+from replies import LOCAL, REMOTE
 
 _BASIC = {"Card 1": {"Front": "{{Front}}", "Back": "{{FrontSide}}<hr id=answer>{{Back}}"}}
 _CLOZE = {"Cloze": {"Front": "{{cloze:Text}}", "Back": "{{cloze:Text}}<br />{{Extra}}"}}
@@ -48,6 +50,26 @@ class EvalCaseTests(unittest.TestCase):
         t = {"Card 1": {"Front": "{{Front}}{{#Hint}} ({{Hint}}){{/Hint}}", "Back": "{{Back}}"}}
         _, shown = check(t, {"Front": "Q?", "Back": "A", "Hint": ""})
         self.assertEqual(shown[0][1], "Q?")
+
+
+class RenderSavedTemplatesContract:
+    """render_note.py --templates with each server's saved note-type reply."""
+    server = None
+
+    def test_cli_renders_basic(self):
+        r = run_script("render_note.py", "note.json", "--templates", "t.json",
+                       files={"note.json": {"Front": "Which eval step costs more: inference or scoring?", "Back": "Inference"},
+                              "t.json": raw(self.server, "templates")})
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("front: Which eval step costs more: inference or scoring?", r.stdout)
+
+
+class LocalRenderSavedTemplates(RenderSavedTemplatesContract, unittest.TestCase):
+    server = LOCAL
+
+
+class RemoteRenderSavedTemplates(RenderSavedTemplatesContract, unittest.TestCase):
+    server = REMOTE
 
 
 if __name__ == "__main__":

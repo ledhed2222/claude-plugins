@@ -25,9 +25,13 @@ theme.json:
 }
 
 Writes to <out dir>:
-  models.json   create_model arguments for "<deck> · Basic" and "<deck> · Cloze",
-                with exactly the stock fields (Front/Back, Text/Extra), so the skill
-                fills them as before and Change Note Type keeps review history
+  models.json   create_model arguments (local server) for "<deck> · Basic" and "<deck> · Cloze",
+                with the stock fields (Front/Back, Text/Extra), so the skill fills
+                them as before and Change Note Type keeps review history
+  models-remote.json
+                the same for the remote server: anki_note_types_change_preview
+                (operation "create") and anki_note_types_create arguments, with
+                "kind": "cloze" on the Cloze copy
   theme.css     the stylesheet (also inside models.json)
   preview.html  a sample note, front and back, in light and night mode
   _<family>-<subset>-<weight>[-italic].woff2
@@ -168,6 +172,13 @@ def models(theme, stylesheet):
     ]
 
 
+def remote_models(theme, stylesheet):
+    """models() as anki_note_types_create arguments."""
+    return [{"name": m["model_name"], "kind": "cloze" if m["is_cloze"] else "standard", "fields": m["in_order_fields"], "css": m["css"],
+             "templates": [{"name": t["Name"], "question_format": t["Front"], "answer_format": t["Back"]} for t in m["card_templates"]]}
+            for m in models(theme, stylesheet)]
+
+
 def preview(theme, stylesheet, sample):
     def render(mode, side):
         cls = "card" + (" nightMode" if mode == "night" else "")
@@ -244,12 +255,14 @@ async def main():
         asyncio.to_thread(_write, os.path.join(out, "theme.css"), stylesheet),
         asyncio.to_thread(_write, os.path.join(out, "models.json"),
                           json.dumps(models(theme, stylesheet), ensure_ascii=False, indent=1)),
+        asyncio.to_thread(_write, os.path.join(out, "models-remote.json"),
+                          json.dumps(remote_models(theme, stylesheet), ensure_ascii=False, indent=1)),
         asyncio.to_thread(_write, os.path.join(out, "preview.html"), preview(theme, stylesheet, sample)),
     )
     for mode in MODES:
         p = theme[mode]
         print(f"{mode}: text {contrast(p['text'], p['bg']):.1f}:1, accent {contrast(p['accent'], p['bg']):.1f}:1")
-    print(f"wrote theme.css, models.json, preview.html, media.json and {len(media)} font file(s) to {out}")
+    print(f"wrote theme.css, models.json, models-remote.json, preview.html, media.json and {len(media)} font file(s) to {out}")
 
 
 if __name__ == "__main__":

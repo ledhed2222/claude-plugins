@@ -1,0 +1,12 @@
+{
+ "idempotency_key": "91646fba-72d4-4fe1-8f88-963482b6fa19",
+ "state": "committed",
+ "local_committed": true,
+ "remote_synced": true,
+ "media_synced": null,
+ "retryable": false,
+ "result": {
+  "id": 1795478372697,
+  "updated": true
+ }
+}

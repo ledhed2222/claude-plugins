@@ -1,0 +1,33 @@
+{
+ "items": [
+  {
+   "id": 1795478372697,
+   "name": "AI Engineering",
+   "name_truncated": false,
+   "hierarchy": [
+    "AI Engineering"
+   ]
+  },
+  {
+   "id": 1795478372698,
+   "name": "AI Engineering::01 Classification metrics",
+   "name_truncated": false,
+   "hierarchy": [
+    "AI Engineering",
+    "01 Classification metrics"
+   ]
+  },
+  {
+   "id": 1,
+   "name": "Default",
+   "name_truncated": false,
+   "hierarchy": [
+    "Default"
+   ]
+  }
+ ],
+ "offset": 0,
+ "limit": 100,
+ "total": 3,
+ "has_more": false
+}

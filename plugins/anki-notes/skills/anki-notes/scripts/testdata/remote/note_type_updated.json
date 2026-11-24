@@ -1,0 +1,17 @@
+{
+ "idempotency_key": "css1",
+ "state": "committed",
+ "local_committed": true,
+ "remote_synced": true,
+ "media_synced": null,
+ "retryable": false,
+ "result": {
+  "id": 1795483653406,
+  "updated": true,
+  "backup": {
+   "requested": true,
+   "created": true,
+   "path": "/data/backups/backup.colpkg"
+  }
+ }
+}

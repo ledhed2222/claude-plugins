@@ -1,6 +1,6 @@
 {
   "name": "ankimcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Connects Claude Code to an Anki MCP server: the local AnkiMCP add-on or a self-hosted anki-sync-mcp (unofficial).",
   "author": {
     "name": "ledhed2222"

@@ -1,0 +1,12 @@
+{
+ "modelNames": [
+  "Basic",
+  "Basic (and reversed card)",
+  "Basic (optional reversed card)",
+  "Basic (type in the answer)",
+  "Cloze",
+  "Image Occlusion"
+ ],
+ "total": 6,
+ "message": "Found 6 note types"
+}

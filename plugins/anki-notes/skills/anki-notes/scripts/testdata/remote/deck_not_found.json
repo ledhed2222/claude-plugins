@@ -1,0 +1,9 @@
+{
+ "content": [
+  {
+   "type": "text",
+   "text": "Error executing tool anki_decks_get: {\"code\":\"NOT_FOUND\",\"message\":\"deck 'No Such Deck' not found\",\"correlation_id\":\"00000000-0000-0000-0000-000000000000\"}"
+  }
+ ],
+ "isError": true
+}

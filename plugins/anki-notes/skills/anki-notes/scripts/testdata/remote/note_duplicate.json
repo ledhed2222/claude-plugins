@@ -1,0 +1,9 @@
+{
+ "content": [
+  {
+   "type": "text",
+   "text": "Error executing tool anki_notes_create: {\"code\":\"DUPLICATE_NOTE\",\"message\":\"a note with the same first field already exists\",\"correlation_id\":\"00000000-0000-0000-0000-000000000000\"}"
+  }
+ ],
+ "isError": true
+}

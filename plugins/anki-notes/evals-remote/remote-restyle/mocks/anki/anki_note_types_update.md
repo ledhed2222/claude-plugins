@@ -1,0 +1,1 @@
+{"idempotency_key": "{{input.idempotency_key}}", "state": "committed", "local_committed": true, "remote_synced": true, "media_synced": null, "retryable": false, "result": {"id": 1700000000101, "updated": true, "backup": {"requested": true, "created": true, "path": "/data/backups/backup.colpkg"}}}

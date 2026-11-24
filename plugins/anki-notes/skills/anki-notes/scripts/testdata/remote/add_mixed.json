@@ -1,0 +1,27 @@
+{
+ "idempotency_key": "b1",
+ "state": "committed",
+ "local_committed": true,
+ "remote_synced": true,
+ "media_synced": null,
+ "retryable": false,
+ "result": {
+  "notes": [
+   {
+    "status": "created",
+    "note_id": 1795482500533,
+    "card_ids": [
+     1795482500533
+    ],
+    "created": true
+   },
+   {
+    "status": "duplicate",
+    "duplicate_of": 1795482500528,
+    "created": false
+   }
+  ],
+  "created": 1,
+  "duplicates": 1
+ }
+}

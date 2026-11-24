@@ -76,34 +76,6 @@ class EvalCaseTests(unittest.TestCase):
                    "Confusion matrix cells: {{c1::true positive}}, {{c2::false positive}}, {{c3::false negative}}, {{c4::true negative}}"}}
         self.assertEqual(lint(ordered), [])
 
-    def test_inbox_path(self):
-        doc = """# Anki inbox
-Cards queued away from Anki.
-
-## Queued cards
-
-```json
-{"charter": {"deck": "Spanish", "stages": ["01 Basics"], "description": "..."}}
-```
-
-```json
-{"deck": "AI Engineering", "stage": null, "model": "Basic", "fields": {"Front": "Which eval step costs more: inference or scoring?", "Back": "<b>Inference.</b>"}, "tags": ["aie::evals::cost", "type::contrast", "src::eval-cost"]}
-```
-
-```json
-{"deck": "AI Engineering", "stage": null, "model": "Basic", "fields": {"Front": "Is recall the same as precision?", "Back": "No."}, "tags": ["aie::metrics::recall", "type::contrast", "src::recall"]}
-```
-
-```json
-{not json
-```
-"""
-        cards = parse_cards(doc)
-        self.assertEqual([n for n, _ in cards], [2, 3, 4])
-        self.assertEqual(lint(cards[0][1], prefix="aie"), [])
-        self.assertTrue(any(m.startswith("yes-no") for m in _msgs(cards[1][1])))
-        self.assertIn("unparsed", cards[2][1])
-
     def test_json_list(self):
         self.assertEqual(parse_cards('[{"a": 1}]'), [(1, {"a": 1})])
 

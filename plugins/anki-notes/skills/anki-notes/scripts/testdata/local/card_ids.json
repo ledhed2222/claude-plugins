@@ -1,0 +1,88 @@
+{
+ "notes": [
+  {
+   "noteId": 1795478372709,
+   "modelName": "Basic",
+   "tags": [
+    "to-delete"
+   ],
+   "cards": [
+    1795478372709
+   ],
+   "fields": {
+    "Front": {
+     "value": "What is <b>recall</b>?",
+     "order": 0
+    },
+    "Back": {
+     "value": "",
+     "order": 1
+    }
+   }
+  },
+  {
+   "noteId": 1795478391691,
+   "modelName": "Basic",
+   "tags": [
+    "ai::evals",
+    "type::contrast"
+   ],
+   "cards": [
+    1795478391691
+   ],
+   "fields": {
+    "Front": {
+     "value": "Which eval step costs more: inference or scoring?",
+     "order": 0
+    },
+    "Back": {
+     "value": "",
+     "order": 1
+    }
+   }
+  },
+  {
+   "noteId": 1795478391692,
+   "modelName": "Cloze",
+   "tags": [
+    "ai::metrics"
+   ],
+   "cards": [
+    1795478391692,
+    1795478391693
+   ],
+   "fields": {
+    "Text": {
+     "value": "Precision {{c1::rises}}, recall {{c2::falls}}",
+     "order": 0
+    },
+    "Back Extra": {
+     "value": "",
+     "order": 1
+    }
+   }
+  },
+  {
+   "noteId": 1795478708394,
+   "modelName": "Basic",
+   "tags": [
+    "aie::metrics::basics",
+    "src::metrics",
+    "type::definition"
+   ],
+   "cards": [
+    1795478708394
+   ],
+   "fields": {
+    "Front": {
+     "value": "What does a binary classifier do?",
+     "order": 0
+    },
+    "Back": {
+     "value": "",
+     "order": 1
+    }
+   }
+  }
+ ]
+}

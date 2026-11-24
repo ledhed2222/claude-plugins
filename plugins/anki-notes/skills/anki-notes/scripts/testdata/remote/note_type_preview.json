@@ -1,0 +1,13 @@
+{
+ "operation": "anki_note_types_update",
+ "impact": {
+  "operation": "update",
+  "note_type_id": 1795483653406,
+  "affected_notes": 0,
+  "backup_required": true,
+  "full_sync_required": false,
+  "state_fingerprint": "08f51ed032f6cedc70e58ed029c6bc02f89ffbe9ec092945f2249c092eb6761e"
+ },
+ "confirmation_token": "0crCe1QuNgp25nVnCy0Vbd-pvPdrQYyM9ZrlO9oNqfg",
+ "expires_in_seconds": 300
+}

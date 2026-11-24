@@ -1,0 +1,26 @@
+{
+ "id": 1795478372709,
+ "note_type_id": 1795478372492,
+ "note_type_name": "Basic",
+ "note_type_name_truncated": false,
+ "fields": [
+  {
+   "name": "Front",
+   "name_truncated": false,
+   "value": "What is <b>recall</b>?",
+   "value_truncated": false
+  },
+  {
+   "name": "Back",
+   "name_truncated": false,
+   "value": "x",
+   "value_truncated": false
+  }
+ ],
+ "fields_omitted": 0,
+ "tags": [],
+ "card_ids": [
+  1795478372709
+ ],
+ "modified": 1795478372
+}

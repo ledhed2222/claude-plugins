@@ -1,12 +1,15 @@
 # pyright: basic
 """List existing notes that look like each drafted card (SKILL.md step 2).
 
-Usage: python3 -I find_dupes.py <cards.json|inbox.md> [--threshold 0.5]
+Usage: python3 -I find_dupes.py <cards.json> <search-reply.json>... [--threshold 0.5]
 
-Reads every note's first field in each draft's subject deck (all note types)
-and prints, per draft, the closest ones by wording. It only lists candidates:
-Claude reads them and decides what is a repeat, a near neighbor or unrelated.
-It does not replace the w:term searches for prerequisites.
+The replies are the saved pages of a search for the subject deck, every note
+type: find_notes with query deck:"<subject>" and include_first_field: true
+(local), or anki_notes_search with the same query (remote). Prints, per draft,
+the deck's notes worded most like it. It only lists candidates: Claude decides
+what is a repeat, a near neighbor or unrelated. A score of 1.00 is the same
+first field, which the server refuses as a duplicate. It does not replace the
+w:term searches for prerequisites.
 """
 import asyncio
 import difflib
@@ -15,10 +18,8 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
-from ankimcp_client import AnkiError, Client  # noqa: E402
 from lint_cards import read_cards, text  # noqa: E402
-
-_PAGE = 500
+from replies import ReplyError, first_field, notes, read  # noqa: E402
 
 
 def _norm(s):
@@ -40,31 +41,20 @@ def close_matches(draft, existing, threshold=0.5, n=3):
     return [s for s in scored[:n] if s[0] >= threshold]
 
 
-async def _first_fields(anki, deck):
-    out, offset = [], 0
-    while True:
-        r = await anki.call("find_notes", query=f'deck:"{deck}"', limit=_PAGE, offset=offset, include_first_field=True)
-        out += [(n["noteId"], n["firstField"]) for n in r.get("noteLabels", [])]
-        if not r.get("hasMore"):
-            return out
-        offset += _PAGE
-
-
 async def main():
     args = sys.argv[1:]
-    if not args:
+    threshold = float(args.pop(args.index("--threshold") + 1)) if "--threshold" in args else 0.5
+    args = [a for a in args if a != "--threshold"]
+    if len(args) < 2:
         sys.exit(__doc__)
-    threshold = float(args[args.index("--threshold") + 1]) if "--threshold" in args else 0.5
     cards = [(n, c) for n, c in await read_cards(args[0]) if "fields" in c]
     try:
-        async with Client() as anki:
-            names = list(dict.fromkeys(c["deck"] for _, c in cards))
-            decks = dict(zip(names, await asyncio.gather(*(_first_fields(anki, d) for d in names))))
-    except AnkiError as e:
-        sys.exit(str(e))
+        existing = [(n["id"], first_field(n)) for n in notes(await read(args[1:]))]
+    except ReplyError as e:
+        sys.exit(f"a saved reply is an error: {e}")
     for n, c in cards:
         draft = next(iter(c["fields"].values()), "")
-        matches = close_matches(draft, decks[c["deck"]], threshold)
+        matches = close_matches(draft, existing, threshold)
         print(f"#{n} {text(draft)[:70]}")
         for s, nid, f in matches:
             print(f"    {s:.2f} note {nid}: {text(f)[:90]}")

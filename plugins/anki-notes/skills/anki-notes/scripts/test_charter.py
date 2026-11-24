@@ -1,10 +1,9 @@
-import functools
 import unittest
-from unittest import mock
 
-import ankimcp_client
-from charter import edit, from_anki, lint, prefix, stages
-from test_ankimcp_client import fake_server, tool_result
+from charter import edit, lint, prefix, stages
+
+from both_servers import check_call, load, raw, run_script
+from replies import LOCAL, REMOTE, ReplyError, description, error_code
 
 _GOOD = """## Scope
 Spanish for living in Madrid: everyday conversation and reading. In: present and past tenses, ser vs estar, common verbs.
@@ -86,26 +85,70 @@ class EvalCaseTests(unittest.TestCase):
         self.assertTrue(new.endswith("## Conventions\n- Tags: `es::<area>::<topic>`.\n"))
 
 
-class FromAnkiTests(unittest.IsolatedAsyncioTestCase):
-    async def test_reads_every_deck_and_keeps_own_text_apart(self):
-        descs = {"Spanish": "## Conventions\n- Tags: `es::<area>`", "AI Engineering": "## Conventions\n- Tags: `aie::x`",
-                 "Default": "", "Mine": "own charter"}
+class CharterLintContract:
+    """lint reads either server's saved deck list and charters (fixtures: testdata/, see both_servers.py)."""
+    server = None
 
-        def replies(msg):
-            if msg.get("method") != "tools/call":
-                return {"jsonrpc": "2.0", "id": msg.get("id"), "result": {}} if "id" in msg else None
-            name, args = msg["params"]["name"], msg["params"]["arguments"]
-            if name == "list_decks":
-                payload = {"decks": [{"name": n} for n in [*descs, "Mine::01 Basics", "Mine::01 Basics::x"]]}
-            else:
-                payload = {"description": descs[args["deck_name"]]}
-            return dict(tool_result(payload), jsonrpc="2.0", id=msg["id"])
-        server = await fake_server(replies, [])
-        port = server.sockets[0].getsockname()[1]
-        async with server:
-            with mock.patch.object(ankimcp_client, "Client", functools.partial(ankimcp_client.Client, port=port)):
-                text, others, subs = await from_anki("Mine", True)
-        self.assertEqual((text, sorted(others), subs), ("own charter", ["aie", "es"], ["01 Basics"]))
+    def lint(self, *flags, files):
+        return run_script("charter.py", "lint", *flags, files=files)
+
+    def test_subdecks_and_taken_prefix(self):
+        other = dict(load(self.server, "charter"), description="## Conventions\n- Tags: `es::x`")
+        r = self.lint("charter.md", "--deck", "AI Engineering", "--decks", "decks.json", "--others", "other.json",
+                      files={"charter.md": _GOOD, "decks.json": raw(self.server, "decks"), "other.json": other})
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("tag prefix es:: is already used", r.stdout)
+        self.assertIn("subdeck 01 Classification metrics is not a stage", r.stdout)
+
+    def test_charter_from_a_saved_reply(self):
+        saved = dict(load(self.server, "charter"), description=_GOOD)
+        r = self.lint("saved.json", files={"saved.json": saved})
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_error_reply_is_refused(self):
+        r = self.lint("charter.md", "--others", "other.json", files={"charter.md": _GOOD, "other.json": raw(self.server, "unreachable")})
+        self.assertIn("a saved reply is an error", r.stderr)
+
+
+class CharterCallsContract:
+    """Reading and saving a charter, as SKILL.md's tools table says, checked against each server's real schema."""
+    server = None
+
+    def calls(self):
+        if self.server == LOCAL:
+            return [{"tool": "get_deck_description", "args": {"deck_name": "AI Engineering"}},
+                    {"tool": "update_deck_description", "args": {"deck_name": "AI Engineering", "description": _GOOD, "is_markdown": True}}]
+        deck_id = load(REMOTE, "charter")["id"]  # a read by name returns the id the save needs
+        return [{"tool": "anki_decks_get", "args": {"name": "AI Engineering"}},
+                {"tool": "anki_decks_update", "args": {"deck_id": deck_id, "description": _GOOD, "idempotency_key": "k"}}]
+
+    def test_calls_match_the_schema(self):
+        self.assertEqual([p for c in self.calls() for p in check_call(self.server, c)], [])
+
+    def test_read_gives_the_charter(self):
+        name, text = description(load(self.server, "charter"))
+        self.assertEqual((name, text), ("AI Engineering", "Charter text"))
+
+
+class LocalCharterCalls(CharterCallsContract, unittest.TestCase):
+    server = LOCAL
+
+
+class RemoteCharterCalls(CharterCallsContract, unittest.TestCase):
+    server = REMOTE
+
+    def test_unknown_name_is_not_found(self):
+        with self.assertRaises(ReplyError) as e:
+            load(REMOTE, "deck_not_found")
+        self.assertEqual(error_code(e.exception)[0], "NOT_FOUND")
+
+
+class LocalCharterLint(CharterLintContract, unittest.TestCase):
+    server = LOCAL
+
+
+class RemoteCharterLint(CharterLintContract, unittest.TestCase):
+    server = REMOTE
 
 
 if __name__ == "__main__":

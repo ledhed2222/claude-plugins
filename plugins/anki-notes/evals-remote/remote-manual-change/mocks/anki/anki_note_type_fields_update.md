@@ -1,0 +1,4 @@
+---
+error: true
+---
+Error executing tool anki_note_type_fields_update: {"code":"MANUAL_CHANGE_REQUIRED","message":"anki_note_type_fields_update forces a full sync and this client cannot ask the person to approve it; give them these steps to make the change in Anki","correlation_id":"00000000-0000-0000-0000-000000000000","details":{"note_type":"Basic","fields":[{"position":1,"name":"Front","change":"keep"},{"position":2,"name":"Back","change":"keep"},{"position":3,"name":"Extra","change":"add"}],"remove":[],"steps":["Sync every device that has Anki changes, so none are lost.","In Anki desktop open Tools > Manage Note Types, select Basic, then click Fields.","Use Add, Delete, Rename and Reposition until they match the list above, and remove the ones under 'remove'.","Anki warns that this needs a one-way sync. Accept, then sync and choose Upload.","This server downloads the change on its next sync."]}}

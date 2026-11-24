@@ -1,0 +1,1 @@
+{"idempotency_key": "{{input.idempotency_key}}", "state": "committed", "local_committed": true, "remote_synced": true, "media_synced": null, "retryable": false, "result": {"deck_id": {{input.deck_id}}, "updated": true}}
