@@ -39,14 +39,14 @@ Writes to <out dir>:
                 each font file, fetched from npm by fetch_font.py (next to preview.html,
                 so the preview shows it); media.json lists them as store_media_file(filename, path)
                 arguments (local), which the add-on refuses until its media_allowed_types includes
-                "font/woff2", and media-remote.json as anki_media_store arguments (remote)
+                "font/woff2", and media-remote.json as anki_media_store(filename, url) arguments (remote),
+                each url the same file on jsdelivr pinned to the package's version
 
 Exits 1 if any text color is below WCAG AA contrast (4.5:1) against its
 background in either mode, if a font lacks one of the deck's subsets, a weight
 or italic, if a font can't be fetched, or if the spec is malformed. Standard library only.
 """
 import asyncio
-import base64
 import hashlib
 import json
 import os
@@ -185,10 +185,10 @@ def remote_models(theme, stylesheet):
             for m in models(theme, stylesheet)]
 
 
-def remote_media(filename, data):
-    """anki_media_store arguments for one font file; the key follows the content, so a retry can't store it twice."""
-    return {"filename": filename, "content_base64": base64.b64encode(data).decode("ascii"),
-            "idempotency_key": "media-" + hashlib.sha256(data).hexdigest()[:32]}
+def remote_media(f):
+    """anki_media_store arguments for one font file: the server downloads it from its pinned jsdelivr url,
+    so the file never passes through Claude. The key follows the url, which names an exact version."""
+    return {"filename": f["filename"], "url": f["url"], "idempotency_key": "media-" + hashlib.sha256(f["url"].encode()).hexdigest()[:32]}
 
 
 def preview(theme, stylesheet, sample):
@@ -229,11 +229,6 @@ def _read_json(path):
         return json.load(f)
 
 
-def _read_bytes(path):
-    with open(path, "rb") as f:
-        return f.read()
-
-
 def _write(path, text):
     with open(path, "w") as f:
         f.write(text)
@@ -264,8 +259,9 @@ async def main():
         sys.exit(f"font problem: {e}. Pick another family (check it with fetch_font.py --info) or set it to null.")
     files = [f for group in fetched for f in group]
     media = [{"filename": f["filename"], "path": f["path"]} for f in files]
-    contents = await asyncio.gather(*(asyncio.to_thread(_read_bytes, f["path"]) for f in files))
-    media_remote = [remote_media(f["filename"], data) for f, data in zip(files, contents)]
+    if any(not f["url"] for f in files):
+        sys.exit("font problem: a Fontsource package has no version, so its files have no pinned url")
+    media_remote = [remote_media(f) for f in files]
     stylesheet = css(theme, files)
     sample = theme.get("sample") or {"stage": "01 Basics", "front": "Which eval step costs more: inference or scoring?",
                                       "back": "<b>Inference.</b>", "tags": ["rescued"]}

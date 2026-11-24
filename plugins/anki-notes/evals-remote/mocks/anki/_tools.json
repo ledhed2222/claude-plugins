@@ -1680,7 +1680,7 @@
   },
   {
    "name": "anki_media_store",
-   "description": "Create or replace one bounded media file from base64 content.",
+   "description": "Create or replace one bounded media file from base64 content or an HTTPS URL.\n\nPass exactly one of content_base64 and url. Prefer url: the server downloads it, so the file never passes through the client. Allowed url hosts: cdn.jsdelivr.net, fonts.gstatic.com, raw.githubusercontent.com, unpkg.com, upload.wikimedia.org. On cdn.jsdelivr.net and unpkg.com name an exact version (pkg@1.2.3); on raw.githubusercontent.com and jsdelivr /gh/ name a full commit hash. A url store's filename must end in one of: aac, avif, bmp, flac, gif, ico, jpeg, jpg, m4a, m4v, mkv, mov, mp3, mp4, oga, ogg, ogv, opus, otf, png, svg, tif, tiff, ttf, wav, webm, webp, woff, woff2.",
    "inputSchema": {
     "additionalProperties": false,
     "properties": {
@@ -1691,10 +1691,32 @@
       "type": "string"
      },
      "content_base64": {
-      "maxLength": 22369624,
-      "minLength": 1,
-      "title": "Content Base64",
-      "type": "string"
+      "anyOf": [
+       {
+        "maxLength": 22369624,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Content Base64"
+     },
+     "url": {
+      "anyOf": [
+       {
+        "maxLength": 2048,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Url"
      },
      "idempotency_key": {
       "anyOf": [
@@ -1712,8 +1734,7 @@
      }
     },
     "required": [
-     "filename",
-     "content_base64"
+     "filename"
     ],
     "title": "media_storeArguments",
     "type": "object"

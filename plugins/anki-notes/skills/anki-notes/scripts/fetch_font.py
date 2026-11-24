@@ -51,14 +51,17 @@ async def _pack(family, tmp):
 
 
 def _read_json(tar, name):
-    f = tar.extractfile(f"package/{name}")
+    try:
+        f = tar.extractfile(f"package/{name}")
+    except KeyError:
+        return {}
     return json.loads(f.read()) if f else {}
 
 
 def _info(tgz):
     with tarfile.open(tgz) as t:
-        meta, ranges = _read_json(t, "metadata.json"), _read_json(t, "unicode.json")
-    return {"family": meta.get("family"), "category": meta.get("category"), "subsets": meta.get("subsets", []),
+        meta, ranges, pkg = (_read_json(t, n) for n in ("metadata.json", "unicode.json", "package.json"))
+    return {"package": pkg.get("name"), "version": pkg.get("version"), "family": meta.get("family"), "category": meta.get("category"), "subsets": meta.get("subsets", []),
             "weights": meta.get("weights", []), "styles": meta.get("styles", []), "unicode": ranges}
 
 
@@ -74,7 +77,10 @@ def plan_files(info, subsets, weights, italic):
         raise FontError(f"{info['family']} has no italic")
     fid = slug(info["family"])
     styles = ["normal", "italic"] if italic else ["normal"]
+    # the same file on jsdelivr, pinned to this exact package version, for servers that download it themselves
+    cdn = f"https://cdn.jsdelivr.net/npm/{info['package']}@{info['version']}/" if info.get("package") and info.get("version") else None
     return [{"member": f"package/files/{fid}-{s}-{w}-{st}.woff2",
+             "url": cdn and f"{cdn}files/{fid}-{s}-{w}-{st}.woff2",
              "filename": f"_{fid}-{s}-{w}{'-italic' if st == 'italic' else ''}.woff2",
              "family": info["family"], "subset": s, "weight": w, "style": st,
              "unicode_range": info["unicode"].get(s, "")}

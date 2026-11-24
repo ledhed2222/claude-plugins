@@ -14,6 +14,10 @@ GOOD = {
 }
 
 
+_FONT = {"filename": "_fraunces-latin-400.woff2",
+         "url": "https://cdn.jsdelivr.net/npm/@fontsource/fraunces@5.2.8/files/fraunces-latin-400-normal.woff2"}
+
+
 class ThemeTests(unittest.TestCase):
     def test_contrast_extremes(self):
         self.assertAlmostEqual(contrast("#000000", "#FFFFFF"), 21.0, places=1)
@@ -122,7 +126,7 @@ class ThemeModelsContract:
         """Storing a theme's font files, as media.json (local) or media-remote.json (remote) gives them."""
         if self.server == LOCAL:
             return [{"tool": "store_media_file", "args": {"filename": "_fraunces-latin-400.woff2", "path": "/tmp/t/_fraunces-latin-400.woff2"}}]
-        return [{"tool": "anki_media_store", "args": remote_media("_fraunces-latin-400.woff2", b"wOF2font")}]
+        return [{"tool": "anki_media_store", "args": remote_media(_FONT)}]
 
     def test_media_calls_match_the_schema(self):
         self.assertEqual([p for c in self.media_calls() for p in check_call(self.server, c)], [])
@@ -150,11 +154,13 @@ class LocalThemeModels(ThemeModelsContract, unittest.TestCase):
 class RemoteThemeModels(ThemeModelsContract, unittest.TestCase):
     server = REMOTE
 
-    def test_media_key_follows_the_content(self):
-        a, b = remote_media("_x.woff2", b"one"), remote_media("_x.woff2", b"two")
-        self.assertEqual(a["content_base64"], "b25l")
-        self.assertNotEqual(a["idempotency_key"], b["idempotency_key"])
-        self.assertEqual(a, remote_media("_x.woff2", b"one"))
+    def test_media_is_a_pinned_url_keyed_on_it(self):
+        args = remote_media(_FONT)
+        self.assertEqual(set(args), {"filename", "url", "idempotency_key"})
+        self.assertRegex(args["url"], r"^https://cdn\.jsdelivr\.net/npm/@fontsource/fraunces@\d+\.\d+\.\d+/files/")
+        other = remote_media(dict(_FONT, url=_FONT["url"].replace("5.2.8", "5.2.9")))
+        self.assertNotEqual(args["idempotency_key"], other["idempotency_key"])
+        self.assertEqual(args, remote_media(_FONT))
 
     def test_cloze_copy_is_created_as_cloze(self):
         kinds = {m["name"]: m["kind"] for m in remote_models(GOOD, "")}
