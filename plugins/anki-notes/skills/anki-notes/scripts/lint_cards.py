@@ -42,6 +42,24 @@ def _words(s):
     return [w for w in re.findall(r"[^\W\d_]{5,}", s.lower()) if w not in _STOP]
 
 
+_SVG_IMG = re.compile(r"""<img\b[^>]*?\bsrc\s*=\s*(["'])[^"'<>:]*\.svg\1[^>]*>""", re.I)
+_HANDLER = re.compile(r"<[^>]*\son[a-z]+\s*=", re.I)
+
+
+def unsafe_html(html):
+    """Why a field's HTML could run script: an SVG must come in through <img src="x.svg">, which
+    never runs its scripts; inline <svg>, other ways of loading one, and on* handlers can."""
+    out = []
+    if _HANDLER.search(html):
+        out.append("an on* event attribute")
+    rest = _SVG_IMG.sub("", html)
+    if re.search(r"<svg\b", rest, re.I):
+        out.append('inline <svg>: store it as a file and use <img src="name.svg">')
+    elif re.search(r"\.svg\b|image/svg", rest, re.I):
+        out.append('an SVG loaded other than by <img src="name.svg">')
+    return out
+
+
 def lint(card, prefix=None, skip=()):
     out = []
     f = card.get("fields", {})
@@ -83,6 +101,10 @@ def lint(card, prefix=None, skip=()):
         for name, val in f.items():
             if re.search(r"<(br|hr)\s*>", val):
                 add("warn", "void-tag", f"{name}: close void tags (<br />)")
+
+    for name, val in f.items():
+        # not skippable: a charter's Lint skip must never let script into a card
+        out += [("error", f"unsafe-html: {name}: {p}") for p in unsafe_html(val or "")]
 
     types = [t for t in tags if t.startswith("type::")]
     if len(types) != 1:

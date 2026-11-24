@@ -119,6 +119,13 @@ class CheckItemsTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             _check_items([{"keep": 1, "tags": ["rescued"]}])
 
+    def test_svg_only_through_img(self):
+        _check_items([{"rewrite": 1, "fields": {"Back": '<img src="tiers.svg">'}}])
+        for item in ({"rewrite": 1, "fields": {"Back": "<svg><script>x()</script></svg>"}},
+                     {"new": {"model": "Basic", "fields": {"Front": "Q?", "Back": '<object data="tiers.svg">'}}}):
+            with self.assertRaises(SystemExit):
+                _check_items([item])
+
 
 if __name__ == "__main__":
     unittest.main()

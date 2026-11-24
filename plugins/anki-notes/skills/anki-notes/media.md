@@ -34,7 +34,7 @@ Files are SVG for diagrams, and JPEG or PNG for photos: both servers accept them
 - **local:** write the file, then `store_media_file(filename, path)` with its absolute path; for a Commons photo, `store_media_file(filename, url)` with the `thumburl`.
 - **remote:** `anki_media_store(filename, content_base64, idempotency_key)`, with the file's bytes as base64 (`base64 < file | tr -d '\n'`). A drawn SVG is a few kilobytes, so that's quick; a photo is tens of kilobytes, which takes minutes to send this way, so on remote propose a photo the way you would with no web tool and add it only when the user asks.
 
-Then refer to it in a field as `<img src="solera-tiers.svg">`. Put it on the back, unless the card is a spotting card that shows the picture and asks what it is.
+Then refer to it in a field as `<img src="solera-tiers.svg">`: an SVG only ever goes on a card through an `<img>` with a plain filename, never inline as `<svg>` and never through `<object>`, `<embed>`, `<iframe>` or a link, because those can run script in it. `lint_cards.py` and `apply_stage.py` refuse anything else, and no skip turns that off. Put it on the back, unless the card is a spotting card that shows the picture and asks what it is.
 
 ## How much
 
