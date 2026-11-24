@@ -29,11 +29,11 @@ Every case runs 3 times with the plugin and 3 times without it, on the plain mod
 
 ## Not covered
 
-- The Anki inbox doc itself: eval sessions have no docs tools. The no-Anki cases (`inbox-path`, `charter-away`, `charter-change-away`) mock every Anki tool as unreachable, so Claude falls back to giving the queued blocks in its reply, and the graders read them there. `charter-from-inbox` pastes the inbox contents into the prompt.
+- The remote server (anki-sync-mcp): `../evals-remote/` has its own suite, including the unreachable-server and retry cases.
 - The questionnaire through `AskUserQuestion`: headless eval runs drop that tool even when a case allows it, so the questionnaire cases grade the numbered-list fallback.
 - Anything after the user's yes in a multi-turn flow (a case has one user message). Cases either test that nothing is written before the yes, or put the approval in the prompt.
 - Whether the LLM judges agree with a human reviewer (see Ideas in the plugin README).
-- `scripts/apply_stage.py` and the real AnkiMCP server.
+- `scripts/apply_stage.py` (its unit tests cover both servers) and the real AnkiMCP server.
 - How a theme looks on a real phone (AnkiMobile).
 - Fetching fonts: that is `fetch_font.py`'s job and has unit tests, and the eval sandbox usually can't run npm. The font cases grade the family names Claude chooses (in its `fetch_font.py --info` calls, theme.json drafts and reply), not whether they downloaded.
 
@@ -57,13 +57,14 @@ From the first full run (2026-11-20, overall 0.78, 23 of 49 cases passing) and a
 - `stale-fact` (0.50): the judge objects to numbers given in a scenario ("your context window is 1M tokens"); only an undated model figure in the answer should fail.
 - `restate-then-draft` (0.50): the judge treats a two-blank cloze as mixing two points, but Anki makes one card per blank.
 - `nt-repo` (0.87): the real `Reconocimiento` type already has a `Notas` field and back section, so Claude correctly changes nothing. Ask for a field that doesn't exist yet.
-- `charter-away`, `charter-change-away` (0.00) and `inbox-path` (0.33): without Anki or the inbox, the skill says nothing was saved instead of showing the queued charter block. Left as is: a planned server-side Anki client will make the no-Anki path moot.
 
 **Fixed in the mocks since that run, so re-check:**
 
 - `charter-overlap` (0.75) never saw the AI Engineering charter: the fixture lookup rejects a deck name with a space. It passed once with an agent mock.
 
 **Cause unknown:**
+
+- `variety-mnemonic` (0.67, #34): adds the cards, but `mnemonic-offered` fails in all 3 runs: the judge doesn't see a mnemonic offered for the arbitrary fact (BLEU counts n-grams up to length 4), though `SKILL.md`'s "Vary the shape" asks for one. The case first ran on 2026-11-24, after its `focus: reply` grader was fixed. Read a transcript (`--keep-temp`) to tell whether the skill skips the offer or the judge misreads it.
 
 - `nt-propose` (0.67): proposals have a hint field, the answer typed once and a sample note, yet the judge fails all three runs. Re-run with `--keep-temp` to see which of its five rules fails.
 - `nt-fill` (0.94) and `project-specific` (0.89): one run added no card.
@@ -94,12 +95,9 @@ claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
 |---|---|
 | [`ask-mode-deck`](#ask-mode-deck) | In a deck whose charter says Ask, cards are offered, not added. |
 | [`charter-assumes`](#charter-assumes) | A charter's Assumes line stops prerequisite cards for basics the user already knows, but not for missing deck concepts. |
-| [`charter-away`](#charter-away) | Away from Anki, an approved charter is queued as a charter block ahead of the cards for its deck. |
-| [`charter-change-away`](#charter-change-away) | Away from Anki, a charter change is queued as the user's request, not as guessed charter text. |
 | [`charter-change-consequences`](#charter-change-consequences) | Narrowing a charter's scope reports how many cards fall out and offers to tag them, without tagging first. |
 | [`charter-change-minimal`](#charter-change-minimal) | A charter change touches only the relevant section and is shown, with the cards it affects, before saving. |
 | [`charter-change-proposed`](#charter-change-proposed) | Leeches that share a charter-level cause lead to a proposed charter change, not a silent save. |
-| [`charter-from-inbox`](#charter-from-inbox) | Emptying the inbox saves a queued charter first, without re-asking, then adds its cards. |
 | [`charter-lean`](#charter-lean) | A draft charter is short, doesn't restate the skill's rules, marks overrides, and describes every stage. |
 | [`charter-overlap`](#charter-overlap) | A new deck whose scope overlaps an existing one gets the overlap flagged and settled in both Out of scope sections. |
 | [`charter-save`](#charter-save) | An approved charter creates the deck and every stage, saves the full text as Markdown, then syncs. |
@@ -107,10 +105,7 @@ claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
 | [`closed-list`](#closed-list) | A fixed list is never asked for whole; its members are carded one at a time or as one ordered cloze. |
 | [`coined-term`](#coined-term) | A term coined in the session must not become a card's premise or answer. |
 | [`doing-not-teaching`](#doing-not-teaching) | Helping with a task, as opposed to teaching a concept, makes no cards. |
-| [`inbox-path`](#inbox-path) | Without Anki, drafted cards still pass the formulation checks and are reported as not saved. |
 | [`leech-first-rebuild`](#leech-first-rebuild) | A stage rebuild starts with the leech and marked cards and names the rule each rewrite fixes. |
-| [`look-away`](#look-away) | Away from Anki, the queued charter carries the picked theme. |
-| [`look-away-empty`](#look-away-empty) | Emptying a queued charter with a theme creates its note types before saving the description. |
 | [`look-change`](#look-change) | Changing a theme recovers its spec from the CSS, rebuilds, previews, and applies to both note types only on a yes. |
 | [`look-choices`](#look-choices) | Any feeling answer gets two or three distinct theme.json drafts, each built and previewed front and back. |
 | [`look-cjk`](#look-cjk) | A Japanese deck keeps the system font (both fonts null) and still gets themed colors. |
@@ -160,7 +155,7 @@ claude plugin eval . --trust-plugin --tag themes --allow-tools Write Bash
 | [`stale-fact`](#stale-fact) | An answer that depends on a date, model or benchmark says so in the question, or the card tests the durable principle instead. |
 | [`variety-image-giveaway`](#variety-image-giveaway) | A diagram whose visible label gives away the answer is not put on the card's front. |
 | [`variety-mnemonic`](#variety-mnemonic) | A mnemonic is offered for an arbitrary fact and not for a fact the learner can reason out. |
-| [`variety-none`](#variety-none) | A charter with "Variety: none" keeps every new card in the deck's one format. |
+| [`variety-none`](#variety-none) | A charter with "Variety: none" keeps every new card in the deck''s one format. |
 | [`variety-one-shape`](#variety-one-shape) | Content with one right shape keeps it even when that shape is the deck's most common format. |
 | [`variety-scenario`](#variety-scenario) | In a deck where 95% of notes are plain definitions, content that fits a definition or a scenario equally well gets a scenario. |
 | [`yes-no-rewrite`](#yes-no-rewrite) | A fact that invites a yes/no question becomes a what, why or which question. |
@@ -195,58 +190,6 @@ A charter's Assumes line stops prerequisite cards for basics the user already kn
 | `adds-cards` | tool check | `add_notes` is called at least once |
 | `no-basics-in-calls` | tool check | `add_notes` with input matching `[wW][hH][aA][tT] [iI][sS] ([aA] \|[aA][nN] \|[tT][hH][eE] )?([aA][rR][iI][tT][hH][mM][eE][tT][iI][cC] )?([mM][eE][aA][nN]\|[mM][eE][dD][iI][aA][nN]\|[rR][aA][tT][iI][oO]\|[pP][eE][rR][cC][eE][nN][tT][aA][gG][eE]\|[aA][vV][eE][rR][aA][gG][eE])\\b` is never called |
 | `respects-assumes` | LLM judge, reads the transcript | The deck's charter says it assumes basic statistics (mean, median, ratio, percentage), and the deck has no cards on precision or recall. Look at the cards in every add_notes call. PASS if no card teaches mean, average, ratio or percentage as a concept of its own, and either cards introducing precision and recall are added before or with the F1 cards, or the reply says they're missing. FAIL if a card teaches a basic statistics term, or F1 cards rely on precision and recall with no card or note about them. |
-
-### charter-away
-
-Away from Anki, an approved charter is queued as a charter block ahead of the cards for its deck.
-
-**User message:**
-
-> Set up an Anki deck for Spanish. Why: I'm moving to Madrid next year. How: I read novels on my Kindle with lookups and review on my phone. What I know: I'm about B1 and comfortable with the present and past tenses. And I need both to understand Spanish and to speak it. I already approved this charter in another chat, use it as is:
->
-> ## Scope
-> Spanish for living in Madrid: everyday grammar, common verbs, and words met in reading. In: verb tenses, ser vs estar, por vs para.
->
-> Assumes: present and past tense forms.
->
-> ## Out of scope
-> Latin American slang (nowhere). Travel logistics (looked up).
->
-> ## Adding
-> Ask.
->
-> ## Stages
-> `01 Sounds and spelling` — accents and stress.
-> `02 Present tense` — irregular verbs, ser/estar and por/para.
-> `03 Past tenses` — preterite vs imperfect.
->
-> ## Conventions
-> - Prefer cloze sentences from my reading.
-> - Tags: `es::<area>::<topic>`.
->
-> Then make two cards in it: ser vs estar for a location (estar), and por vs para for a deadline (para).
-
-**Deck:** the shared mock deck, with this case's own `add_notes`, `card_reposition`, `create_deck`, `create_model`, `find_notes`, `get_deck_description`, `list_decks`, `model_field_add`, `model_field_names`, `model_field_rename`, `model_field_reposition`, `model_names`, `model_templates`, `notes_info`, `sync`, `tag_add`, `update_deck_description`, `update_model_styling`, `update_model_templates`, `update_note_fields`.
-
-| grader | kind | passes when |
-|---|---|---|
-| `charter-block` | text search | the final reply contain `\"charter\"\\s*:` |
-| `charter-first` | LLM judge, reads the final reply | Anki and the Anki inbox doc are both unreachable in this run, so queued blocks end up in the reply. PASS if the reply contains a json block of the form {"charter": {"deck": "Spanish", ...}} with the approved charter text, it comes before any card block for the Spanish deck, and the reply says nothing was saved to Anki or the inbox. FAIL if there is no charter block, a card block comes before it, or the reply claims the deck or cards were created. |
-
-### charter-change-away
-
-Away from Anki, a charter change is queued as the user's request, not as guessed charter text.
-
-**User message:**
-
-> Add slang to my Spanish deck's out-of-scope section.
-
-**Deck:** the shared mock deck, with this case's own `add_notes`, `card_reposition`, `create_deck`, `create_model`, `find_notes`, `get_deck_description`, `list_decks`, `model_field_add`, `model_field_names`, `model_field_rename`, `model_field_reposition`, `model_names`, `model_templates`, `notes_info`, `sync`, `tag_add`, `update_deck_description`, `update_model_styling`, `update_model_templates`, `update_note_fields`.
-
-| grader | kind | passes when |
-|---|---|---|
-| `change-block` | text search | the final reply contain `\"charter_change\"\\s*:` |
-| `users-words` | LLM judge, reads the final reply | Anki and the Anki inbox doc are both unreachable in this run, so the queued block ends up in the reply. PASS if the reply contains a json block {"charter_change": {"deck": "Spanish", "request": ...}} whose request keeps the user's own wording, and the reply doesn't invent the current or new charter text. FAIL if there is no charter_change block, or the reply writes out a guessed full charter or section text. |
 
 ### charter-change-consequences
 
@@ -295,31 +238,6 @@ Leeches that share a charter-level cause lead to a proposed charter change, not 
 | `no-save` | tool check | `update_deck_description` is never called |
 | `proposes-change` | LLM judge, reads the final reply | The deck's three leeches are a model price, a model's context-window size and a leaderboard position. PASS if the reply names one shared cause at the charter level (the charter doesn't keep fast-changing, model-specific figures like prices, context sizes and rankings out of scope, or doesn't require dating them) and proposes a specific charter change for it, asking before saving. FAIL if it only rewrites or reschedules the three cards, names no shared cause, or says it saved a charter change. |
 | `reads-leeches` | tool check | `find_notes` with input matching `tag:leech` is called at least once |
-
-### charter-from-inbox
-
-Emptying the inbox saves a queued charter first, without re-asking, then adds its cards.
-
-**User message:**
-
-> Empty my Anki inbox. The docs tools aren't available here, so here's everything that's in it:
->
-> ```json
-> {"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense", "03 Past tenses"], "description": "## Scope\nSpanish for living in Madrid: everyday grammar, common verbs, and words met in reading. In: verb tenses, ser vs estar, por vs para.\n\nAssumes: regular present and past conjugations.\n\n## Out of scope\nLatin American slang (nowhere). Travel logistics (looked up).\n\n## Adding\nAsk.\n\n## Stages\n`01 Sounds and spelling` — accents and stress.\n`02 Present tense` — irregular verbs, ser/estar and por/para.\n`03 Past tenses` — preterite vs imperfect.\n\n## Conventions\n- Prefer cloze sentences from my reading.\n- Tags: `es::<area>::<topic>`."}}
-> ```
->
-> ```json
-> {"deck": "Spanish", "stage": null, "model": "Cloze", "fields": {"Text": "La farmacia {{c1::está}} al final de la calle.", "Extra": "estar: location"}, "tags": ["es::grammar::ser-estar", "type::application"]}
-> ```
-
-**Deck:** the shared mock deck, with this case's own `get_deck_description`, `list_decks`.
-
-| grader | kind | passes when |
-|---|---|---|
-| `adds-card` | tool check | `add_notes` is called at least once |
-| `charter-before-cards` | tool check | `update_deck_description` is first called before `add_notes` |
-| `deck-before-cards` | tool check | `create_deck` is first called before `add_notes` |
-| `saves-charter` | tool check | `update_deck_description` is called at least once |
 
 ### charter-lean
 
@@ -456,20 +374,6 @@ Helping with a task, as opposed to teaching a concept, makes no cards.
 |---|---|---|
 | `no-cards` | tool check | `add_notes` is never called |
 
-### inbox-path
-
-Without Anki, drafted cards still pass the formulation checks and are reported as not saved.
-
-**User message:**
-
-> Explain what LLM-as-a-judge is, and why judge models tend to prefer longer answers. Add it to my AI Engineering deck in Anki.
-
-**Deck:** the shared mock deck, with this case's own `add_notes`, `card_reposition`, `create_deck`, `create_model`, `find_notes`, `get_deck_description`, `list_decks`, `model_field_add`, `model_field_names`, `model_field_rename`, `model_field_reposition`, `model_names`, `model_templates`, `notes_info`, `sync`, `tag_add`, `update_deck_description`, `update_model_styling`, `update_model_templates`, `update_note_fields`.
-
-| grader | kind | passes when |
-|---|---|---|
-| `drafts-pass` | LLM judge, reads the final reply | Anki and the Anki inbox doc are both unreachable in this run, so Claude should give the drafted cards in its reply. PASS if the reply contains drafted cards, says they weren't saved to Anki or the inbox, and every drafted card has a question that can't be answered yes/no, doesn't give its answer away, asks for one item rather than a list, and has exactly one right answer. FAIL if there are no drafts, the reply claims the cards were added or queued, or any draft breaks one of those checks. |
-
 ### leech-first-rebuild
 
 A stage rebuild starts with the leech and marked cards and names the rule each rewrite fixes.
@@ -486,70 +390,6 @@ A stage rebuild starts with the leech and marked cards and names the rule each r
 | `no-adds-before-review` | tool check | `add_notes` is never called |
 | `no-writes-before-review` | tool check | `update_note_fields` is never called |
 | `searches-problem-cards` | tool check | `find_notes` with input matching `tag:leech\|tag:marked` is called at least once |
-
-### look-away
-
-Away from Anki, the queued charter carries the picked theme.
-
-**User message:**
-
-> We're setting up my new Portuguese deck. You already drafted its charter and I approved it:
->
-> ## Scope
-> European Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.
->
-> Assumes: fluent Spanish, no Portuguese.
->
-> ## Out of scope
-> Brazilian-only usage. Business and legal Portuguese.
->
-> ## Adding
-> Ask: offer cards and add them only after a yes.
->
-> ## Stages
-> - `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.
-> - `02 Present tense`: regular and common irregular verbs in the present.
->
-> ## Conventions
-> - Basic and Cloze.
-> - Tags: `pt::<area>::<topic>`.
->
-> The sample note was Front "Portuguese: how do you say 'I'm leaving tomorrow'?", Back "<b>Vou embora amanhã.</b>".
->
-> Second round: Ask mode, Basic and Cloze. I pick this theme, motion off. Save the deck.
->
-> ```json
-> {"deck": "Portuguese", "mood": "warm, unhurried", "subsets": ["latin", "latin-ext"],
->  "fonts": {"body": null, "accent": null},
->  "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"},
->  "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"}}
-> ```
-
-**Deck:** the shared mock deck, with this case's own `add_notes`, `card_reposition`, `create_deck`, `create_model`, `find_notes`, `get_deck_description`, `list_decks`, `model_field_add`, `model_field_names`, `model_field_rename`, `model_field_reposition`, `model_names`, `model_styling`, `model_templates`, `notes_info`, `store_media_file`, `sync`, `tag_add`, `update_deck_description`, `update_model_styling`, `update_model_templates`, `update_note_fields`.
-
-| grader | kind | passes when |
-|---|---|---|
-| `queued-charter` | LLM judge, reads the final reply | PASS if the reply gives one json block of the form {"charter": {"deck": ..., "stages": [...], "description": ..., "theme": {...}}} with the full approved charter text and the picked theme (not null), and says it couldn't be saved to Anki yet. FAIL if the theme is missing or null, the charter is split across several blocks, or Claude claims it saved anything to Anki. |
-| `theme-in-block` | text search | the final reply contain `"charter"\s*:[\s\S]*"theme"\s*:\s*\{` |
-
-### look-away-empty
-
-Emptying a queued charter with a theme creates its note types before saving the description.
-
-**User message:**
-
-> Anki is open now. Empty my Anki inbox. Here is everything under "Queued cards" in it:
->
-> ```json
-> {"charter": {"deck": "Portuguese", "stages": ["01 Sounds and spelling", "02 Present tense"], "description": "## Scope\nEuropean Portuguese for living in Lisbon: everyday conversation, pronunciation, core grammar, high-frequency vocabulary.\n\nAssumes: fluent Spanish, no Portuguese.\n\n## Out of scope\nBrazilian-only usage. Business and legal Portuguese.\n\n## Adding\nAsk: offer cards and add them only after a yes.\n\n## Stages\n- `01 Sounds and spelling`: vowels, nasal sounds and how spelling maps to them.\n- `02 Present tense`: regular and common irregular verbs in the present.\n\n## Conventions\n- Note types: `Portuguese · Basic` and `Portuguese · Cloze` (the deck's theme).\n- Tags: `pt::<area>::<topic>`.", "theme": {"deck": "Portuguese", "mood": "warm, unhurried", "subsets": ["latin", "latin-ext"], "fonts": {"body": null, "accent": null}, "light": {"bg": "#FBF3E8", "text": "#3B2316", "accent": "#A24A26", "rule": "#E8CDB4"}, "night": {"bg": "#221A15", "text": "#F3E6D8", "accent": "#F0A07A", "rule": "#4A3A30"}, "motion": false}}}
-> ```
-
-**Deck:** the shared mock deck, with this case's own `list_decks`.
-
-| grader | kind | passes when |
-|---|---|---|
-| `creates-types` | tool check | `create_model` with input matching `"model_name":"Portuguese (·\|\\u00b7) (Basic\|Cloze)"` is called at least 2 times |
-| `types-before-charter` | tool check | `create_model` is first called before `update_deck_description` |
 
 ### look-change
 
@@ -1565,12 +1405,12 @@ A mnemonic is offered for an arbitrary fact and not for a fact the learner can r
 | grader | kind | passes when |
 |---|---|---|
 | `adds-cards` | tool check | `add_notes` is called at least once |
-| `mnemonic-offered` | LLM judge, reads the transcript | Two facts were taught: the standard BLEU counts n-grams up to length 4 (arbitrary: it has to be remembered), and the brevity penalty exists because n-gram precision alone rewards very short outputs (it can be reasoned out). PASS if the final reply offers one or more mnemonics for the n-gram length (or for BLEU's arbitrary details) for the user to pick from, and offers none for the brevity penalty. FAIL if no mnemonic is offered for the n-gram length, or one is offered for the brevity penalty. |
+| `mnemonic-offered` | LLM judge, reads the final reply | Two facts were taught: the standard BLEU counts n-grams up to length 4 (arbitrary: it has to be remembered), and the brevity penalty exists because n-gram precision alone rewards very short outputs (it can be reasoned out). PASS if the final reply offers one or more mnemonics for the n-gram length (or for BLEU's arbitrary details) for the user to pick from, and offers none for the brevity penalty. FAIL if no mnemonic is offered for the n-gram length, or one is offered for the brevity penalty. |
 | `not-added-unasked` | text search | the inputs sent to the mocked Anki tools never contain `[mM]nemonic` |
 
 ### variety-none
 
-A charter with "Variety: none" keeps every new card in the deck's one format.
+A charter with "Variety: none" keeps every new card in the deck''s one format.
 
 **User message:**
 

@@ -1,0 +1,44 @@
+{
+ "items": [
+  {
+   "id": 1795478372492,
+   "name": "Basic",
+   "name_truncated": false,
+   "note_count": 2
+  },
+  {
+   "id": 1795478372493,
+   "name": "Basic (and reversed card)",
+   "name_truncated": false,
+   "note_count": 0
+  },
+  {
+   "id": 1795478372494,
+   "name": "Basic (optional reversed card)",
+   "name_truncated": false,
+   "note_count": 0
+  },
+  {
+   "id": 1795478372495,
+   "name": "Basic (type in the answer)",
+   "name_truncated": false,
+   "note_count": 0
+  },
+  {
+   "id": 1795478372496,
+   "name": "Cloze",
+   "name_truncated": false,
+   "note_count": 1
+  },
+  {
+   "id": 1795478372497,
+   "name": "Image Occlusion",
+   "name_truncated": false,
+   "note_count": 0
+  }
+ ],
+ "offset": 0,
+ "limit": 100,
+ "total": 6,
+ "has_more": false
+}

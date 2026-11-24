@@ -4,8 +4,6 @@ tags: [themes]
 plugins: ["../..", "../../../ankimcp"]
 max_turns: 40
 timeout_seconds: 900
-env:
-  EVAL_SKIP_INBOX_HOOK: "1"
 allowed_tools: [Skill, Read, AskUserQuestion, mcp__plugin_ankimcp_anki__list_decks, mcp__plugin_ankimcp_anki__get_deck_description, mcp__plugin_ankimcp_anki__model_names, mcp__plugin_ankimcp_anki__model_field_names, mcp__plugin_ankimcp_anki__model_templates]
 ---
 We're setting up my new AI Engineering deck. You already drafted its charter and I approved it:

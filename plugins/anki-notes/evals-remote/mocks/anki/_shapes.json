@@ -1,0 +1,138 @@
+{
+ "source": "anki-sync-mcp at ledhed2222/anki-sync-mcp 47c5699 (PR #36 merged): keys every successful reply has, from replies recorded against a live server. Tools not listed are not checked.",
+ "tools": {
+  "anki_decks_list": {
+   "keys": [
+    "items",
+    "offset",
+    "limit",
+    "total",
+    "has_more"
+   ],
+   "items": {
+    "items": [
+     "id",
+     "name",
+     "hierarchy"
+    ]
+   }
+  },
+  "anki_decks_get": {
+   "keys": [
+    "id",
+    "name",
+    "description",
+    "dynamic"
+   ]
+  },
+  "anki_decks_create": {
+   "keys": [
+    "idempotency_key",
+    "state",
+    "result"
+   ]
+  },
+  "anki_decks_update": {
+   "keys": [
+    "idempotency_key",
+    "state",
+    "result"
+   ]
+  },
+  "anki_notes_search": {
+   "keys": [
+    "items",
+    "offset",
+    "limit",
+    "total",
+    "has_more"
+   ],
+   "items": {
+    "items": [
+     "id",
+     "note_type_id",
+     "note_type_name",
+     "tags"
+    ]
+   }
+  },
+  "anki_notes_create": {
+   "keys": [
+    "idempotency_key",
+    "state",
+    "result"
+   ]
+  },
+  "anki_note_types_list": {
+   "keys": [
+    "items",
+    "total",
+    "has_more"
+   ],
+   "items": {
+    "items": [
+     "id",
+     "name",
+     "note_count"
+    ]
+   }
+  },
+  "anki_note_types_get": {
+   "keys": [
+    "id",
+    "name",
+    "kind",
+    "css",
+    "fields",
+    "templates"
+   ],
+   "items": {
+    "fields": [
+     "name",
+     "ordinal"
+    ],
+    "templates": [
+     "name",
+     "question_format",
+     "answer_format"
+    ]
+   }
+  },
+  "anki_cards_reposition": {
+   "keys": [
+    "idempotency_key",
+    "state",
+    "result"
+   ]
+  },
+  "anki_note_types_change_preview": {
+   "keys": [
+    "operation",
+    "impact",
+    "confirmation_token",
+    "expires_in_seconds"
+   ]
+  },
+  "anki_note_types_update": {
+   "keys": [
+    "idempotency_key",
+    "state",
+    "result"
+   ]
+  },
+  "anki_sync": {
+   "keys": [
+    "required",
+    "media_sync",
+    "full_download"
+   ]
+  },
+  "anki_notes_create_batch": {
+   "keys": [
+    "idempotency_key",
+    "state",
+    "result"
+   ]
+  }
+ }
+}

@@ -1,16 +1,18 @@
 # pyright: basic
 """Check every eval case against the rules in plugins/anki-notes/CLAUDE.md.
 
-Usage: python3 -I check_cases.py
+Usage: python3 -I check_cases.py [suite dir]   (default: this folder, the local suite)
 
 Cases:
-- prompt.md has a description, loads exactly ["../..", "../../../ankimcp"]
-  and sets EVAL_SKIP_INBOX_HOOK: "1" in env.
+- prompt.md has a description and loads exactly ["../..", "../../../ankimcp"].
+- Its allowed ankimcp tools all belong to one server: every one is an anki_*
+  tool (remote) or none is (local). The skill picks the server by tool name.
 - Every allowed ankimcp tool has a mock (the case's or the shared one), so no
   call can reach a real Anki, and every mocked tool is in _tools.json.
 - A case tagged charter, note-type or questionnaire allows Read, or the
   skill can't open charters.md or note-types.md.
-- An llm grader with focus: trace is paired with a grader that sees every call
+- An llm grader's focus is last_message or trace (the harness refuses anything else),
+  and one with focus: trace is paired with a grader that sees every call
   (tool_used, tool_order, or regex on mock_calls).
 
 Mocks: every JSON reply (a whole-file reply, a fixture it loads, or a reply an
@@ -25,7 +27,6 @@ import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_SHARED = _HERE / "mocks" / "anki"
 _PLUGINS = '["../..", "../../../ankimcp"]'
 _TOOL_PREFIX = "mcp__plugin_ankimcp_anki__"
 _NEEDS_READ = {"charter", "note-type", "questionnaire"}  # the skill reads charters.md / note-types.md
@@ -43,8 +44,6 @@ def check_case(case, mocked, known):
         out.append("prompt.md has no description")
     if not re.search(rf"(?m)^plugins:\s*{re.escape(_PLUGINS)}\s*$", fm):
         out.append(f"plugins must be {_PLUGINS}")
-    if not re.search(r"(?m)^env:\s*\n(?:[ \t]+.*\n)*?[ \t]+EVAL_SKIP_INBOX_HOOK:\s*[\"']1[\"']", fm + "\n"):
-        out.append('env must set EVAL_SKIP_INBOX_HOOK: "1"')
 
     tags = re.search(r"(?m)^tags:\s*\[(.*)\]", fm)
     tags = {t.strip() for t in tags.group(1).split(",")} if tags else set()
@@ -54,13 +53,20 @@ def check_case(case, mocked, known):
 
     own = {p.stem for p in (case / "mocks" / "anki").glob("*.md")}
     allowed = re.search(r"(?m)^allowed_tools:\s*\[(.*)\]", fm)
-    for tool in re.findall(rf"{_TOOL_PREFIX}(\w+)", allowed.group(1) if allowed else ""):
+    tools = re.findall(rf"{_TOOL_PREFIX}(\w+)", allowed.group(1) if allowed else "")
+    if len({t.startswith("anki_") for t in tools}) > 1:
+        out.append("allowed_tools mixes the local and remote servers' tools")
+    for tool in tools:
         if tool not in mocked | own:
             out.append(f"{tool} is allowed but has no mock: a call would reach a real Anki")
     for tool in sorted(own - known):
         out.append(f"mocks/anki/{tool}.md: {tool} is not in _tools.json")
 
     graders = [_frontmatter(g.read_text()) for g in sorted((case / "graders").glob("*.md"))]
+    for g in graders:
+        focus = re.search(r"(?m)^focus:\s*(\S+)", g)
+        if focus and focus.group(1) not in ("last_message", "trace"):
+            out.append(f"an llm grader's focus must be last_message or trace, not {focus.group(1)}")
     sees_calls = any(re.search(r"(?m)^type:\s*(tool_used|tool_order)\b", g)
                      or (re.search(r"(?m)^type:\s*regex\b", g) and re.search(r"(?m)^target:\s*mock_calls\b", g))
                      for g in graders)
@@ -70,7 +76,7 @@ def check_case(case, mocked, known):
 
 
 def _rel(path):
-    return str(path.relative_to(_HERE)) if path.is_relative_to(_HERE) else str(path)
+    return str(path.relative_to(_HERE.parent)) if path.is_relative_to(_HERE.parent) else str(path)
 
 
 def replies(mock):
@@ -106,15 +112,17 @@ def check_shape(label, reply, shape):
 
 
 async def main():
-    tools_text, shapes_text = await asyncio.gather(*(asyncio.to_thread((_SHARED / f).read_text) for f in ("_tools.json", "_shapes.json")))
+    suite = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else _HERE
+    shared = suite / "mocks" / "anki"
+    tools_text, shapes_text = await asyncio.gather(*(asyncio.to_thread((shared / f).read_text) for f in ("_tools.json", "_shapes.json")))
     tools = json.loads(tools_text)
     known = {t["name"] for t in (tools["tools"] if isinstance(tools, dict) else tools)}
     shapes = json.loads(shapes_text)["tools"]
-    mocked = {p.stem for p in _SHARED.glob("*.md")}
+    mocked = {p.stem for p in shared.glob("*.md")}
     problems = [f"mocks/anki/{t}.md: {t} is not in _tools.json" for t in sorted(mocked - known)]
 
-    cases = sorted(p.parent for p in _HERE.glob("*/prompt.md"))
-    mocks = [m for m in sorted(_HERE.glob("**/mocks/anki/*.md")) if m.stem in shapes]
+    cases = sorted(p.parent for p in suite.glob("*/prompt.md"))
+    mocks = [m for m in sorted(suite.glob("**/mocks/anki/*.md")) if m.stem in shapes]
     # every case and mock is read in its own thread; results keep their sorted order
     found = await asyncio.gather(*(asyncio.to_thread(check_case, c, mocked, known) for c in cases),
                                  *(asyncio.to_thread(replies, m) for m in mocks))

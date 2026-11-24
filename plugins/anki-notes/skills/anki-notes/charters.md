@@ -29,19 +29,19 @@ Go through these for the subject and write down only the answers that differ fro
    - **How do you plan to study it?** Where new material comes from (sessions with Claude, a course or book, your own reading with lookups) and where you review (phone, desktop, both). This sets Sources and Adding, and which devices a note type must work on.
    - **What do you already know?** This sets `Assumes:` and stage `01`.
    - **Do you need to understand it or produce it?** Recognize it when reading or hearing, produce it when speaking, writing or building, or both. This sets card direction and note types.
-2. **Read what exists**: the other charters (`list_decks`, then `get_deck_description` on each top-level deck) and the collection's note types (`model_names`). Scope must not overlap another deck's: if it does, ask which deck owns the overlap and say so in both decks' Out of scope. The tag prefix must be unused.
+2. **Read what exists**: the other charters ("List decks", then "Read a charter" on each top-level deck, as in `SKILL.md`'s "Anki tools") and the collection's note types ("List note types"). Scope must not overlap another deck's: if it does, ask which deck owns the overlap and say so in both decks' Out of scope. The tag prefix must be unused.
 3. **Draft** from `charter-template.md`, against the rules above. Every answer from step 1 must show up in some line of the charter; an answer that changes nothing was a wasted question.
 4. **Choose the note types** (next section).
-5. **Test it before showing it.** Run `python3 -I <this skill dir>/scripts/charter.py lint <draft.md> --deck <subject>` (without `--deck` away from Anki) and fix every error: it checks the sections, `Assumes:`, Adding, stage numbering and descriptions, length, and that the tag prefix is unused. Then pick three things likely to come up: one clearly in, one borderline, one adjacent but out. Decide each from the charter's text alone; if the text doesn't settle the borderline one, tighten Scope or Out of scope. Then write one sample note in the chosen note type under the Conventions and check that it passes every rule in `SKILL.md`.
+5. **Test it before showing it.** Run `python3 -I <this skill dir>/scripts/charter.py lint <draft.md> --deck <subject> --decks <list.json> --others <charter.json>...`, with the saved deck list and the other top-level decks' saved charters from step 2, and fix every error: it checks the sections, `Assumes:`, Adding, stage numbering and descriptions, length, and that the tag prefix is unused. Then pick three things likely to come up: one clearly in, one borderline, one adjacent but out. Decide each from the charter's text alone; if the text doesn't settle the borderline one, tighten Scope or Out of scope. Then write one sample note in the chosen note type under the Conventions and check that it passes every rule in `SKILL.md`.
 6. **Show** the draft, the three test cases and how it decided them, and the sample note as each of its cards would show it. Ask what's left as a second, shorter questionnaire: Automatic or Ask (suggest Ask until the first few batches look right), the note-type choice when there's a real alternative, anything step 5 left open, and one optional question for the deck's look: **how does studying this make you feel, and how would you like it to feel?** (options like calm, playful, focused, cozy, plus a free answer). Never repeat a round-one question. Revise until the user says yes.
 7. **Pick a look**, as "Themes" in `note-types.md` says: build two or three themes from the answer (or from the subject, if the user skipped it), show each on the sample note, and let the user pick one, or none. On a pick, Conventions name the theme's note types, `<Deck> · Basic` and `<Deck> · Cloze`, in place of Basic and Cloze.
-8. **Save**: the theme's note types and any other new note type first (as `note-types.md` says), then `create_deck` for the subject and for each stage (`<Subject>::01 <name>`), then `update_deck_description` on the top-level deck with the full text and `is_markdown: true`, then sync as in `SKILL.md`. Report in one line.
+8. **Save**: the theme's note types and any other new note type first (as `note-types.md` says), then "Create a deck" for the subject and for each stage (`<Subject>::01 <name>`), then "Save a charter" on the top-level deck with the full text, then sync as in `SKILL.md`. Report in one line. If Anki can't be reached, follow `SKILL.md`'s "When Anki can't be reached": show the approved text and save it when the user says Anki is back.
 
 ## Choosing note types
 
 Basic and Cloze cover most subjects. Look for something better only when the subject's cards keep the same multi-part shape. Check in this order:
 
-1. **Reuse what the user has.** If `model_names` lists a type that fits, read its fields and templates (`model_field_names`, `model_templates`) and use it. Never create a near-copy of a type the user already has.
+1. **Reuse what the user has.** If "List note types" shows a type that fits, read its fields and templates ("Read a note type") and use it. Never create a near-copy of a type the user already has.
 2. **A new type is worth proposing when**:
    - Most cards share one shape with several parts (a word, the sentence it appeared in, a gloss, where it came from) that Basic would cram into one Back field.
    - One note should give cards for different skills from the same fields, such as recognizing a word and producing it.
@@ -56,26 +56,8 @@ Write the outcome into Conventions: which note type each kind of card uses, what
 
 Change one when the user asks. Propose a change yourself only when the evidence shows the charter, not the cards, is the cause: the same kind of card rejected or rewritten more than once, or problem cards that share a cause.
 
-1. **Read** the current text (`get_deck_description`) and the evidence: the user's complaint, the deck's problem cards (`tag:leech or tag:marked`), and the subdecks that exist (`list_decks`) against the stages listed.
+1. **Read** the current text ("Read a charter") and the evidence: the user's complaint, the deck's problem cards (`tag:leech or tag:marked`), and the subdecks that exist ("List decks") against the stages listed.
 2. **Name the cause** in one sentence ("Scope doesn't say whether regional slang is in, so it's been carded inconsistently"). A topic that keeps getting carded and rejected belongs in Out of scope; a rule that keeps getting broken belongs in Conventions; cards whose parts keep getting crammed into one field may point to a note type.
 3. **Make the smallest change** that fixes it, and keep every other line word for word: the user may have edited the description by hand. Save the current text to a file and the new section body to another, then run `charter.py edit <current.md> "<section>" <body.md> <new.md>`: it changes only that section and prints the diff to show the user. Lint `new.md` as in "Creating a charter".
 4. **List what it does to existing cards**: how many cards fall out of scope (offer to tag them `to-delete`), which stages are renamed, split or reordered (a stage rebuild, as in `SKILL.md`), which cards break a new convention (offer a rebuild; never rewrite them silently), and how many notes a note-type change touches.
-5. **Show** the old and new text of each changed section, with those consequences, and update only on a yes. `update_deck_description` replaces the whole description, so send the full text, then sync.
-
-## Away from Anki
-
-Without the Anki tools, charters and note types can't be read or saved. Run the questionnaire and draft a new charter the same way, skipping the steps that need Anki (other charters, the collection's note types, existing cards), and once the user approves it, queue it in the Anki inbox as one json block:
-
-```json
-{"charter": {"deck": "Spanish", "stages": ["01 Sounds and spelling", "02 Present tense"], "description": "<full charter text>", "theme": {"...": "the picked theme.json, or null"}}}
-```
-
-The theme can still be picked away from Anki: `build_theme.py` needs only Python, and the previews can be drawn inline. Its note types are created when the charter is saved.
-
-A change to an existing charter needs its current text, so queue the request instead, in the user's words:
-
-```json
-{"charter_change": {"deck": "Spanish", "request": "stop carding regional slang"}}
-```
-
-When the inbox is emptied, these go before any card. For a queued charter, run the skipped steps; if they change nothing, save it, since the user already approved it, and otherwise show the change first. If the deck already exists or has a description, that is a change too: show the old and new text, as in "Changing a charter", and save only on a yes. If the skipped note-type check finds a type that fits, that is a change: ask before switching. A queued change goes through "Changing a charter" from the top. Delete each charter block from the inbox once it is saved or applied, so it isn't replayed.
+5. **Show** the old and new text of each changed section, with those consequences, and update only on a yes. "Save a charter" replaces the whole description, so send the full text, then sync.

@@ -3,10 +3,11 @@
 
 Usage:
   python3 -I render_note.py <spec.json>
-  python3 -I render_note.py <note.json> --model <note type>   (templates read from Anki)
+  python3 -I render_note.py <note.json> --templates <reply.json>
 
 spec.json: {"templates": {"<card name>": {"Front": ..., "Back": ...}}, "note": {"<field>": ...}}
-(templates in the shape model_templates returns). note.json is just the note.
+(templates in the shape model_templates returns). note.json is just the note;
+--templates is a saved model_templates (local) or anki_note_types_get (remote) reply.
 
 A card's answer is what its back shows that its front doesn't: the fields the
 back template uses and the front doesn't, or the cloze being tested. Errors:
@@ -128,14 +129,13 @@ async def main():
         with open(args[0]) as f:
             return json.load(f)
     data = await asyncio.to_thread(read)
-    if "--model" in args:
+    if "--templates" in args:
         sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
-        from ankimcp_client import AnkiError, Client
+        from replies import ReplyError, read, templates as read_templates
         try:
-            async with Client() as anki:
-                templates = (await anki.call("model_templates", model_name=args[args.index("--model") + 1]))["templates"]
-        except AnkiError as e:
-            sys.exit(str(e))
+            templates = read_templates((await read([args[args.index("--templates") + 1]]))[0])
+        except ReplyError as e:
+            sys.exit(f"the saved reply is an error: {e}")
         note = data
     else:
         templates, note = data["templates"], data["note"]

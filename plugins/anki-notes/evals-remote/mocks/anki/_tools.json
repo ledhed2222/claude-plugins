@@ -1,0 +1,1736 @@
+{
+ "tools": [
+  {
+   "name": "anki_decks_list",
+   "description": "List decks with stable IDs and hierarchy, using bounded offset pagination.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "offset": {
+      "default": 0,
+      "title": "Offset",
+      "type": "integer",
+      "minimum": 0
+     },
+     "limit": {
+      "default": 100,
+      "title": "Limit",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "sync_before": {
+      "default": false,
+      "title": "Sync Before",
+      "type": "boolean"
+     }
+    },
+    "title": "decks_listArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "decks_listDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_decks_get",
+   "description": "Get metadata for one deck by stable Anki deck ID or by full deck name (exactly one).",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "deck_id": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Deck Id",
+      "minimum": 1
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 512,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Name"
+     },
+     "sync_before": {
+      "default": false,
+      "title": "Sync Before",
+      "type": "boolean"
+     }
+    },
+    "title": "decks_getArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "decks_getDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_decks_create",
+   "description": "Create a deck by name, or return the existing deck with that name.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "name": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "title": "decks_createArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "decks_createDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_decks_update",
+   "description": "Rename a deck, set its description, or both. Omitted values are left unchanged.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "deck_id": {
+      "exclusiveMinimum": 0,
+      "title": "Deck Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 512,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Name"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "maxLength": 262144,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Description"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "deck_id"
+    ],
+    "title": "decks_updateArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "decks_updateDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_notes_search",
+   "description": "Search notes with Anki search syntax and bounded offset pagination.\n\n        Each item names its note type (note_type_id, note_type_name). With include_fields,\n        each item is the full note as anki_notes_get returns it. A page that would exceed\n        MCP_MAX_RESPONSE_BYTES returns fewer items, with limit set to the count returned\n        and has_more true.\n        ",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "query": {
+      "default": "",
+      "maxLength": 4096,
+      "title": "Query",
+      "type": "string"
+     },
+     "offset": {
+      "default": 0,
+      "title": "Offset",
+      "type": "integer",
+      "minimum": 0
+     },
+     "limit": {
+      "default": 100,
+      "title": "Limit",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "include_fields": {
+      "default": false,
+      "title": "Include Fields",
+      "type": "boolean"
+     },
+     "sync_before": {
+      "default": false,
+      "title": "Sync Before",
+      "type": "boolean"
+     }
+    },
+    "title": "notes_searchArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "notes_searchDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_notes_get",
+   "description": "Get general note fields, tags, note type, cards, and metadata by stable ID.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "note_id": {
+      "exclusiveMinimum": 0,
+      "title": "Note Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "sync_before": {
+      "default": false,
+      "title": "Sync Before",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "note_id"
+    ],
+    "title": "notes_getArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "notes_getDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_notes_create",
+   "description": "Create one validated, duplicate-checked note with a durable idempotent receipt.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "deck_id": {
+      "exclusiveMinimum": 0,
+      "title": "Deck Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "note_type_id": {
+      "exclusiveMinimum": 0,
+      "title": "Note Type Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "fields": {
+      "additionalProperties": {
+       "maxLength": 262144,
+       "type": "string"
+      },
+      "propertyNames": {
+       "maxLength": 512,
+       "minLength": 1
+      },
+      "title": "Fields",
+      "type": "object"
+     },
+     "tags": {
+      "anyOf": [
+       {
+        "items": {
+         "maxLength": 512,
+         "minLength": 1,
+         "type": "string"
+        },
+        "maxItems": 100,
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Tags"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "deck_id",
+     "note_type_id",
+     "fields"
+    ],
+    "title": "notes_createArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "notes_createDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_notes_create_batch",
+   "description": "Create a bounded atomic batch of validated notes with one idempotency key.\n\n        With skip_duplicates, notes whose first field duplicates an existing note (or an\n        earlier note in the batch) are skipped instead of failing the batch; each result in\n        request order has status \"created\" (with note_id and card_ids) or \"duplicate\" (with\n        duplicate_of, the id of the note it duplicates).\n        Any other error still fails the whole batch.\n        ",
+   "inputSchema": {
+    "$defs": {
+     "NoteCreateInput": {
+      "additionalProperties": false,
+      "properties": {
+       "deck_id": {
+        "exclusiveMinimum": 0,
+        "title": "Deck Id",
+        "type": "integer"
+       },
+       "note_type_id": {
+        "exclusiveMinimum": 0,
+        "title": "Note Type Id",
+        "type": "integer"
+       },
+       "fields": {
+        "additionalProperties": {
+         "maxLength": 262144,
+         "type": "string"
+        },
+        "propertyNames": {
+         "maxLength": 512,
+         "minLength": 1
+        },
+        "title": "Fields",
+        "type": "object"
+       },
+       "tags": {
+        "items": {
+         "maxLength": 512,
+         "minLength": 1,
+         "type": "string"
+        },
+        "maxItems": 100,
+        "title": "Tags",
+        "type": "array"
+       }
+      },
+      "required": [
+       "deck_id",
+       "note_type_id",
+       "fields"
+      ],
+      "title": "NoteCreateInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "notes": {
+      "items": {
+       "$ref": "#/$defs/NoteCreateInput"
+      },
+      "title": "Notes",
+      "type": "array"
+     },
+     "skip_duplicates": {
+      "default": false,
+      "title": "Skip Duplicates",
+      "type": "boolean"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "notes"
+    ],
+    "title": "notes_create_batchArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "notes_create_batchDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_notes_update_fields",
+   "description": "Patch named fields on a general note after note-type validation.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "note_id": {
+      "exclusiveMinimum": 0,
+      "title": "Note Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "fields": {
+      "additionalProperties": {
+       "maxLength": 262144,
+       "type": "string"
+      },
+      "propertyNames": {
+       "maxLength": 512,
+       "minLength": 1
+      },
+      "title": "Fields",
+      "type": "object"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "note_id",
+     "fields"
+    ],
+    "title": "notes_update_fieldsArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "notes_update_fieldsDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_notes_add_tags",
+   "description": "Add normalized tags to a bounded set of notes.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "note_ids": {
+      "items": {
+       "exclusiveMinimum": 0,
+       "type": "integer"
+      },
+      "maxItems": 500,
+      "minItems": 1,
+      "title": "Note Ids",
+      "type": "array"
+     },
+     "tags": {
+      "items": {
+       "maxLength": 512,
+       "minLength": 1,
+       "type": "string"
+      },
+      "maxItems": 100,
+      "title": "Tags",
+      "type": "array"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "note_ids",
+     "tags"
+    ],
+    "title": "notes_add_tagsArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "notes_add_tagsDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_note_types_list",
+   "description": "List note types with stable IDs and bounded pagination.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "offset": {
+      "default": 0,
+      "title": "Offset",
+      "type": "integer",
+      "minimum": 0
+     },
+     "limit": {
+      "default": 100,
+      "title": "Limit",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "sync_before": {
+      "default": false,
+      "title": "Sync Before",
+      "type": "boolean"
+     }
+    },
+    "title": "note_types_listArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "note_types_listDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_note_types_get",
+   "description": "Get fields, templates, CSS, kind, and usage for one note type.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "note_type_id": {
+      "exclusiveMinimum": 0,
+      "title": "Note Type Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "sync_before": {
+      "default": false,
+      "title": "Sync Before",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "note_type_id"
+    ],
+    "title": "note_types_getArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "note_types_getDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_cards_search",
+   "description": "Search cards with Anki search syntax and bounded offset pagination.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "query": {
+      "default": "",
+      "maxLength": 4096,
+      "title": "Query",
+      "type": "string"
+     },
+     "offset": {
+      "default": 0,
+      "title": "Offset",
+      "type": "integer",
+      "minimum": 0
+     },
+     "limit": {
+      "default": 100,
+      "title": "Limit",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+     },
+     "sync_before": {
+      "default": false,
+      "title": "Sync Before",
+      "type": "boolean"
+     }
+    },
+    "title": "cards_searchArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "cards_searchDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_cards_reposition",
+   "description": "Reposition a bounded set of new cards using explicit scheduling controls.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "card_ids": {
+      "items": {
+       "exclusiveMinimum": 0,
+       "type": "integer"
+      },
+      "maxItems": 500,
+      "minItems": 1,
+      "title": "Card Ids",
+      "type": "array"
+     },
+     "starting_from": {
+      "exclusiveMinimum": 0,
+      "title": "Starting From",
+      "type": "integer"
+     },
+     "step_size": {
+      "default": 1,
+      "exclusiveMinimum": 0,
+      "title": "Step Size",
+      "type": "integer"
+     },
+     "randomize": {
+      "default": false,
+      "title": "Randomize",
+      "type": "boolean"
+     },
+     "shift_existing": {
+      "default": true,
+      "title": "Shift Existing",
+      "type": "boolean"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "card_ids",
+     "starting_from"
+    ],
+    "title": "cards_repositionArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "cards_repositionDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_cards_change_deck",
+   "description": "Move arbitrary supported cards to another deck by stable IDs.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "card_ids": {
+      "items": {
+       "exclusiveMinimum": 0,
+       "type": "integer"
+      },
+      "maxItems": 500,
+      "minItems": 1,
+      "title": "Card Ids",
+      "type": "array"
+     },
+     "deck_id": {
+      "exclusiveMinimum": 0,
+      "title": "Deck Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "card_ids",
+     "deck_id"
+    ],
+    "title": "cards_change_deckArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "cards_change_deckDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_cards_unsuspend",
+   "description": "Unsuspend arbitrary supported cards by stable IDs.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "card_ids": {
+      "items": {
+       "exclusiveMinimum": 0,
+       "type": "integer"
+      },
+      "maxItems": 500,
+      "minItems": 1,
+      "title": "Card Ids",
+      "type": "array"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "card_ids"
+    ],
+    "title": "cards_unsuspendArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "cards_unsuspendDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_sync",
+   "description": "Synchronize the collection with the authenticated remote server.\n\n        Media sync runs in the background and is not waited on past a short bound. Check\n        `media_sync.state` in the result: `in_progress` means it is still running (call\n        `anki_status` to follow it), `completed` means it finished, `failed` carries an error code.\n        ",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "sync_media": {
+      "default": true,
+      "title": "Sync Media",
+      "type": "boolean"
+     }
+    },
+    "title": "syncArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "syncDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_note_types_change_preview",
+   "description": "Preview an exact proposed schema mutation and issue a maintenance token.",
+   "inputSchema": {
+    "$defs": {
+     "NoteTypeFieldMappingInput": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "maxLength": 512,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+       },
+       "source_ordinal": {
+        "anyOf": [
+         {
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Source Ordinal"
+       }
+      },
+      "required": [
+       "name"
+      ],
+      "title": "NoteTypeFieldMappingInput",
+      "type": "object"
+     },
+     "NoteTypeTemplateInput": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "maxLength": 512,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+       },
+       "question_format": {
+        "maxLength": 262144,
+        "title": "Question Format",
+        "type": "string"
+       },
+       "answer_format": {
+        "maxLength": 262144,
+        "title": "Answer Format",
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "question_format",
+       "answer_format"
+      ],
+      "title": "NoteTypeTemplateInput",
+      "type": "object"
+     },
+     "NoteTypeTemplateMappingInput": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "maxLength": 512,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+       },
+       "question_format": {
+        "maxLength": 262144,
+        "title": "Question Format",
+        "type": "string"
+       },
+       "answer_format": {
+        "maxLength": 262144,
+        "title": "Answer Format",
+        "type": "string"
+       },
+       "source_ordinal": {
+        "anyOf": [
+         {
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Source Ordinal"
+       }
+      },
+      "required": [
+       "name",
+       "question_format",
+       "answer_format"
+      ],
+      "title": "NoteTypeTemplateMappingInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "operation": {
+      "enum": [
+       "create",
+       "update",
+       "fields_update",
+       "templates_update"
+      ],
+      "title": "Operation",
+      "type": "string"
+     },
+     "note_type_id": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Note Type Id",
+      "minimum": 1
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 512,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Name"
+     },
+     "fields": {
+      "anyOf": [
+       {
+        "items": {
+         "maxLength": 512,
+         "minLength": 1,
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Fields"
+     },
+     "templates": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/$defs/NoteTypeTemplateInput"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Templates"
+     },
+     "css": {
+      "anyOf": [
+       {
+        "maxLength": 262144,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Css"
+     },
+     "field_mappings": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/$defs/NoteTypeFieldMappingInput"
+        },
+        "maxItems": 1000,
+        "minItems": 1,
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Field Mappings"
+     },
+     "template_mappings": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/$defs/NoteTypeTemplateMappingInput"
+        },
+        "maxItems": 1000,
+        "minItems": 1,
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Template Mappings"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "enum": [
+         "standard",
+         "cloze"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Kind"
+     }
+    },
+    "required": [
+     "operation"
+    ],
+    "title": "note_types_change_previewArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "note_types_change_previewDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true
+   },
+   "_meta": {
+    "anki-mcp/sync": "none"
+   }
+  },
+  {
+   "name": "anki_note_types_update",
+   "description": "Change a note type's name, fields, templates, or CSS after guarded approval.\n\n        Omitted values are left unchanged.\n        ",
+   "inputSchema": {
+    "$defs": {
+     "NoteTypeTemplateInput": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "maxLength": 512,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+       },
+       "question_format": {
+        "maxLength": 262144,
+        "title": "Question Format",
+        "type": "string"
+       },
+       "answer_format": {
+        "maxLength": 262144,
+        "title": "Answer Format",
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "question_format",
+       "answer_format"
+      ],
+      "title": "NoteTypeTemplateInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "note_type_id": {
+      "exclusiveMinimum": 0,
+      "title": "Note Type Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "confirmation_token": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Confirmation Token",
+      "type": "string"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 512,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Name"
+     },
+     "fields": {
+      "anyOf": [
+       {
+        "items": {
+         "maxLength": 512,
+         "minLength": 1,
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Fields"
+     },
+     "templates": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/$defs/NoteTypeTemplateInput"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Templates"
+     },
+     "css": {
+      "anyOf": [
+       {
+        "maxLength": 262144,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Css"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "note_type_id",
+     "confirmation_token"
+    ],
+    "title": "note_types_updateArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "note_types_updateDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_note_types_create",
+   "description": "Create a standard or cloze note type after preview, backup, and full-sync gating.",
+   "inputSchema": {
+    "$defs": {
+     "NoteTypeTemplateInput": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "maxLength": 512,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+       },
+       "question_format": {
+        "maxLength": 262144,
+        "title": "Question Format",
+        "type": "string"
+       },
+       "answer_format": {
+        "maxLength": 262144,
+        "title": "Answer Format",
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "question_format",
+       "answer_format"
+      ],
+      "title": "NoteTypeTemplateInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "name": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "fields": {
+      "items": {
+       "maxLength": 512,
+       "minLength": 1,
+       "type": "string"
+      },
+      "title": "Fields",
+      "type": "array"
+     },
+     "templates": {
+      "items": {
+       "$ref": "#/$defs/NoteTypeTemplateInput"
+      },
+      "title": "Templates",
+      "type": "array"
+     },
+     "confirmation_token": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Confirmation Token",
+      "type": "string"
+     },
+     "css": {
+      "default": "",
+      "maxLength": 262144,
+      "title": "Css",
+      "type": "string"
+     },
+     "kind": {
+      "default": "standard",
+      "enum": [
+       "standard",
+       "cloze"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "name",
+     "fields",
+     "templates",
+     "confirmation_token"
+    ],
+    "title": "note_types_createArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "note_types_createDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  },
+  {
+   "name": "anki_note_type_fields_update",
+   "description": "Change fields after guarded full-sync maintenance approval.",
+   "inputSchema": {
+    "$defs": {
+     "NoteTypeFieldMappingInput": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "maxLength": 512,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+       },
+       "source_ordinal": {
+        "anyOf": [
+         {
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Source Ordinal"
+       }
+      },
+      "required": [
+       "name"
+      ],
+      "title": "NoteTypeFieldMappingInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "note_type_id": {
+      "exclusiveMinimum": 0,
+      "title": "Note Type Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "mappings": {
+      "items": {
+       "$ref": "#/$defs/NoteTypeFieldMappingInput"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Mappings",
+      "type": "array"
+     },
+     "confirmation_token": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Confirmation Token",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "note_type_id",
+     "mappings",
+     "confirmation_token"
+    ],
+    "title": "note_type_fields_updateArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "note_type_fields_updateDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "conditional"
+   }
+  },
+  {
+   "name": "anki_templates_update",
+   "description": "Change templates after guarded full-sync maintenance approval.",
+   "inputSchema": {
+    "$defs": {
+     "NoteTypeTemplateMappingInput": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "maxLength": 512,
+        "minLength": 1,
+        "title": "Name",
+        "type": "string"
+       },
+       "question_format": {
+        "maxLength": 262144,
+        "title": "Question Format",
+        "type": "string"
+       },
+       "answer_format": {
+        "maxLength": 262144,
+        "title": "Answer Format",
+        "type": "string"
+       },
+       "source_ordinal": {
+        "anyOf": [
+         {
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Source Ordinal"
+       }
+      },
+      "required": [
+       "name",
+       "question_format",
+       "answer_format"
+      ],
+      "title": "NoteTypeTemplateMappingInput",
+      "type": "object"
+     }
+    },
+    "additionalProperties": false,
+    "properties": {
+     "note_type_id": {
+      "exclusiveMinimum": 0,
+      "title": "Note Type Id",
+      "type": "integer",
+      "minimum": 1
+     },
+     "mappings": {
+      "items": {
+       "$ref": "#/$defs/NoteTypeTemplateMappingInput"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Mappings",
+      "type": "array"
+     },
+     "confirmation_token": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Confirmation Token",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "note_type_id",
+     "mappings",
+     "confirmation_token"
+    ],
+    "title": "templates_updateArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "templates_updateDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "conditional"
+   }
+  },
+  {
+   "name": "anki_media_store",
+   "description": "Create or replace one bounded media file from base64 content.",
+   "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+     "filename": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Filename",
+      "type": "string"
+     },
+     "content_base64": {
+      "maxLength": 22369624,
+      "minLength": 1,
+      "title": "Content Base64",
+      "type": "string"
+     },
+     "idempotency_key": {
+      "anyOf": [
+       {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+     }
+    },
+    "required": [
+     "filename",
+     "content_base64"
+    ],
+    "title": "media_storeArguments",
+    "type": "object"
+   },
+   "outputSchema": {
+    "additionalProperties": true,
+    "title": "media_storeDictOutput",
+    "type": "object"
+   },
+   "annotations": {
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": false
+   },
+   "_meta": {
+    "anki-mcp/sync": "incremental"
+   }
+  }
+ ]
+}

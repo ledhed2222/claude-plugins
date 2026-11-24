@@ -16,6 +16,7 @@ Runs inside Anki Desktop on your machine.
 - Anki must be running: the add-on serves MCP only while Anki is open.
 - Server URL: `http://127.0.0.1:3141/`
 - Auth: none. The add-on only listens on your machine, so there is nothing to sign in to.
+- Claude Code only. claude.ai connects to servers from Anthropic's cloud, so it can't reach a server on your machine.
 
 ### Remote: anki-sync-mcp
 
@@ -25,6 +26,10 @@ A headless server you host, such as in Docker. It syncs with AnkiWeb or your own
 - Add `http://localhost:33418/callback` to the server's `MCP_OAUTH_REDIRECT_URIS`. The server only accepts redirect URIs it lists exactly, so the plugin pins Claude Code's OAuth callback to port 33418.
 - Server URL: `https://<your-host>/mcp`
 - Auth: OAuth. After enabling the plugin, run `/mcp`, choose the `anki` server and sign in with the server's owner password in your browser. Claude Code keeps the token and refreshes it.
+
+## claude.ai
+
+This plugin's server doesn't carry over to claude.ai (web, desktop chat and mobile): claude.ai ignores a plugin server whose URL comes from plugin settings, and doesn't turn on a plugin's dependencies for you. To use Anki there, add your remote anki-sync-mcp server yourself as a custom connector in claude.ai's settings, with its public HTTPS URL. The local add-on can't be used from claude.ai at all.
 
 ## Install
 

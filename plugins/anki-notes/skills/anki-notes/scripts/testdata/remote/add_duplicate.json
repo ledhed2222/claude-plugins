@@ -1,0 +1,19 @@
+{
+ "idempotency_key": "b2",
+ "state": "committed",
+ "local_committed": true,
+ "remote_synced": true,
+ "media_synced": null,
+ "retryable": false,
+ "result": {
+  "notes": [
+   {
+    "status": "duplicate",
+    "duplicate_of": 1795478708394,
+    "created": false
+   }
+  ],
+  "created": 0,
+  "duplicates": 1
+ }
+}

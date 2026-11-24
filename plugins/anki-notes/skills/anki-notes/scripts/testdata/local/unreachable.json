@@ -1,0 +1,9 @@
+{
+ "content": [
+  {
+   "type": "text",
+   "text": "Error calling tool: could not connect to the AnkiMCP server (connection refused)"
+  }
+ ],
+ "isError": true
+}

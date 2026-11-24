@@ -1,7 +1,7 @@
 # pyright: basic
 """Regenerate the case list in SPEC.md from the eval case files.
 
-Usage: python3 -I gen_spec.py [--check]
+Usage: python3 -I gen_spec.py [suite dir] [--check]   (default: this folder, the local suite)
 
 Only the text between the generated markers in SPEC.md is rewritten; the rest
 is hand-written. --check exits 1 instead of writing when SPEC.md is stale (CI).
@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_SPEC = _HERE / "SPEC.md"
 _START, _END = "<!-- generated:start -->", "<!-- generated:end -->"
 
 
@@ -76,8 +75,8 @@ def _render_case(c):
     return meta.get("description", ""), out
 
 
-async def _render():
-    cases = sorted(p for p in _HERE.iterdir() if (p / "prompt.md").is_file())
+async def _render(suite):
+    cases = sorted(p for p in suite.iterdir() if (p / "prompt.md").is_file())
     rendered = await asyncio.gather(*(asyncio.to_thread(_render_case, c) for c in cases))  # one thread per case, order kept
     out = ["| case | what it checks |\n|---|---|"]
     out += [f"| [`{c.name}`](#{c.name}) | {desc} |" for c, (desc, _) in zip(cases, rendered)]
@@ -86,15 +85,18 @@ async def _render():
 
 
 async def main():
-    spec, body = await asyncio.gather(asyncio.to_thread(_SPEC.read_text), _render())
+    dirs = [a for a in sys.argv[1:] if not a.startswith("--")]
+    suite = Path(dirs[0]).resolve() if dirs else _HERE
+    spec_path = suite / "SPEC.md"
+    spec, body = await asyncio.gather(asyncio.to_thread(spec_path.read_text), _render(suite))
     head, rest = spec.split(_START, 1)
     _, tail = rest.split(_END, 1)
     new = f"{head}{_START}\n{body}{_END}{tail}"
     if "--check" in sys.argv:
         if new != spec:
-            sys.exit("SPEC.md is out of date with the eval cases: run python3 -I plugins/anki-notes/evals/gen_spec.py and commit the result")
+            sys.exit(f"{spec_path} is out of date with the eval cases: run python3 -I plugins/anki-notes/evals/gen_spec.py {' '.join(dirs)} and commit the result")
         return
-    await asyncio.to_thread(_SPEC.write_text, new)
+    await asyncio.to_thread(spec_path.write_text, new)
 
 
 if __name__ == "__main__":

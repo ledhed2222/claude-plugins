@@ -1,0 +1,22 @@
+{
+ "notes": [
+  {
+   "noteId": 1795478372709,
+   "modelName": "Basic",
+   "tags": [],
+   "cards": [
+    1795478372709
+   ],
+   "fields": {
+    "Front": {
+     "value": "What is <b>recall</b>?",
+     "order": 0
+    },
+    "Back": {
+     "value": "x",
+     "order": 1
+    }
+   }
+  }
+ ]
+}

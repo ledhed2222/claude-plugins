@@ -35,7 +35,7 @@ Unofficial. Declares one HTTP MCP server, `anki`, whose URL is a `userConfig` va
 - Stay clearly unofficial: no Anki or AnkiMCP logo or branding. An icon, if added, must be original art.
 - No `privacyPolicyUrl`: the server runs locally or is hosted by the user, and the plugin collects nothing, so the validator's privacy warning is expected. Keep it that way: no hooks or telemetry.
 - `.mcp.json` pins the OAuth callback to port 33418 because the server matches redirect URIs exactly. Changing the port breaks every server that allow-lists `http://localhost:33418/callback`.
-- anki-notes calls the AnkiMCP add-on's tool names (`list_decks`, `add_notes`, ...), so for now it only works with the local server. #28 ports it to anki-sync-mcp.
+- anki-notes supports both servers (see its `CLAUDE.md`, "Two servers"). A change to either server's tools needs unit tests for both there.
 
 ### anki-notes
 

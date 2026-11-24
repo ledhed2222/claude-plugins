@@ -1,0 +1,1 @@
+{"items": [{"id": 1700000000101, "name": "Basic", "name_truncated": false, "note_count": 3}, {"id": 1700000000102, "name": "Cloze", "name_truncated": false, "note_count": 0}], "offset": 0, "limit": 100, "total": 2, "has_more": false}

@@ -1,13 +1,10 @@
 # pyright: basic
-"""Mechanical checks on drafted cards, before they are added or queued.
+"""Mechanical checks on drafted cards, before they are added.
 
-Usage: python3 -I lint_cards.py <cards.json|inbox.md> [--prefix aie] [--skip yes-no,...] [--strict]
+Usage: python3 -I lint_cards.py <cards.json> [--prefix aie] [--skip yes-no,...] [--strict]
 
-cards.json is a list of cards in the Anki inbox's format:
+cards.json is a JSON list of cards, numbered from 1 in findings ("#3"):
   {"deck": ..., "stage": ..., "model": "Basic"|"Cloze"|..., "fields": {...}, "tags": [...]}
-A Markdown file (the Anki inbox exported) is read as its ```json blocks, numbered
-from 1 in document order; charter blocks are skipped. Findings are numbered the
-same way, so "#3" is the third block.
 
 Every finding starts with a check id. --skip turns checks off, for a charter
 whose Conventions has a "Lint skip:" line.
@@ -90,18 +87,8 @@ def lint(card, prefix=None, skip=()):
 
 
 def parse_cards(raw):
-    """[(number, card)] from a JSON list or from a Markdown doc's ```json blocks."""
-    if raw.lstrip().startswith("["):
-        return list(enumerate(json.loads(raw), 1))
-    out = []
-    for n, block in enumerate(re.findall(r"```json\s*\n(.*?)```", raw, re.S), 1):
-        try:
-            item = json.loads(block)
-        except ValueError:
-            item = {"unparsed": block}
-        if "charter" not in item and "charter_change" not in item:
-            out.append((n, item))
-    return out
+    """[(number, card)] from a JSON list."""
+    return list(enumerate(json.loads(raw), 1))
 
 
 async def read_cards(path):
@@ -121,10 +108,6 @@ async def main():
     cards = await read_cards(args[0])
     bad = False
     for i, c in cards:
-        if "unparsed" in c:
-            print(f"#{i} [error] not valid JSON")
-            bad = True
-            continue
         label = text(c.get("fields", {}).get("Front") or c.get("fields", {}).get("Text") or "")[:50]
         for sev, msg in lint(c, prefix, skip):
             print(f"#{i} [{sev}] {msg}  ({label})")

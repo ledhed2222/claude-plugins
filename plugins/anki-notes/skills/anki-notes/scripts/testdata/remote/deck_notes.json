@@ -1,0 +1,124 @@
+{
+ "items": [
+  {
+   "id": 1795478372709,
+   "note_type_id": 1795478372492,
+   "note_type_name": "Basic",
+   "note_type_name_truncated": false,
+   "fields": [
+    {
+     "name": "Front",
+     "name_truncated": false,
+     "value": "What is <b>recall</b>?",
+     "value_truncated": false
+    },
+    {
+     "name": "Back",
+     "name_truncated": false,
+     "value": "",
+     "value_truncated": false
+    }
+   ],
+   "fields_omitted": 0,
+   "tags": [
+    "to-delete"
+   ],
+   "card_ids": [
+    1795478372709
+   ],
+   "modified": 1795478372
+  },
+  {
+   "id": 1795478391691,
+   "note_type_id": 1795478372492,
+   "note_type_name": "Basic",
+   "note_type_name_truncated": false,
+   "fields": [
+    {
+     "name": "Front",
+     "name_truncated": false,
+     "value": "Which eval step costs more: inference or scoring?",
+     "value_truncated": false
+    },
+    {
+     "name": "Back",
+     "name_truncated": false,
+     "value": "<img src=\"roc.png\">",
+     "value_truncated": false
+    }
+   ],
+   "fields_omitted": 0,
+   "tags": [
+    "ai::evals",
+    "type::contrast"
+   ],
+   "card_ids": [
+    1795478391691
+   ],
+   "modified": 1795478372
+  },
+  {
+   "id": 1795478391692,
+   "note_type_id": 1795478372496,
+   "note_type_name": "Cloze",
+   "note_type_name_truncated": false,
+   "fields": [
+    {
+     "name": "Text",
+     "name_truncated": false,
+     "value": "Precision {{c1::rises}}, recall {{c2::falls}}",
+     "value_truncated": false
+    },
+    {
+     "name": "Back Extra",
+     "name_truncated": false,
+     "value": "",
+     "value_truncated": false
+    }
+   ],
+   "fields_omitted": 0,
+   "tags": [
+    "ai::metrics"
+   ],
+   "card_ids": [
+    1795478391692,
+    1795478391693
+   ],
+   "modified": 1795478372
+  },
+  {
+   "id": 1795478708394,
+   "note_type_id": 1795478372492,
+   "note_type_name": "Basic",
+   "note_type_name_truncated": false,
+   "fields": [
+    {
+     "name": "Front",
+     "name_truncated": false,
+     "value": "What does a binary classifier do?",
+     "value_truncated": false
+    },
+    {
+     "name": "Back",
+     "name_truncated": false,
+     "value": "",
+     "value_truncated": false
+    }
+   ],
+   "fields_omitted": 0,
+   "tags": [
+    "aie::metrics::basics",
+    "src::metrics",
+    "type::definition"
+   ],
+   "card_ids": [
+    1795478708394
+   ],
+   "modified": 1795478372
+  }
+ ],
+ "offset": 0,
+ "limit": 100,
+ "total": 4,
+ "has_more": false
+}

@@ -1,0 +1,25 @@
+{
+ "created": 1,
+ "skipped": 1,
+ "failed": 1,
+ "total_requested": 3,
+ "deck_name": "AI Engineering::02 Eval basics",
+ "model_name": "Basic",
+ "results": [
+  {
+   "index": 0,
+   "status": "created",
+   "note_id": 2001
+  },
+  {
+   "index": 1,
+   "status": "skipped",
+   "reason": "duplicate"
+  },
+  {
+   "index": 2,
+   "status": "failed",
+   "error": "Unknown fields for this model: Foo"
+  }
+ ]
+}

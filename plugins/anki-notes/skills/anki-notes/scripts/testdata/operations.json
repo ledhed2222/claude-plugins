@@ -1,0 +1,80 @@
+{
+ "_about": "Each shared operation has one reply fixture per server, local/<op>.json and remote/<op>.json: the reply of the tool named here, for the same collection. Remote replies were recorded from a live anki-sync-mcp (df6a388), except sync and unreachable; media_sync_in_progress was recorded from a2e6562 (PR #22) during a first media download; local ones hold the same notes, ids and texts in the AnkiMCP add-on's reply shapes (evals/mocks/anki). Server-only fixtures are under only. The remote add_created and add_duplicate are batch receipts in the shape recorded from 76f155e (PR #31), with the fixture collection's ids; add_mixed is that recording as is. deck_notes on remote is an include_fields search page (shape from ec9c352, PR #32) of the fixture collection; search_full and search_trimmed (a page cut to fit MCP_MAX_RESPONSE_BYTES) are recordings from ec9c352 as is. note_type_preview and note_type_updated are a CSS-only update recorded from 853e85b (PR #33). deck_not_found is anki_decks_get(name) for an unknown deck, recorded from b4da2b3 (PR #34). search on remote carries note_type_name (shape from 47c5699, PR #36); search_without_names is the older shape, for the fallback.",
+ "shared": {
+  "decks": {
+   "local": "list_decks",
+   "remote": "anki_decks_list"
+  },
+  "charter": {
+   "local": "get_deck_description",
+   "remote": "anki_decks_get"
+  },
+  "charter_saved": {
+   "local": "update_deck_description",
+   "remote": "anki_decks_update"
+  },
+  "search": {
+   "local": "find_notes",
+   "remote": "anki_notes_search"
+  },
+  "note_types": {
+   "local": "model_names",
+   "remote": "anki_note_types_list"
+  },
+  "notes_full": {
+   "local": "notes_info",
+   "remote": "anki_notes_get"
+  },
+  "templates": {
+   "local": "model_templates",
+   "remote": "anki_note_types_get"
+  },
+  "add_created": {
+   "local": "add_notes",
+   "remote": "anki_notes_create_batch"
+  },
+  "add_duplicate": {
+   "local": "add_notes",
+   "remote": "anki_notes_create_batch"
+  },
+  "card_ids": {
+   "local": "notes_info",
+   "remote": "anki_cards_search"
+  },
+  "reposition": {
+   "local": "card_reposition",
+   "remote": "anki_cards_reposition"
+  },
+  "sync": {
+   "local": "sync",
+   "remote": "anki_sync"
+  },
+  "unreachable": {
+   "local": "add_notes",
+   "remote": "anki_notes_create_batch"
+  },
+  "deck_notes": {
+   "local": "notes_info",
+   "remote": "anki_notes_search"
+  }
+ },
+ "only": {
+  "local": {
+   "add_mixed": "add_notes"
+  },
+  "remote": {
+   "auth_error": "anki_sync",
+   "note_type_preview": "anki_note_types_change_preview",
+   "note_type_updated": "anki_note_types_update",
+   "note_type_manual_change": "anki_note_type_fields_update",
+   "media_sync_in_progress": "anki_media_store",
+   "note_created": "anki_notes_create",
+   "note_duplicate": "anki_notes_create",
+   "add_mixed": "anki_notes_create_batch",
+   "search_full": "anki_notes_search",
+   "search_trimmed": "anki_notes_search",
+   "deck_not_found": "anki_decks_get",
+   "search_without_names": "anki_notes_search"
+  }
+ }
+}

@@ -7,8 +7,6 @@ from check_cases import check_case, check_shape, replies
 _GOOD = """---
 description: A case.
 plugins: ["../..", "../../../ankimcp"]
-env:
-  EVAL_SKIP_INBOX_HOOK: "1"
 allowed_tools: [Skill, mcp__plugin_ankimcp_anki__list_decks, mcp__plugin_ankimcp_anki__add_notes]
 ---
 Teach me F1.
@@ -37,10 +35,20 @@ class CheckCaseTests(unittest.TestCase):
     def test_good_case(self):
         self.assertEqual(check_case(_case(_GOOD, [_JUDGE, _CALLS]), _SHARED, _SHARED), [])
 
-    def test_missing_env_and_plugins(self):
-        bad = _GOOD.replace('  EVAL_SKIP_INBOX_HOOK: "1"\n', '  OTHER: "1"\n').replace('"../../../ankimcp"', '"../ankimcp"')
-        problems = check_case(_case(bad, [_CALLS]), _SHARED, _SHARED)
-        self.assertEqual(len(problems), 2)
+    def test_llm_focus_must_be_known(self):
+        bad = "---\ntype: llm\nfocus: reply\n---\nPASS if ...\n"
+        self.assertEqual(check_case(_case(_GOOD, [bad, _CALLS]), _SHARED, _SHARED),
+                         ["an llm grader's focus must be last_message or trace, not reply"])
+
+    def test_wrong_plugins(self):
+        bad = _GOOD.replace('"../../../ankimcp"', '"../ankimcp"')
+        self.assertEqual(len(check_case(_case(bad, [_CALLS]), _SHARED, _SHARED)), 1)
+
+    def test_one_server_per_case(self):
+        mixed = _GOOD.replace("]\n---", ", mcp__plugin_ankimcp_anki__anki_decks_list]\n---", 1)
+        known = _SHARED | {"anki_decks_list"}
+        self.assertEqual(check_case(_case(mixed, [_CALLS]), known, known),
+                         ["allowed_tools mixes the local and remote servers' tools"])
 
     def test_unmocked_tool_would_reach_anki(self):
         problems = check_case(_case(_GOOD, [_CALLS]), {"list_decks"}, _SHARED)

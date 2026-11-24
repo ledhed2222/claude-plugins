@@ -1,0 +1,47 @@
+{
+ "items": [
+  {
+   "id": 1795478372709,
+   "note_type_id": 1795478372492,
+   "first_field": "What is <b>recall</b>?",
+   "first_field_truncated": false,
+   "tags": [
+    "to-delete"
+   ]
+  },
+  {
+   "id": 1795478391691,
+   "note_type_id": 1795478372492,
+   "first_field": "Which eval step costs more: inference or scoring?",
+   "first_field_truncated": false,
+   "tags": [
+    "ai::evals",
+    "type::contrast"
+   ]
+  },
+  {
+   "id": 1795478391692,
+   "note_type_id": 1795478372496,
+   "first_field": "Precision {{c1::rises}}, recall {{c2::falls}}",
+   "first_field_truncated": false,
+   "tags": [
+    "ai::metrics"
+   ]
+  },
+  {
+   "id": 1795478708394,
+   "note_type_id": 1795478372492,
+   "first_field": "What does a binary classifier do?",
+   "first_field_truncated": false,
+   "tags": [
+    "aie::metrics::basics",
+    "src::metrics",
+    "type::definition"
+   ]
+  }
+ ],
+ "offset": 0,
+ "limit": 100,
+ "total": 4,
+ "has_more": false
+}

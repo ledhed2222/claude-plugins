@@ -1,0 +1,1 @@
+{"required": "NORMAL_SYNC", "server_message": "", "server_message_truncated": false, "host_number": 1, "media_sync_requested": true, "media_sync": {"state": "completed", "completed": true}, "endpoint_changed": false, "full_download": null}

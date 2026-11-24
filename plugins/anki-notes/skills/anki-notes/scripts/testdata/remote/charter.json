@@ -1,0 +1,21 @@
+{
+ "id": 1795478372697,
+ "name": "AI Engineering",
+ "name_truncated": false,
+ "hierarchy": [
+  "AI Engineering"
+ ],
+ "modified": 1795478372,
+ "description": "Charter text",
+ "description_truncated": false,
+ "dynamic": false,
+ "config_id": 1,
+ "config": {
+  "name": "Default",
+  "name_truncated": false,
+  "new_cards_per_day": 20,
+  "reviews_per_day": 200,
+  "max_answer_seconds": 60,
+  "desired_retention": 0.9
+ }
+}

@@ -1,0 +1,17 @@
+{
+ "created": 1,
+ "skipped": 0,
+ "failed": 0,
+ "total_requested": 1,
+ "max_notes_per_batch": 100,
+ "deck_name": "AI Engineering::01 Classification metrics",
+ "model_name": "Basic",
+ "results": [
+  {
+   "index": 0,
+   "status": "created",
+   "note_id": 1795478708394
+  }
+ ],
+ "message": "Created 1 of 1 notes in deck \"AI Engineering::01 Classification metrics\""
+}

@@ -1,0 +1,9 @@
+{
+ "content": [
+  {
+   "type": "text",
+   "text": "Error executing tool anki_sync: {\"code\":\"AUTHENTICATION_FAILED\",\"message\":\"sync login is required before synchronization\",\"correlation_id\":\"00000000-0000-0000-0000-000000000000\"}"
+  }
+ ],
+ "isError": true
+}

@@ -1,6 +1,6 @@
 ---
 type: llm
-focus: reply
+focus: last_message
 arm: with-only
 ---
 Two facts were taught: the standard BLEU counts n-grams up to length 4 (arbitrary: it has to be remembered), and the brevity penalty exists because n-gram precision alone rewards very short outputs (it can be reasoned out).

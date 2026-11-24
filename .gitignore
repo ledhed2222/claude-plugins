@@ -3,3 +3,4 @@ evals/results/
 *.applied.json
 __pycache__/
 *.pyc
+plugins/anki-notes/evals-remote/results/

@@ -1,0 +1,9 @@
+{
+ "content": [
+  {
+   "type": "text",
+   "text": "Error executing tool anki_media_store: {\"code\":\"MEDIA_SYNC_IN_PROGRESS\",\"message\":\"the initial media sync has not completed; media is incomplete\",\"correlation_id\":\"00000000-0000-0000-0000-000000000000\",\"details\":{\"media_sync\":{\"state\":\"in_progress\",\"completed\":false,\"in_progress\":true,\"error\":null,\"checked\":\"Checked: \\u20681000\\u2069\",\"added\":\"Added: \\u20680\\u2069\\u2191 \\u2068175\\u2069\\u2193\",\"removed\":\"Removed: \\u20680\\u2069\\u2191 \\u20680\\u2069\\u2193\"}}}"
+  }
+ ],
+ "isError": true
+}

@@ -2,16 +2,16 @@
 """Mechanical checks and edits for deck charters (see charters.md).
 
 Usage:
-  python3 -I charter.py lint <charter.md> [--deck <name>]
-  python3 -I charter.py lint --deck <name>
+  python3 -I charter.py lint <charter.md|description.json> [--deck <name> --decks <reply.json>] [--others <reply.json>...]
   python3 -I charter.py edit <charter.md> <section> <new-body.md> <out.md>
 
 lint checks the required sections, the Assumes: line, that Adding is Automatic
 or Ask, stage numbering and one-line descriptions, the ~250-word cap and the
-tag prefix. With --deck it also reads Anki: the saved charter when no file is
-given, the other top-level decks' tag prefixes (must differ) and the deck's
-subdecks (must match the stages). Without --deck it needs no Anki, so it runs
-in the claude.ai sandbox. Exit 1 on any error.
+tag prefix. The charter is a Markdown file, or a saved get_deck_description /
+anki_decks_get reply for the one in Anki. Optional saved replies add checks:
+--decks (list_decks or anki_decks_list) with --deck checks the deck's subdecks
+match the stages; --others (the other top-level decks' description replies)
+checks the tag prefix isn't already taken. Exit 1 on any error.
 
 edit replaces one section's body, writes the full new text to out.md and
 prints the diff: every other line stays byte for byte.
@@ -104,21 +104,12 @@ def edit(text, section, body):
     return "".join(out)
 
 
-async def from_anki(deck, want_text):
-    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
-    from ankimcp_client import AnkiError, Client
-    try:
-        async with Client() as anki:
-            names = [d["name"] for d in (await anki.call("list_decks"))["decks"]]
-            tops = [n for n in names if "::" not in n and n != deck] + ([deck] if want_text else [])
-            descs = [d.get("description") or "" for d in await asyncio.gather(
-                *(anki.call("get_deck_description", deck_name=t) for t in tops))]  # reads only, so they run at once
-            text = descs.pop() if want_text else None
-            others = [prefix(d) for d in descs if prefix(d)]
-    except AnkiError as e:
-        sys.exit(str(e))
-    subs = [n[len(deck) + 2:] for n in names if n.startswith(deck + "::") and "::" not in n[len(deck) + 2:]]
-    return text, others, subs
+def _flag_values(args, flag):
+    """The values after flag, up to the next --flag."""
+    if flag not in args:
+        return []
+    rest = args[args.index(flag) + 1:]
+    return rest[:next((i for i, a in enumerate(rest) if a.startswith("--")), len(rest))]
 
 
 async def _read(path):
@@ -145,13 +136,20 @@ async def main():
         sys.stdout.writelines(difflib.unified_diff(old.splitlines(True), new.splitlines(True), "old", "new"))
         return
 
-    deck = args[args.index("--deck") + 1] if "--deck" in args else None
-    files = [a for a in args[1:] if a != "--deck" and a != deck]
-    others, subs, text = (), None, None
-    if deck:
-        text, others, subs = await from_anki(deck, not files)
-    if files:
-        text = await _read(files[0])
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
+    from replies import ReplyError, decks, description, read
+    path = args[1] if len(args) > 1 and not args[1].startswith("--") else None
+    if not path:
+        sys.exit(__doc__)
+    deck = (_flag_values(args, "--deck") or [None])[0]
+    try:
+        text = description((await read([path]))[0])[1] if path.endswith(".json") else await _read(path)
+        others = [prefix(description(p)[1]) for p in await read(_flag_values(args, "--others"))]
+        names = list(decks(await read(_flag_values(args, "--decks"))))
+    except ReplyError as e:
+        sys.exit(f"a saved reply is an error: {e}")
+    others = [p for p in others if p]
+    subs = [n[len(deck) + 2:] for n in names if n.startswith(deck + "::") and "::" not in n[len(deck) + 2:]] if deck and names else None
     if not text:
         sys.exit("no charter text")
     findings = lint(text, others, subs)
