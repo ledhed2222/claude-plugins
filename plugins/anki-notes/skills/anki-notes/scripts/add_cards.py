@@ -41,7 +41,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))  # -I leaves this dir off sys.path
 from lint_cards import lint, read_cards, text  # noqa: E402
-from replies import LOCAL, REMOTE, SERVERS, ReplyError, call, card_ids, decks, key, note_type_names, print_plan, read  # noqa: E402
+from replies import LOCAL, REMOTE, SERVERS, ReplyError, call, card_ids, decks, error_code, key, note_type_names, print_plan, read  # noqa: E402
 
 def check(cards):
     errors = [f"#{n}: {m}" for n, c in cards for s, m in lint(c) if s == "error"]
@@ -103,7 +103,17 @@ def outcomes(cards, server, payloads):
         return out
     for chunk, p in zip(_chunks(cards), payloads):
         if isinstance(p, ReplyError):
-            out.update({n: ("failed", str(p)) for n, _ in chunk})
+            code = error_code(p)[0]
+            if code == "FULL_SYNC_REQUIRED":  # the server committed the batch, then its sync needed a full one
+                out.update({n: ("failed", "saved on the server but not synced: AnkiWeb needs a full sync "
+                                          "(FULL_SYNC_REQUIRED). Don't add it again; the user picks the direction") for n, _ in chunk})
+            elif code != "DUPLICATE_NOTE":
+                out.update({n: ("failed", str(p)) for n, _ in chunk})
+            elif len(chunk) == 1:  # a batch sent without skip_duplicates refuses its one card as a repeat
+                out[chunk[0][0]] = ("duplicate", None)
+            else:
+                out.update({n: ("failed", "the batch was refused because one of its cards is a duplicate: "
+                                          "plan again, which sends skip_duplicates") for n, _ in chunk})
             continue
         results = p["result"]["notes"]
         if len(results) != len(chunk):

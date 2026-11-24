@@ -31,7 +31,8 @@ make them yourself, in order, saving each reply to its own file.
           --cards it prints the lookup call (notes_info, or anki_cards_search
           on remote) to save first. On remote, page that search while
           has_more (the next offset is this one plus the reply's limit) and
-          pass each page with its own --cards. --sync adds the sync at the end.
+          pass each page with its own --cards. --sync adds the sync at the end
+          (on remote, needed only when a receipt says remote_synced: false).
 """
 import asyncio
 import json
@@ -221,7 +222,8 @@ async def main():
         sys.exit(f"a saved reply is an error: {e}")
     if "--sync" in args and not (calls and calls[0].get("note")):
         calls.append(dict(call("sync"), note="then poll sync(job_id) until it's not running; cancel a conflict")
-                     if server == LOCAL else call("anki_sync"))
+                     if server == LOCAL else
+                     dict(call("anki_sync"), note="only if a receipt above says remote_synced: false; the server syncs each write itself"))
     print_plan(calls)
 
 

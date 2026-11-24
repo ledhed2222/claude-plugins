@@ -97,6 +97,11 @@ class RemoteApplyStage(ApplyStageContract, unittest.TestCase):
     server = REMOTE
     new_note_reply = "note_created"  # apply_stage adds new notes one anki_notes_create at a time
 
+    def test_sync_only_when_a_receipt_says_unsynced(self):
+        self.run_cmd("record", self.plan_path, "--server", REMOTE, self.file("new.json", raw(REMOTE, "note_created")))
+        placed = self.calls("place", self.plan_path, *self.ids, "--cards", self.file("cards.json", raw(REMOTE, "card_ids")), "--sync")
+        self.assertIn("remote_synced: false", placed[-1]["note"])
+
     def test_writes_carry_ids_and_keys(self):
         calls = self.calls("plan", self.plan_path, *self.ids)
         self.assertEqual(calls[0]["args"]["deck_id"], decks([load(REMOTE, "decks")])[_DECK])

@@ -173,6 +173,25 @@ class RemoteAddCards(AddCardsContract, unittest.TestCase):
         results = outcomes(cards, REMOTE, [load(REMOTE, "add_created")])
         self.assertEqual({results[1][0], results[2][0]}, {"failed"})
 
+    def test_a_refused_batch_of_one_duplicate_is_a_duplicate(self):
+        """A batch sent by hand without skip_duplicates, as recorded from a deployed server."""
+        refused = {"r.json": raw(REMOTE, "batch_duplicate_error")}
+        one = run_script("add_cards.py", "order", "cards.json", "--server", REMOTE, "r.json",
+                         files=dict(self.files(_CARDS[:1]), **refused))
+        self.assertEqual(json.loads(one.stdout.strip().splitlines()[-1])["duplicate"], [1], one.stdout + one.stderr)
+        both = run_script("add_cards.py", "order", "cards.json", "--server", REMOTE, "r.json", files=dict(self.files(), **refused))
+        report = json.loads(both.stdout.strip().splitlines()[-1])
+        self.assertEqual(sorted(report["failed"]), ["1", "2"])
+        self.assertIn("skip_duplicates", report["failed"]["1"])
+
+    def test_full_sync_required_says_the_cards_are_on_the_server(self):
+        r = run_script("add_cards.py", "order", "cards.json", "--server", REMOTE, "r.json",
+                       files=dict(self.files(), **{"r.json": raw(REMOTE, "full_sync_required")}))
+        report = json.loads(r.stdout.strip().splitlines()[-1])
+        self.assertEqual(sorted(report["failed"]), ["1", "2"])
+        self.assertIn("saved on the server but not synced", report["failed"]["1"])
+        self.assertEqual(report["calls"], [])
+
     def test_recorded_mixed_batch(self):
         """The receipt recorded from a live anki-sync-mcp: one created, one duplicate of a note it already held."""
         receipt = load(REMOTE, "add_mixed")
@@ -195,6 +214,13 @@ class FindDupesTests(unittest.TestCase):
         self.assertNotIn(1, [x[1] for x in m])
         self.assertEqual(close_matches("Grounding is a {{c1::noun}}", existing), [])
 
+    def test_image_file_names_count(self):
+        """Anki's duplicate check keeps media file names, so two maps with one question aren't the same field."""
+        q = "<br />Which Sherry Triangle town is marked on this map?"
+        m = close_matches('<img src="map-a.svg">' + q, [(1, '<img src="map-b.svg">' + q)])
+        self.assertTrue(m and m[0][0] < 1.0)
+        self.assertEqual(close_matches('<img src="map-a.svg">' + q, [(1, '<img src="map-a.svg">' + q)])[0][0], 1.0)
+
 
 class FindDupesContract:
     server = None
@@ -205,6 +231,12 @@ class FindDupesContract:
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("1.00 note 1795478708394: What does a binary classifier do?", r.stdout)
         self.assertIn("note 1795478391691: Which eval step costs more", r.stdout)
+
+    def test_cli_compares_drafts_with_each_other(self):
+        drafts = [_card("Which soil gives the finest Palomino?"), _card("Which soil gives the finest Palomino?")]
+        r = run_script("find_dupes.py", "cards.json", "search.json", files={"cards.json": drafts, "search.json": raw(self.server, "search")})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("1.00 draft #1: Which soil gives the finest Palomino?", r.stdout)
 
     def test_cli_refuses_an_error_reply(self):
         r = run_script("find_dupes.py", "cards.json", "search.json", files={"cards.json": _CARDS, "search.json": raw(self.server, "unreachable")})

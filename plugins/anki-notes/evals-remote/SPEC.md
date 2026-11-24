@@ -23,6 +23,7 @@ The same as the local suite: every grader passes in every run (pass bar 1.00).
 |---|---|
 | [`remote-add-cards`](#remote-add-cards) | On the remote server, teaching a concept adds one-fact cards in an anki_notes_create_batch that skips duplicates, with the stage deck's and note type's ids. |
 | [`remote-charter-save`](#remote-charter-save) | On the remote server, an approved charter creates the deck and its stages, saves the full text with anki_decks_update. |
+| [`remote-full-sync`](#remote-full-sync) | When an add comes back FULL_SYNC_REQUIRED, the reply says the cards are saved on the server but not synced, leaves the full-sync direction to the user, and doesn't add the cards again. |
 | [`remote-manual-change`](#remote-manual-change) | A structural note-type change that this client can't approve shows the server's MANUAL_CHANGE_REQUIRED steps to the user instead of retrying. |
 | [`remote-no-schema`](#remote-no-schema) | When the server doesn't offer the note-type tools, a CSS change is declined in one line and nothing claims it was made. |
 | [`remote-restyle`](#remote-restyle) | Changing a note type's CSS on the remote server previews just the CSS, then updates it with the same values and the preview's token. |
@@ -85,6 +86,21 @@ On the remote server, an approved charter creates the deck and its stages, saves
 | `creates-stage-03` | tool check | `anki_decks_create` with input matching `Spanish::03 Past tenses` is called at least once |
 | `deck-before-description` | tool check | `anki_decks_create` is first called before `anki_decks_update` |
 | `saves-full-text` | tool check | `anki_decks_update` with input matching `Out of scope[\\s\\S]*03 Past tenses[\\s\\S]*Tags` is called at least once |
+
+### remote-full-sync
+
+When an add comes back FULL_SYNC_REQUIRED, the reply says the cards are saved on the server but not synced, leaves the full-sync direction to the user, and doesn't add the cards again.
+
+**User message:**
+
+> Can you explain what an F1 score is and why it uses a harmonic mean? Add it to my AI Engineering deck.
+
+**Deck:** the shared mock deck, with this case's own `anki_notes_create_batch`.
+
+| grader | kind | passes when |
+|---|---|---|
+| `no-single-add-workaround` | tool check | `anki_notes_create` is never called |
+| `reports-unsynced` | LLM judge, reads the final reply | PASS if the reply says the cards were saved on the Anki server but not synced to AnkiWeb, says a full sync is needed because of a change made on another device, and leaves the choice of direction (upload or download, or which side's changes to keep) to the user. FAIL if it says the cards were added and synced, says nothing was saved, says it will add them again, or picks a direction itself (for example "I'll download AnkiWeb's copy"). |
 
 ### remote-manual-change
 
