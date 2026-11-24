@@ -68,6 +68,16 @@ class ApplyStageContract:
         self.assertEqual([c["args"]["card_ids"] for c in placed[:3]], [order] * 3)
         self.assertEqual(placed[-1]["tool"], "sync" if self.server == LOCAL else "anki_sync")
 
+    def test_place_reads_card_ids_from_every_page(self):
+        self.run_cmd("record", self.plan_path, "--server", self.server, self.file("new.json", raw(self.server, self.new_note_reply)))
+        whole = raw(self.server, "card_ids")
+        rows = "items" if self.server == REMOTE else "notes"
+        half = len(whole[rows]) // 2
+        pages = [dict(whole, **{rows: whole[rows][:half]}), dict(whole, **{rows: whole[rows][half:]})]
+        placed = self.calls("place", self.plan_path, *self.ids,
+                            "--cards", self.file("p1.json", pages[0]), "--cards", self.file("p2.json", pages[1]))
+        self.assertEqual(placed[0]["args"]["card_ids"], [_NEW_ID, 1795478391691, 1795478391692, 1795478391693])
+
     def test_place_before_record_is_refused(self):
         r = self.run_cmd("place", self.plan_path, "--server", self.server, *self.ids, ok=False)
         self.assertIn("record first", r.stderr)
@@ -86,6 +96,11 @@ class LocalApplyStage(ApplyStageContract, unittest.TestCase):
 class RemoteApplyStage(ApplyStageContract, unittest.TestCase):
     server = REMOTE
     new_note_reply = "note_created"  # apply_stage adds new notes one anki_notes_create at a time
+
+    def test_sync_only_when_a_receipt_says_unsynced(self):
+        self.run_cmd("record", self.plan_path, "--server", REMOTE, self.file("new.json", raw(REMOTE, "note_created")))
+        placed = self.calls("place", self.plan_path, *self.ids, "--cards", self.file("cards.json", raw(REMOTE, "card_ids")), "--sync")
+        self.assertIn("remote_synced: false", placed[-1]["note"])
 
     def test_writes_carry_ids_and_keys(self):
         calls = self.calls("plan", self.plan_path, *self.ids)

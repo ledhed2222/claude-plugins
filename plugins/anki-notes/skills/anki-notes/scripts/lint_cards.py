@@ -30,6 +30,14 @@ def text(html):
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html)).strip()
 
 
+def _choices(front):
+    """Words that are items of a listed set of options in the front ("albariza, barro and arena")."""
+    out = set()
+    for m in re.finditer(r"([^\W\d_]+)((?:,\s*[^\W\d_]+)+),?\s+and\s+([^\W\d_]+)", front):
+        out |= {w.lower() for w in re.findall(r"[^\W\d_]+", m.group(0)) if w.lower() != "and"}
+    return out
+
+
 def _words(s):
     return [w for w in re.findall(r"[^\W\d_]{5,}", s.lower()) if w not in _STOP]
 
@@ -68,8 +76,8 @@ def lint(card, prefix=None, skip=()):
                 add("warn", "yes-no", "front looks like a yes/no question")
             if _LIST_ASK.search(text(front)):
                 add("warn", "whole-set", "asks for a whole set or 'an example of': card one member, or turn it around")
-            # a front that names its choices ("A or B?") must contain the answer, so skip it
-            leaked = [] if re.search(r"\bor\b", text(front), re.I) else sorted(set(_words(answer)) & set(_words(text(front))))
+            # a front that names its choices ("A or B?", "A, B and C") must contain the answer, so skip those words
+            leaked = [] if re.search(r"\bor\b", text(front), re.I) else sorted(set(_words(answer)) & set(_words(text(front))) - _choices(text(front)))
             if leaked:
                 add("warn", "answer-in-question", f"answer word(s) appear in the question: {', '.join(leaked)}")
         for name, val in f.items():

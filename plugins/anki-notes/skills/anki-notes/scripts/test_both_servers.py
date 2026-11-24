@@ -85,6 +85,10 @@ class SchemaCheckTests(unittest.TestCase):
         self.assertIn("missing required 'fields'", check_args({"deck_id": 1, "note_type_id": 2}, schema))
         self.assertIn("unknown argument 'deck_name'", check_args({"deck_id": 1, "note_type_id": 2, "fields": {}, "deck_name": "x"}, schema))
         self.assertTrue(any("deck_id" in p for p in check_args({"deck_id": "AI", "note_type_id": 2, "fields": {}}, schema)))
+        search = tools(REMOTE)["anki_cards_search"]["inputSchema"]
+        self.assertEqual(check_args({"query": "nid:1", "limit": 100}, search), [])
+        self.assertTrue(any("limit" in p for p in check_args({"query": "nid:1", "limit": 1000}, search)))  # over its maximum
+        self.assertTrue(any("limit" in p for p in check_args({"query": "nid:1", "limit": 0}, search)))
         local = tools(LOCAL)["tag_add"]["inputSchema"]
         self.assertTrue(any("tags" in p for p in check_args({"note_ids": [1], "tags": ["a"]}, local)))  # the add-on wants a string
 

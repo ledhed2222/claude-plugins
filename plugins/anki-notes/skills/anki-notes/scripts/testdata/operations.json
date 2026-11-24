@@ -1,5 +1,5 @@
 {
- "_about": "Each shared operation has one reply fixture per server, local/<op>.json and remote/<op>.json: the reply of the tool named here, for the same collection. Remote replies were recorded from a live anki-sync-mcp (df6a388), except sync and unreachable; media_sync_in_progress was recorded from a2e6562 (PR #22) during a first media download; local ones hold the same notes, ids and texts in the AnkiMCP add-on's reply shapes (evals/mocks/anki). Server-only fixtures are under only. The remote add_created and add_duplicate are batch receipts in the shape recorded from 76f155e (PR #31), with the fixture collection's ids; add_mixed is that recording as is. deck_notes on remote is an include_fields search page (shape from ec9c352, PR #32) of the fixture collection; search_full and search_trimmed (a page cut to fit MCP_MAX_RESPONSE_BYTES) are recordings from ec9c352 as is. note_type_preview and note_type_updated are a CSS-only update recorded from 853e85b (PR #33). deck_not_found is anki_decks_get(name) for an unknown deck, recorded from b4da2b3 (PR #34). search on remote carries note_type_name (shape from 47c5699, PR #36); search_without_names is the older shape, for the fallback.",
+ "_about": "Each shared operation has one reply fixture per server, local/<op>.json and remote/<op>.json: the reply of the tool named here, for the same collection. Remote replies were recorded from a live anki-sync-mcp (df6a388), except sync and unreachable; media_sync_in_progress was recorded from a2e6562 (PR #22) during a first media download; local ones hold the same notes, ids and texts in the AnkiMCP add-on's reply shapes (evals/mocks/anki). Server-only fixtures are under only. The remote add_created and add_duplicate are batch receipts in the shape recorded from 76f155e (PR #31), with the fixture collection's ids; add_mixed is that recording as is. deck_notes on remote is an include_fields search page (shape from ec9c352, PR #32) of the fixture collection; search_full and search_trimmed (a page cut to fit MCP_MAX_RESPONSE_BYTES) are recordings from ec9c352 as is. note_type_preview and note_type_updated are a CSS-only update recorded from 853e85b (PR #33). deck_not_found is anki_decks_get(name) for an unknown deck, recorded from b4da2b3 (PR #34). search on remote carries note_type_name (shape from 47c5699, PR #36); search_without_names is the older shape, for the fallback. batch_duplicate_error is anki_notes_create_batch without skip_duplicates, recorded from a deployed server (47c5699) with its correlation id zeroed. full_sync_required is built from the server's message (collection.py, _sync_or_raise_full_sync), not recorded: the deployed server has no tool to recover from it.",
  "shared": {
   "decks": {
    "local": "list_decks",
@@ -74,7 +74,9 @@
    "search_full": "anki_notes_search",
    "search_trimmed": "anki_notes_search",
    "deck_not_found": "anki_decks_get",
-   "search_without_names": "anki_notes_search"
+   "search_without_names": "anki_notes_search",
+   "batch_duplicate_error": "anki_notes_create_batch",
+   "full_sync_required": "anki_notes_create_batch"
   }
  }
 }

@@ -6,10 +6,12 @@ Usage: python3 -I find_dupes.py <cards.json> <search-reply.json>... [--threshold
 The replies are the saved pages of a search for the subject deck, every note
 type: find_notes with query deck:"<subject>" and include_first_field: true
 (local), or anki_notes_search with the same query (remote). Prints, per draft,
-the deck's notes worded most like it. It only lists candidates: Claude decides
-what is a repeat, a near neighbor or unrelated. A score of 1.00 is the same
-first field, which the server refuses as a duplicate. It does not replace the
-w:term searches for prerequisites.
+the deck's notes worded most like it, and the earlier drafts in the batch
+("draft #n"). It only lists candidates: Claude decides what is a repeat, a near
+neighbor or unrelated. A score of 1.00 is the same first field, which the
+server refuses as a duplicate. Image file names count as part of the field, as
+they do in Anki's own duplicate check. It does not replace the w:term searches
+for prerequisites.
 """
 import asyncio
 import difflib
@@ -24,6 +26,7 @@ from replies import ReplyError, first_field, notes, read  # noqa: E402
 
 def _norm(s):
     s = re.sub(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}", r"\1", s)
+    s = re.sub(r"""<img[^>]*?src=["']?([^"'\s>]+)[^>]*>""", r" \1 ", s)
     return " ".join(re.findall(r"\w+", text(s).lower()))
 
 
@@ -37,7 +40,7 @@ def _score(a, b):
 
 def close_matches(draft, existing, threshold=0.5, n=3):
     """existing: [(note id, first field)] -> the n best [(score, id, first field)] at or above threshold."""
-    scored = sorted(((_score(draft, f), nid, f) for nid, f in existing), reverse=True)
+    scored = sorted(((_score(draft, f), nid, f) for nid, f in existing), key=lambda s: s[0], reverse=True)
     return [s for s in scored[:n] if s[0] >= threshold]
 
 
@@ -52,14 +55,16 @@ async def main():
         existing = [(n["id"], first_field(n)) for n in notes(await read(args[1:]))]
     except ReplyError as e:
         sys.exit(f"a saved reply is an error: {e}")
+    earlier = []
     for n, c in cards:
         draft = next(iter(c["fields"].values()), "")
-        matches = close_matches(draft, existing, threshold)
+        matches = close_matches(draft, existing + earlier, threshold)
         print(f"#{n} {text(draft)[:70]}")
         for s, nid, f in matches:
-            print(f"    {s:.2f} note {nid}: {text(f)[:90]}")
+            print(f"    {s:.2f} {nid if isinstance(nid, str) else f'note {nid}'}: {text(f)[:90]}")
         if not matches:
             print("    no close match")
+        earlier.append((f"draft #{n}", draft))
 
 
 if __name__ == "__main__":

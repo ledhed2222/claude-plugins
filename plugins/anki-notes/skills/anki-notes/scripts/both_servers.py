@@ -65,6 +65,25 @@ def tools(server):
 _JSON_TYPES = {"string": str, "integer": int, "number": (int, float), "boolean": bool, "array": list, "object": dict, "null": type(None)}
 
 
+def _bounds_ok(value, schema):
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if "minimum" in schema and value < schema["minimum"]:
+            return False
+        if "maximum" in schema and value > schema["maximum"]:
+            return False
+        if "exclusiveMinimum" in schema and value <= schema["exclusiveMinimum"]:
+            return False
+        if "exclusiveMaximum" in schema and value >= schema["exclusiveMaximum"]:
+            return False
+    if isinstance(value, (str, list)):
+        low, high = ("minLength", "maxLength") if isinstance(value, str) else ("minItems", "maxItems")
+        if low in schema and len(value) < schema[low]:
+            return False
+        if high in schema and len(value) > schema[high]:
+            return False
+    return True
+
+
 def _type_ok(value, schema, defs):
     if "$ref" in schema:
         schema = defs[schema["$ref"].split("/")[-1]]
@@ -78,6 +97,8 @@ def _type_ok(value, schema, defs):
         if isinstance(value, bool) and t in ("integer", "number"):
             continue
         if isinstance(value, _JSON_TYPES[t]):
+            if not _bounds_ok(value, opt):
+                continue
             if t == "array" and "items" in opt:
                 return all(_type_ok(v, opt["items"], defs) for v in value)
             if t == "object" and "properties" in opt:

@@ -27,8 +27,13 @@ class LintTests(unittest.TestCase):
     def test_answer_in_question(self):
         self.assertTrue(any("answer word" in m for m in _msgs(_basic("Why does a harmonic mean punish imbalance?", "A harmonic mean is dominated by the smaller value."))))
 
+    def test_named_choices_are_not_a_giveaway(self):
+        front = "Jerez's vineyards lie on three soils: albariza, barro and arena. Which one gives the finest Palomino?"
+        self.assertFalse(any("answer word" in m for m in _msgs(_basic(front, "<b>Albariza.</b>"))))
+        self.assertTrue(any("answer word" in m for m in _msgs(_basic("Why does albariza soil, white and chalky, suit Palomino?", "<b>Albariza</b> holds water."))))
+
     def test_why_example_line_is_not_the_answer(self):
-        long_extra = "<br><br><small><b>Why/Example:</b> " + "word " * 40 + "</small>"
+        long_extra = "<br /><br /><small><b>Why/Example:</b> " + "word " * 40 + "</small>"
         self.assertEqual([m for m in _msgs(_basic("Which costs more: inference or scoring?", "<b>Inference.</b>" + long_extra)) if "words" in m], [])
 
     def test_long_back(self):
