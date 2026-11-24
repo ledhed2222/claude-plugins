@@ -61,10 +61,16 @@ class ThemeTests(unittest.TestCase):
 
     def test_models_keep_stock_fields(self):
         basic, cloze = models(GOOD, "")
-        self.assertEqual(basic["in_order_fields"], ["Front", "Back"])
-        self.assertEqual(cloze["in_order_fields"], ["Text", "Extra"])
+        self.assertEqual(basic["in_order_fields"], ["Front", "Back", "Feedback"])
+        self.assertEqual(cloze["in_order_fields"], ["Text", "Extra", "Feedback"])
         self.assertTrue(cloze["is_cloze"])
         self.assertEqual(basic["model_name"], "Spanish · Basic")
+
+    def test_feedback_is_last_and_in_no_template(self):
+        for m in models(GOOD, ""):
+            self.assertEqual(m["in_order_fields"][-1], "Feedback")
+            for t in m["card_templates"]:
+                self.assertNotIn("Feedback", t["Front"] + t["Back"])
 
     def test_no_front_shows_the_answer(self):
         for m in models(GOOD, ""):

@@ -9,6 +9,7 @@ Read this only when a charter calls for a new note type or a change to one. Whet
 - **The front never shows the answer.** Check each card's front against a sample note. A back built on `{{FrontSide}}` inherits whatever the front did, so the back of a card whose front hides the answer must render the fields fresh.
 - **A production card gets a hint field** that makes exactly one answer right, such as a short gloss in the user's own language shown under the blank. This is `SKILL.md`'s one-right-answer rule built into the type.
 - **Plain templates first.** Use CSS and Anki's field filters (`{{text:Field}}` strips pasted HTML) before JavaScript. If a script is unavoidable, keep it self-contained in one IIFE: a back that reuses `{{FrontSide}}` runs it a second time in the same page.
+- **The last field is `Feedback`, in no template.** It's where the user, while reviewing, types why a note is badly made; it never shows on a card, only in the note editor. `build_theme.py` adds it to a theme's types; add it to any other type you create. `render_note.py` errors if a template shows it.
 - **Name fields for good.** Templates refer to fields by exact name, accents included.
 - Close void tags in templates: `<br />`, `<hr />`.
 

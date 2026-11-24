@@ -13,7 +13,8 @@ A card's answer is what its back shows that its front doesn't: the fields the
 back template uses and the front doesn't, or the cloze being tested. Errors:
 a front shows its answer (skipped when the front names its choices, "A or B?"),
 or a back reuses {{FrontSide}} although its scripted front has to hide the
-answer inside another field. Template JavaScript is not run: a front with
+answer inside another field. Also an error: a template shows the Feedback field; a
+warning: the note has no Feedback field. Template JavaScript is not run: a front with
 <script> is warned about instead of checked, so preview it in Anki.
 Prints every card's front and back as text, for showing the user.
 """
@@ -23,6 +24,7 @@ import os
 import re
 import sys
 
+FEEDBACK = "Feedback"  # the reviewer's hidden note on every note type the skill creates (build_theme.py)
 _TAG = re.compile(r"\{\{([#^/]?)\s*([^}]*?)\s*\}\}")
 
 
@@ -91,6 +93,11 @@ def _cards(templates, note):
 
 def check(templates, note):
     findings, shown = [], []
+    showing = sorted(name for name, t in templates.items() if FEEDBACK in _refs(t["Front"]) | _refs(t["Back"]))
+    if showing:
+        findings.append(("error", f"{', '.join(showing)}: shows {FEEDBACK}, the reviewer's hidden note; no template may"))
+    if FEEDBACK not in note:
+        findings.append(("warn", f"no {FEEDBACK} field: every note type the skill creates ends with one, in no template"))
     for label, n, ft, bt in _cards(templates, note):
         front = _render(ft, note, n, "front")
         back = _render(bt, note, n, "back", front_side=front)

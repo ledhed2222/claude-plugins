@@ -27,7 +27,8 @@ theme.json:
 Writes to <out dir>:
   models.json   create_model arguments (local server) for "<deck> · Basic" and "<deck> · Cloze",
                 with the stock fields (Front/Back, Text/Extra), so the skill fills
-                them as before and Change Note Type keeps review history
+                them as before and Change Note Type keeps review history, plus a
+                last field, Feedback, that no template shows
   models-remote.json
                 the same for the remote server: anki_note_types_change_preview
                 (operation "create") and anki_note_types_create arguments, with
@@ -158,17 +159,19 @@ def css(theme, files=()):
 {motion}"""
 
 
+# the reviewer's note on a badly made card; no template shows it, so it never reaches a card
+FEEDBACK = "Feedback"
 LABEL = '<div class="deck-label" data-deck="{{Deck}}">{{Subdeck}}</div>'
 
 
 def models(theme, stylesheet):
     deck = theme["deck"]
     return [
-        {"model_name": f"{deck} · Basic", "in_order_fields": ["Front", "Back"], "is_cloze": False, "css": stylesheet,
+        {"model_name": f"{deck} · Basic", "in_order_fields": ["Front", "Back", FEEDBACK], "is_cloze": False, "css": stylesheet,
          "card_templates": [{"Name": "Card 1",
                              "Front": LABEL + "\n<div class=\"question\">{{Front}}</div>",
                              "Back": "{{FrontSide}}\n<hr id=\"answer\" />\n<div class=\"answer\" data-tags=\"{{Tags}}\">{{Back}}</div>"}]},
-        {"model_name": f"{deck} · Cloze", "in_order_fields": ["Text", "Extra"], "is_cloze": True, "css": stylesheet,
+        {"model_name": f"{deck} · Cloze", "in_order_fields": ["Text", "Extra", FEEDBACK], "is_cloze": True, "css": stylesheet,
          "card_templates": [{"Name": "Cloze",
                              "Front": LABEL + "\n<div class=\"question\">{{cloze:Text}}</div>",
                              "Back": LABEL + "\n<div class=\"question\">{{cloze:Text}}</div>\n<hr id=\"answer\" />\n<div class=\"answer\" data-tags=\"{{Tags}}\">{{Extra}}</div>"}]},
