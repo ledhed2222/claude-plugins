@@ -1,0 +1,1 @@
+{"decks": [{"deck_id": 1, "name": "AI Engineering", "is_filtered": false}, {"deck_id": 4, "name": "Spanish", "is_filtered": false}, {"deck_id": 9, "name": "Sherry", "is_filtered": false}, {"deck_id": 10, "name": "Sherry::01 Making", "is_filtered": false}, {"deck_id": 11, "name": "Sherry::02 Styles", "is_filtered": false}]}

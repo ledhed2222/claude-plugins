@@ -75,7 +75,7 @@ A deck where every card is the same plain question gets static. Aim for no more 
 
 - **Variety is a tiebreaker, never a reason to write a worse card.** When the content has one right shape, it gets that shape. Only when two shapes would teach equally well does the under-used one win.
 - **Shapes to pick from**, within what the charter allows: a definition, a contrast, a "you see X, what do you do?" scenario, predict-the-result, spot-the-error, a cloze; and recognition or production of the same item where the charter has both note types.
-- **Media only when it carries part of the answer**: a diagram the user supplies or one you draw, or audio in a language deck. Never decorative, and never one whose visible content gives the answer away on the front.
+- **Look for media first when a card is about something you see or hear**, without being asked: a structure or process (tiers, a flow, a cycle), something recognized by sight (a colour, a shape, a place), or pronunciation. Draw a diagram or find a freely licensed photo, as `media.md` says. Not for abstract facts, never decorative, never one image across many cards, and never one whose visible content gives the answer away on the front. A charter's `Media:` line overrides this; `Media: none` means no media.
 - **Mnemonics are offered, not added**: for an arbitrary fact (a name, a number, an ordered list), propose one or two in your reply and put the one the user picks in the `Why/Example` line or `Extra`. Not for a card the user can reason their way to.
 
 ## Last checks before adding
@@ -103,7 +103,7 @@ Cards reach Anki through the `anki` MCP server of the `ankimcp@ledhed2222` plugi
 | Tag notes | `tag_add(note_ids, tags: "a b")` | `anki_notes_add_tags(note_ids, tags: ["a", "b"])` |
 | List note types | `model_names` | `anki_note_types_list` |
 | Read a note type | `model_field_names`, `model_templates`, `model_styling` | `anki_note_types_get(note_type_id)`: fields, templates and CSS |
-| Store a media file | `store_media_file` | `anki_media_store(filename, content_base64)` |
+| Store a media file | `store_media_file(filename, path)` or `(filename, url)` | `anki_media_store(filename, content_base64)` |
 | Sync | `sync()`, then poll `sync(job_id)` until it isn't `running`; on `conflict`, call `sync(job_id, resolve: "cancel")` and stop | `anki_sync()`, only when a write's receipt says `remote_synced: false` (the server syncs each write itself by default) |
 
 Note-type changes are in `note-types.md`. On remote:
@@ -131,7 +131,7 @@ The scripts named below are in this skill's `scripts/` directory; run each as `p
    - Any other note type the charter names: fill its fields the way Conventions says ("Read a note type" lists them).
    - Tags: the charter's prefix (`<prefix>::<area>::<topic>`), `type::definition|contrast|application|formula`, and `src::<topic>` so a batch can be found together. Name the topic, never the project or session it came from: no client, module or dataset names in tags either.
    - **Order**: new cards are studied in the file's order, after those already queued. Put prerequisites first, and give a card `"first": true` when it must come before new cards the deck already holds.
-6. **Report** in one line: how many were added, to which deck and stage, their fronts in short form, and whether the sync succeeded. On a sync conflict, tell the user and never pick a direction.
+6. **Report** in one line: how many were added, to which deck and stage, their fronts in short form, and whether the sync succeeded. When media was added or considered, add one line saying which cards got which file and which were considered but skipped, and why ("Media: solera diagram on 2 cards; no photo for the manzanilla card, none freely licensed"). On a sync conflict, tell the user and never pick a direction.
 
 If a script can't run, or fails for a reason other than the cards (a tool changed, say), make the same calls by hand, following every step.
 
