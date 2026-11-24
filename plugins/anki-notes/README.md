@@ -24,7 +24,7 @@ The skill tells the two servers apart by their tools and uses the right calls fo
 You need one of these servers ([ankimcp's README](../ankimcp/README.md) has the details):
 
 - **Local:** [Anki](https://apps.ankiweb.net) 25.07 or newer, with the [AnkiMCP](https://ankimcp.ai) add-on (Tools → Add-ons → Get Add-ons, code `124672614`). Works in Claude Code only, while Anki is open. For deck themes with their own fonts, add `"font/woff2"` to the add-on's `media_allowed_types` (Tools → Add-ons → AnkiMCP → Config, then restart Anki); without it, themed decks show your system font.
-- **Remote:** your own [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp) server. Deck themes and note-type changes need its `ANKI_ALLOW_SCHEMA_CHANGES` setting (and `ANKI_ALLOW_FULL_SYNC` for field changes); without them the skill still adds cards and saves charters.
+- **Remote:** your own [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp) server. Deck themes and note-type changes need `admin` in its `MCP_SCOPES` and its `ANKI_ALLOW_SCHEMA_CHANGES` setting (and `ANKI_ALLOW_FULL_SYNC` for field changes); without them the skill still adds cards and saves charters.
 
 In Claude Code:
 
@@ -96,6 +96,6 @@ Not built yet.
 |---|---|
 | Claude says it couldn't reach Anki | Local: Anki is closed, or the AnkiMCP add-on isn't running. Remote: your server is down or `/mcp` isn't signed in. Fix it, then say "try again": the drafts are in the chat. |
 | No Anki tools in claude.ai | Add your anki-sync-mcp server as a custom connector there. The local add-on can't be reached from claude.ai. |
-| Claude says it can't change a note type | Remote: the server's schema tools are off. Set `ANKI_ALLOW_SCHEMA_CHANGES=true` (and `ANKI_ALLOW_FULL_SYNC=true` for field changes). |
+| Claude says it can't change a note type | Remote: the server's schema tools are off. Include `admin` in `MCP_SCOPES` and set `ANKI_ALLOW_SCHEMA_CHANGES=true` (and `ANKI_ALLOW_FULL_SYNC=true` for field changes). |
 | Claude gives steps to change a note type in Anki Desktop | Remote: that change forces a full sync, and this app can't show the server's approval prompt. Follow the steps. |
 | Stages come up out of order in Anki | In the deck's options, set **Display Order → New card gather order** to **Deck**. |

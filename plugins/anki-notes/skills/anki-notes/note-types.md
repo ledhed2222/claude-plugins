@@ -71,7 +71,7 @@ A change to a note type changes every note of that type. Count them (search note
 
 ### remote
 
-Note-type changes need the server's schema tools, which a deployment turns on separately (`ANKI_ALLOW_SCHEMA_CHANGES`, plus `ANKI_ALLOW_FULL_SYNC` for field and template changes). If a tool below isn't listed, the change can't be made from here: say so in one line, and treat theming as optional.
+Note-type changes need the server's schema tools, which a deployment turns on separately: `admin` in `MCP_SCOPES` and `ANKI_ALLOW_SCHEMA_CHANGES`, plus `ANKI_ALLOW_FULL_SYNC` for field and template changes. If a tool below isn't listed, the change can't be made from here: say so in one line, and treat theming as optional.
 
 - **Templates text, CSS and renames** sync normally. Call `anki_note_types_change_preview` with `operation: "update"`, the `note_type_id` and only what changes (`css` to restyle, `templates` for template text, `name` or `fields` to rename), then `anki_note_types_update` with exactly the same values and the preview's `confirmation_token`: the token covers what was sent, so a different set is refused. Anything left out stays as it is (send `css: ""` to clear the CSS), and a field rename also updates the templates that use it. The field and template counts must stay the same.
 - **Adding, removing or reordering a field or template** forces a full sync. Preview it with `operation: "fields_update"` and `field_mappings` (every field in its new order; an existing one keeps its `source_ordinal`, a new one has none), or `"templates_update"` with `template_mappings`, then call `anki_note_type_fields_update` or `anki_templates_update` with the mappings and the token. The server asks the user to approve it itself.

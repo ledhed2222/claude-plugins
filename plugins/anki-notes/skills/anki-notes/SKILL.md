@@ -108,6 +108,7 @@ Cards reach Anki through the `anki` MCP server of the `ankimcp@ledhed2222` plugi
 
 Note-type changes are in `note-types.md`. On remote:
 
+- **Sync before the first read.** The server syncs with AnkiWeb on every write but not on reads, so its copy can miss changes made on another device since its last write (a deck deleted in Anki Desktop still shows up). Pass `sync_before: true` on the first read of a session, normally "List decks".
 - **Ids, not names, for writes.** A charter read by name gives that deck's `id`; other deck ids come from `anki_decks_list`, and note type ids from `anki_note_types_list`.
 - **Fields must match exactly.** A note's `fields` must name every field of its note type and no others: read them with `anki_note_types_get` once per type. Stock Cloze's second field is `Back Extra`.
 - **Add in batches that skip duplicates.** `anki_notes_create_batch` with `skip_duplicates: true` reports a card whose first field the deck already has as `duplicate`, with `duplicate_of` naming that note, instead of failing the batch; `add_cards.py` plans these. Without `skip_duplicates`, one duplicate fails the whole batch with `DUPLICATE_NOTE`, as `anki_notes_create` does for one card.
@@ -125,7 +126,7 @@ The scripts named below are in this skill's `scripts/` directory; run each as `p
 3. **Pick the stage**: the earliest stage subdeck that already teaches everything the card relies on. If no stage fits, propose a new one to the user instead of guessing.
 4. **Lint** the drafts: `lint_cards.py <drafts.json> --prefix <charter's tag prefix>`, adding `--skip <checks>` when the charter's Conventions has a `Lint skip:` line. Fix every error and every warning, or say in your reply why a warning is wrong for that card.
 5. **Add** with `add_cards.py plan <drafts.json> --server <server>` (remote also takes `--decks` and `--note-types`: saved `anki_decks_list` and `anki_note_types_list` replies). It refuses the batch on any lint error or missing stage, and prints the add calls in order: make each, saving each reply, error replies included. Then run `add_cards.py order <drafts.json> --server <server> <replies>...` with those replies in call order: it says which cards were added, which were duplicates and which failed, and prints the calls left (placing `"first"` cards, then the sync); make those too. Write each card's fields as follows:
-   - `Basic`: `{"Front": ..., "Back": ...}`. Bold the key term with `<b>`. An optional context line goes at the end of Back: `<br><br><small><b>Why/Example:</b> one sentence</small>`.
+   - `Basic`: `{"Front": ..., "Back": ...}`. Bold the key term with `<b>`. An optional context line goes at the end of Back: `<br /><br /><small><b>Why/Example:</b> one sentence</small>`.
    - `Cloze`: `{"Text": ..., "Back Extra": ""}`, or the second field's name in the collection if it differs.
    - Any other note type the charter names: fill its fields the way Conventions says ("Read a note type" lists them).
    - Tags: the charter's prefix (`<prefix>::<area>::<topic>`), `type::definition|contrast|application|formula`, and `src::<topic>` so a batch can be found together. Name the topic, never the project or session it came from: no client, module or dataset names in tags either.

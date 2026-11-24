@@ -28,7 +28,7 @@ class LintTests(unittest.TestCase):
         self.assertTrue(any("answer word" in m for m in _msgs(_basic("Why does a harmonic mean punish imbalance?", "A harmonic mean is dominated by the smaller value."))))
 
     def test_why_example_line_is_not_the_answer(self):
-        long_extra = "<br><br><small><b>Why/Example:</b> " + "word " * 40 + "</small>"
+        long_extra = "<br /><br /><small><b>Why/Example:</b> " + "word " * 40 + "</small>"
         self.assertEqual([m for m in _msgs(_basic("Which costs more: inference or scoring?", "<b>Inference.</b>" + long_extra)) if "words" in m], [])
 
     def test_long_back(self):
