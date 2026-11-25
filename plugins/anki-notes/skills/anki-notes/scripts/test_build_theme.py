@@ -40,6 +40,12 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("prefers-reduced-motion: no-preference", moving)
         self.assertNotIn("infinite", moving)
 
+    def test_stage_dots_imply_no_total(self):
+        out = css(GOOD)
+        self.assertNotIn("○", out)
+        self.assertIn('[data-deck*="::03 "]::before { content: "●●● "; }', out)
+        self.assertIn('[data-deck*="::06 "]::before { content: "●●●●●● "; }', out)
+
     def test_night_mode(self):
         self.assertIn(".card.nightMode", css(GOOD))
 

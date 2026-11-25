@@ -126,7 +126,7 @@ def css(theme, files=()):
     lt, nt = theme["light"], theme["night"]
     faces = font_faces(files)
     stages = "".join(
-        f'.deck-label[data-deck*="::{n:02d} "]::before {{ content: "{"●" * n}{"○" * max(0, 3 - n)} "; }}\n'
+        f'.deck-label[data-deck*="::{n:02d} "]::before {{ content: "{"●" * n} "; }}\n'
         for n in range(1, 10))
     motion = ""
     if theme.get("motion"):

@@ -1,6 +1,6 @@
 ---
 name: anki-notes
-description: Turn something just taught into atomic Anki flashcards in the right subject deck. Use whenever the user says "add this to anki", "make a card", "flashcard this", and whenever you explain a concept the user would plausibly want to remember, in any subject (a language, a science, a technical field): the subject's deck charter then decides whether cards are added, offered or skipped. For AI engineering (evals, metrics, LLMs, grounding, extraction, RAG, agents, tooling), where cards are added automatically, including at the end of each step of a walkthrough. Also use it to set up a deck for a new subject, to write or change a deck's charter, and to add cards drafted earlier in the conversation once Anki is reachable again.
+description: "Turn something just taught into atomic Anki flashcards in the right subject deck. Use whenever the user says \"add this to anki\", \"make a card\", \"flashcard this\", and whenever you explain a concept the user would plausibly want to remember, in any subject (a language, a science, a technical field): the subject's deck charter then decides whether cards are added, offered or skipped. For AI engineering (evals, metrics, LLMs, grounding, extraction, RAG, agents, tooling), where cards are added automatically, including at the end of each step of a walkthrough. Also use it to set up a deck for a new subject, to write or change a deck's charter, and to add cards drafted earlier in the conversation once Anki is reachable again."
 ---
 
 # Anki notes
@@ -146,6 +146,9 @@ Edits to existing cards ("Change a note's fields") keep review history. Never de
 The Anki tools are missing, or a call fails because the server can't be reached (connection refused, a timeout, Anki closed on local). Then stop writing, and:
 
 1. Say so in one line that names the cause and that nothing was saved: "Couldn't reach Anki (connection refused). Nothing was saved."
+   When the Anki tools are missing altogether (no call was made, so none failed), the server was never connected. Follow that line with how to connect it on the surface you're on:
+   - **claude.ai** (web, desktop chat, mobile): installing the plugin doesn't add the server here. Add the user's anki-sync-mcp server under Customize → Connectors as a custom connector, using its public HTTPS URL, then connect it and sign in. The local AnkiMCP add-on can't be reached from claude.ai.
+   - **Claude Code**: install or enable `ankimcp@ledhed2222` (`/plugin install ankimcp@ledhed2222`) and give it the server's URL (`http://127.0.0.1:3141/` for the local add-on), then sign in with `/mcp` (remote) or open Anki (local).
 2. Show the drafted cards in full, as the JSON list you'd add, so the conversation keeps them. For a charter, show its approved text. Save nothing anywhere else.
 3. Keep teaching. Don't block the lesson on it.
 
