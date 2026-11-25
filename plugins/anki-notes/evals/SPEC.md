@@ -10,7 +10,7 @@ The cases tagged `themes` cover deck themes: the look question in a new charter,
 
 ## How a run works
 
-1. A fresh, headless Claude Code session starts with only this plugin and `ankimcp` loaded.
+1. A fresh, headless Claude Code session starts with only this plugin loaded.
 2. The Anki server is replaced by a mock (`mocks/anki/`): every Anki tool call gets a canned reply, and no real deck is touched. `_tools.json` holds the real server's tool descriptions so Claude sees the real tools.
 3. The case's user message is sent, and Claude answers as it normally would.
 4. Each grader checks one thing about that run and passes or fails.

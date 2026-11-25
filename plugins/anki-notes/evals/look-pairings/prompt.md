@@ -1,10 +1,10 @@
 ---
 description: Mixing one option's palette with another's fonts gives a theme with A's colors and B's font families, previewed in the deck's language.
 tags: [themes]
-plugins: ["../..", "../../../ankimcp"]
+plugins: ["../.."]
 max_turns: 40
 timeout_seconds: 900
-allowed_tools: [Skill, Read, AskUserQuestion, mcp__plugin_ankimcp_anki__list_decks, mcp__plugin_ankimcp_anki__get_deck_description, mcp__plugin_ankimcp_anki__model_names, mcp__plugin_ankimcp_anki__model_field_names, mcp__plugin_ankimcp_anki__model_templates]
+allowed_tools: [Skill, Read, AskUserQuestion, mcp__plugin_anki-notes_anki__list_decks, mcp__plugin_anki-notes_anki__get_deck_description, mcp__plugin_anki-notes_anki__model_names, mcp__plugin_anki-notes_anki__model_field_names, mcp__plugin_anki-notes_anki__model_templates]
 ---
 We're setting up my new Spanish deck (charter approved; the sample note was Front "Spanish: how do you say 'I'd been waiting for hours'?", Back "<b>Llevaba horas esperando.</b>"). You showed me these two themes:
 

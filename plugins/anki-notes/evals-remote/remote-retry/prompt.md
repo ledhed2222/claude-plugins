@@ -1,9 +1,9 @@
 ---
 description: After an outage, cards drafted earlier in the conversation are checked against the deck before they're added, and a card the deck already holds is reported, not added again.
 tags: [remote, unreachable]
-plugins: ["../..", "../../../ankimcp"]
+plugins: ["../.."]
 max_turns: 25
-allowed_tools: [Skill, mcp__plugin_ankimcp_anki__anki_decks_list, mcp__plugin_ankimcp_anki__anki_decks_get, mcp__plugin_ankimcp_anki__anki_notes_search, mcp__plugin_ankimcp_anki__anki_notes_get, mcp__plugin_ankimcp_anki__anki_note_types_list, mcp__plugin_ankimcp_anki__anki_note_types_get, mcp__plugin_ankimcp_anki__anki_notes_create, mcp__plugin_ankimcp_anki__anki_notes_create_batch, mcp__plugin_ankimcp_anki__anki_cards_search, mcp__plugin_ankimcp_anki__anki_cards_reposition, mcp__plugin_ankimcp_anki__anki_sync]
+allowed_tools: [Skill, mcp__plugin_anki-notes_anki__anki_decks_list, mcp__plugin_anki-notes_anki__anki_decks_get, mcp__plugin_anki-notes_anki__anki_notes_search, mcp__plugin_anki-notes_anki__anki_notes_get, mcp__plugin_anki-notes_anki__anki_note_types_list, mcp__plugin_anki-notes_anki__anki_note_types_get, mcp__plugin_anki-notes_anki__anki_notes_create, mcp__plugin_anki-notes_anki__anki_notes_create_batch, mcp__plugin_anki-notes_anki__anki_cards_search, mcp__plugin_anki-notes_anki__anki_cards_reposition, mcp__plugin_anki-notes_anki__anki_sync]
 ---
 Earlier in this conversation you drafted these cards for my AI Engineering deck, and I approved them, but the Anki server was down so nothing was saved:
 

@@ -1,10 +1,10 @@
 ---
 description: A Russian deck's themes include the cyrillic subset and only families checked to have Cyrillic.
 tags: [themes]
-plugins: ["../..", "../../../ankimcp"]
+plugins: ["../.."]
 max_turns: 40
 timeout_seconds: 900
-allowed_tools: [Skill, Read, AskUserQuestion, mcp__plugin_ankimcp_anki__list_decks, mcp__plugin_ankimcp_anki__get_deck_description, mcp__plugin_ankimcp_anki__model_names, mcp__plugin_ankimcp_anki__model_field_names, mcp__plugin_ankimcp_anki__model_templates]
+allowed_tools: [Skill, Read, AskUserQuestion, mcp__plugin_anki-notes_anki__list_decks, mcp__plugin_anki-notes_anki__get_deck_description, mcp__plugin_anki-notes_anki__model_names, mcp__plugin_anki-notes_anki__model_field_names, mcp__plugin_anki-notes_anki__model_templates]
 ---
 We're setting up my new Russian deck. You already drafted its charter and I approved it:
 

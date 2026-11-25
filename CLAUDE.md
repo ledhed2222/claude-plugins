@@ -28,15 +28,6 @@ Unofficial. Declares Remember The Milk's hosted MCP server (`https://www.remembe
 - `privacyPolicyUrl` points at Remember The Milk's policy (https://www.rememberthemilk.com/help/privacy.rtm) because their server handles the data; the plugin itself collects nothing. Keep it that way: no hooks or telemetry.
 - The MCP server requires a Remember The Milk Pro account; its README says so and should keep saying so.
 
-### ankimcp
-
-Unofficial. Declares one HTTP MCP server, `anki`, whose URL is a `userConfig` value (`server_url`) asked for on enable, so users can enable it from `settings.json` instead of running `claude mcp add` on every machine. Two servers are supported and the README documents both: the local [AnkiMCP](https://ankimcp.ai) add-on (AnkiWeb code `124672614`, `http://127.0.0.1:3141/`, no auth, only while Anki is open) and the owner's self-hosted [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp) fork (built-in OAuth, signed into through `/mcp`). Their tools differ. The plugin ships config, not code.
-
-- Stay clearly unofficial: no Anki or AnkiMCP logo or branding. An icon, if added, must be original art.
-- No `privacyPolicyUrl`: the server runs locally or is hosted by the user, and the plugin collects nothing, so the validator's privacy warning is expected. Keep it that way: no hooks or telemetry.
-- `.mcp.json` pins the OAuth callback to port 33418 because the server matches redirect URIs exactly. Changing the port breaks every server that allow-lists `http://localhost:33418/callback`.
-- anki-notes supports both servers (see its `CLAUDE.md`, "Two servers"). A change to either server's tools needs unit tests for both there.
-
 ### anki-notes
 
-The owner's own skill for turning what Claude teaches into Anki flashcards. It depends on `ankimcp` and has an eval suite; its conventions are in [`plugins/anki-notes/CLAUDE.md`](plugins/anki-notes/CLAUDE.md).
+The owner's own skill for turning what Claude teaches into Anki flashcards. It ships its own `anki` MCP server (the owner's hosted anki-sync-mcp) and has an eval suite; its conventions are in [`plugins/anki-notes/CLAUDE.md`](plugins/anki-notes/CLAUDE.md).

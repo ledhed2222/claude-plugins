@@ -1,7 +1,7 @@
 {
   "name": "anki-notes",
-  "version": "0.6.1",
-  "description": "Turns what Claude teaches you into staged Anki flashcards, with per-deck charters, through a local or hosted Anki MCP server.",
+  "version": "0.7.0",
+  "description": "Turns what Claude teaches you into staged Anki flashcards, with per-deck charters, through the owner's hosted Anki MCP server or a local AnkiMCP add-on.",
   "author": {
     "name": "ledhed2222"
   },
@@ -13,8 +13,5 @@
     "flashcards",
     "spaced-repetition",
     "learning"
-  ],
-  "dependencies": [
-    "ankimcp"
   ]
 }

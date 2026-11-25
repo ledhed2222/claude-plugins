@@ -25,7 +25,7 @@ depends = ["check", "test"]
 description = "Regenerate both suites' SPEC.md"
 run = ['python3 -I evals/gen_spec.py', 'python3 -I evals/gen_spec.py evals-remote']
 
-# the harness only loads ankimcp from under the directory it's pointed at, so these run from the repo root
+# results land under the harness's working directory, so these run from the repo root
 [tasks.eval]
 description = "Run the eval suite; extra args go to claude plugin eval (e.g. --case <name> --runs 1 --ablation none)"
 dir = "{{config_root}}/../.."

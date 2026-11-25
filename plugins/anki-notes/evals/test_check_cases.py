@@ -6,13 +6,13 @@ from check_cases import check_case, check_shape, replies
 
 _GOOD = """---
 description: A case.
-plugins: ["../..", "../../../ankimcp"]
-allowed_tools: [Skill, mcp__plugin_ankimcp_anki__list_decks, mcp__plugin_ankimcp_anki__add_notes]
+plugins: ["../.."]
+allowed_tools: [Skill, mcp__plugin_anki-notes_anki__list_decks, mcp__plugin_anki-notes_anki__add_notes]
 ---
 Teach me F1.
 """
 _JUDGE = "---\ntype: llm\nfocus: trace\n---\nPASS if ...\n"
-_CALLS = "---\ntype: tool_used\ntool: mcp__plugin_ankimcp_anki__add_notes\n---\n"
+_CALLS = "---\ntype: tool_used\ntool: mcp__plugin_anki-notes_anki__add_notes\n---\n"
 
 
 def _case(prompt, graders, mocks=()):
@@ -41,11 +41,11 @@ class CheckCaseTests(unittest.TestCase):
                          ["an llm grader's focus must be last_message or trace, not reply"])
 
     def test_wrong_plugins(self):
-        bad = _GOOD.replace('"../../../ankimcp"', '"../ankimcp"')
+        bad = _GOOD.replace('["../.."]', '["../..", "../ankimcp"]')
         self.assertEqual(len(check_case(_case(bad, [_CALLS]), _SHARED, _SHARED)), 1)
 
     def test_one_server_per_case(self):
-        mixed = _GOOD.replace("]\n---", ", mcp__plugin_ankimcp_anki__anki_decks_list]\n---", 1)
+        mixed = _GOOD.replace("]\n---", ", mcp__plugin_anki-notes_anki__anki_decks_list]\n---", 1)
         known = _SHARED | {"anki_decks_list"}
         self.assertEqual(check_case(_case(mixed, [_CALLS]), known, known),
                          ["allowed_tools mixes the local and remote servers' tools"])
