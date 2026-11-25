@@ -1,6 +1,6 @@
 ---
 type: tool_used
-tool: mcp__plugin_ankimcp_anki__add_notes
+tool: mcp__plugin_anki-notes_anki__add_notes
 input_match: "\"Palabra\":\\s*\"(se dio cuenta|se\\|dio cuenta|dio cuenta)\""
 arm: with-only
 ---

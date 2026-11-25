@@ -2,7 +2,7 @@
   "mcpServers": {
     "anki": {
       "type": "http",
-      "url": "${user_config.server_url}",
+      "url": "https://anki.gregweisbrod.com/mcp",
       "oauth": {
         "callbackPort": 33418
       }

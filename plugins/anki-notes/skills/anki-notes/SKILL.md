@@ -89,7 +89,7 @@ Run every draft through these. They come from the spaced-repetition literature r
 
 ## Anki tools
 
-Cards reach Anki through the `anki` MCP server of the `ankimcp@ledhed2222` plugin, which connects to one of two servers. Tell which from the tools you have: `anki_decks_list` means **remote** (a self-hosted anki-sync-mcp; it syncs with AnkiWeb itself, so Anki needn't be open), `list_decks` means **local** (the AnkiMCP add-on inside a running Anki Desktop). Use only that server's column below. In claude.ai, the remote server's tools are there only if the user added it as a custom connector; the local one never is.
+Cards reach Anki through an Anki MCP server: the plugin's own `anki` server (a hosted anki-sync-mcp), or the local AnkiMCP add-on if the user added it in Claude Code. Tell which from the tools you have: `anki_decks_list` means **remote** (a self-hosted anki-sync-mcp; it syncs with AnkiWeb itself, so Anki needn't be open), `list_decks` means **local** (the AnkiMCP add-on inside a running Anki Desktop). Use only that server's column below. In claude.ai, the tools are there only once the user connects the plugin's `anki` connector; the local add-on never is.
 
 | Operation | local | remote |
 |---|---|---|
@@ -147,8 +147,8 @@ The Anki tools are missing, or a call fails because the server can't be reached 
 
 1. Say so in one line that names the cause and that nothing was saved: "Couldn't reach Anki (connection refused). Nothing was saved."
    When the Anki tools are missing altogether (no call was made, so none failed), the server was never connected. Follow that line with how to connect it on the surface you're on:
-   - **claude.ai** (web, desktop chat, mobile): installing the plugin doesn't add the server here. Add the user's anki-sync-mcp server under Customize → Connectors as a custom connector, using its public HTTPS URL, then connect it and sign in. The local AnkiMCP add-on can't be reached from claude.ai.
-   - **Claude Code**: install or enable `ankimcp@ledhed2222` (`/plugin install ankimcp@ledhed2222`) and give it the server's URL (`http://127.0.0.1:3141/` for the local add-on), then sign in with `/mcp` (remote) or open Anki (local).
+   - **claude.ai** (web, desktop chat, mobile): installing the plugin doesn't connect its server. Open the anki-notes plugin under Customize → Plugins, go to its Connectors tab, and add or connect `anki`, then sign in. The local AnkiMCP add-on can't be reached from claude.ai.
+   - **Claude Code**: run `/mcp` and sign in to the plugin's `anki` server. For the local add-on instead, open Anki and add it with `claude mcp add --transport http anki http://127.0.0.1:3141/`.
 2. Show the drafted cards in full, as the JSON list you'd add, so the conversation keeps them. For a charter, show its approved text. Save nothing anywhere else.
 3. Keep teaching. Don't block the lesson on it.
 

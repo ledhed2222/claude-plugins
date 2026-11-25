@@ -11,14 +11,9 @@
       "description": "Connects Claude Code to Remember The Milk's hosted MCP server (unofficial)."
     },
     {
-      "name": "ankimcp",
-      "source": "./plugins/ankimcp",
-      "description": "Connects Claude Code to an Anki MCP server: the local AnkiMCP add-on or a self-hosted anki-sync-mcp (unofficial)."
-    },
-    {
       "name": "anki-notes",
       "source": "./plugins/anki-notes",
-      "description": "Turns what Claude teaches you into staged Anki flashcards, through a local or hosted Anki MCP server."
+      "description": "Turns what Claude teaches you into staged Anki flashcards, with per-deck charters, through the owner's hosted Anki MCP server or a local AnkiMCP add-on."
     }
   ]
 }

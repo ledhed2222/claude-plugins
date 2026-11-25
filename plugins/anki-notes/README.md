@@ -7,7 +7,7 @@ When Claude teaches you something, this plugin turns it into Anki flashcards: on
 - **Makes cards while you learn.** Ask for them ("make a card for that"), or let a deck opt in to getting cards automatically whenever Claude explains something in its subject.
 - **Keeps subjects apart.** Each top-level deck is one subject (AI Engineering, Spanish, ...) with a short **charter** that says what belongs in it.
 - **Teaches in order.** A deck is split into numbered stages (`01 Basics`, `02 ...`), and a card is only placed after the cards it depends on.
-- **Works with a local or a hosted Anki server.** Either the AnkiMCP add-on inside Anki Desktop, or your own [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp) server, which syncs with AnkiWeb and works from claude.ai and your phone too.
+- **Works with a hosted or a local Anki server.** The plugin connects to a hosted [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp) server, which syncs with AnkiWeb and works from claude.ai and your phone too. In Claude Code you can use the AnkiMCP add-on inside Anki Desktop instead.
 
 ## How it works
 
@@ -21,34 +21,28 @@ The skill tells the two servers apart by their tools and uses the right calls fo
 
 ## Setup
 
-Setup has three parts: an Anki MCP server, the plugin, and a connection between them. That connection works differently in Claude Code and claude.ai.
+The plugin ships its server: `https://anki.gregweisbrod.com/mcp`, the owner's [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp). It's hardcoded for now, so the plugin is only useful as-is to the owner; anyone else needs to point it at their own server (see below).
 
-### 1. Run a server
-
-Pick one ([ankimcp's README](../ankimcp/README.md) has the details):
-
-- **Local:** [Anki](https://apps.ankiweb.net) 25.07 or newer, with the [AnkiMCP](https://ankimcp.ai) add-on (Tools → Add-ons → Get Add-ons, code `124672614`). Works in Claude Code only, while Anki is open. For deck themes with their own fonts, add `"font/woff2"` to the add-on's `media_allowed_types` (Tools → Add-ons → AnkiMCP → Config, then restart Anki); without it, themed decks show your system font.
-- **Remote:** your own [anki-sync-mcp](https://github.com/ledhed2222/anki-sync-mcp) server, reachable at a public HTTPS URL if you want it in claude.ai. Deck themes and note-type changes need `admin` in its `MCP_SCOPES` and its `ANKI_ALLOW_SCHEMA_CHANGES` setting (and `ANKI_ALLOW_FULL_SYNC` for field changes); without them the skill still adds cards and saves charters.
-
-### 2. Claude Code
+### Claude Code
 
 ```
 /plugin marketplace add ledhed2222/claude-plugins
 /plugin install anki-notes@ledhed2222
 ```
 
-1. The install also installs [ankimcp](../ankimcp), which asks for your server's URL: `http://127.0.0.1:3141/` for the add-on, or your anki-sync-mcp endpoint.
-2. Remote only: run `/mcp` and sign in to the `anki` server.
-3. Local only: keep Anki open while you work.
+Then run `/mcp` and sign in to the `anki` server.
 
-### 3. claude.ai (web, desktop chat, mobile)
-
-claude.ai needs two installs. A plugin there can only bring a connector with a fixed URL. Your server's URL is your own, so ankimcp's server doesn't carry over, and plugin dependencies aren't installed there either.
+### claude.ai (web, desktop chat, mobile)
 
 1. Under **Customize → Plugins**, add the `ledhed2222/claude-plugins` marketplace and install `anki-notes`.
-2. Under **Customize → Connectors**, add a custom connector with your anki-sync-mcp server's public HTTPS URL, then connect it and sign in.
+2. On the plugin's **Connectors** tab, add or connect `anki` and sign in.
 
-The local add-on can't be reached from claude.ai. Connectors are per account, so set this up once and it works on web, desktop and mobile. If the skill runs without the connector, it says nothing was saved, tells you how to add the connector, and shows the drafted cards in the chat.
+Connectors are per account, so this works on web, desktop and mobile once it's done. If the skill runs without the connector, it says nothing was saved, tells you how to connect it, and shows the drafted cards in the chat.
+
+### Your own server
+
+- **Remote:** run your own anki-sync-mcp at a public HTTPS URL. In claude.ai, add it under **Customize → Connectors** as a custom connector. In Claude Code, `claude mcp add --transport http anki <url>`. Deck themes and note-type changes need `admin` in its `MCP_SCOPES` and its `ANKI_ALLOW_SCHEMA_CHANGES` setting (and `ANKI_ALLOW_FULL_SYNC` for field changes); without them the skill still adds cards and saves charters.
+- **Local (Claude Code only):** [Anki](https://apps.ankiweb.net) 25.07 or newer, with the [AnkiMCP](https://ankimcp.ai) add-on (Tools → Add-ons → Get Add-ons, code `124672614`), then `claude mcp add --transport http anki http://127.0.0.1:3141/`. Works while Anki is open. For deck themes with their own fonts, add `"font/woff2"` to the add-on's `media_allowed_types` (Tools → Add-ons → AnkiMCP → Config, then restart Anki); without it, themed decks show your system font.
 
 ## Charters
 

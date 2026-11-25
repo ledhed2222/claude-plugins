@@ -4,10 +4,10 @@
 Usage: python3 -I check_cases.py [suite dir]   (default: this folder, the local suite)
 
 Cases:
-- prompt.md has a description and loads exactly ["../..", "../../../ankimcp"].
-- Its allowed ankimcp tools all belong to one server: every one is an anki_*
+- prompt.md has a description and loads exactly ["../.."].
+- Its allowed Anki tools all belong to one server: every one is an anki_*
   tool (remote) or none is (local). The skill picks the server by tool name.
-- Every allowed ankimcp tool has a mock (the case's or the shared one), so no
+- Every allowed Anki tool has a mock (the case's or the shared one), so no
   call can reach a real Anki, and every mocked tool is in _tools.json.
 - A case tagged charter, note-type, questionnaire or media allows Read, or the
   skill can't open charters.md, note-types.md or media.md.
@@ -27,8 +27,8 @@ import sys
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
-_PLUGINS = '["../..", "../../../ankimcp"]'
-_TOOL_PREFIX = "mcp__plugin_ankimcp_anki__"
+_PLUGINS = '["../.."]'
+_TOOL_PREFIX = "mcp__plugin_anki-notes_anki__"
 _NEEDS_READ = {"charter", "note-type", "questionnaire", "media"}  # the skill reads charters.md / note-types.md / media.md
 
 
