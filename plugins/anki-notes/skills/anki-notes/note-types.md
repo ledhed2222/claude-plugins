@@ -37,7 +37,7 @@ Pick from what the deck's cards are made of, then let the mood choose within tha
 
 These are starting points, not a list to stay inside. Every family above was checked with `--info`; check anything else the same way.
 
-- **Built in:** dots on the deck label for the stage (`●○○` in stage 01), and a small "rescued" badge on the back of a card tagged `rescued`.
+- **Built in:** dots on the deck label for the stage (`●` in stage 01, `●●●●` in stage 04), and a small "rescued" badge on the back of a card tagged `rescued`.
 - **Motion** is off unless the user turns it on after seeing it: a 120 ms fade of the answer and a single shimmer on the rescued badge, both off when the device asks for reduced motion. Nothing loops and nothing moves.
 - **Language decks:** suggest Anki's built-in speech, `{{tts es_ES:Field}}` in the template, which reads a field aloud with the device's own voices. It belongs in a note type with a dedicated sentence field, not in the Basic copy.
 
@@ -56,7 +56,7 @@ Check the design first: write the templates (as `model_templates` returns them) 
 - **If the user keeps note types in a repo or folder**, write the templates there and tell them how to apply them. Don't also create them in Anki: two copies drift.
 - **Otherwise** create it in Anki: the fields in order, one card template per card, and the CSS.
   - **local:** `create_model` with `model_name`, `in_order_fields`, `card_templates` (`Name`, `Front`, `Back`), `css` and `is_cloze`: the shape of `models.json`.
-  - **remote:** `anki_note_types_change_preview` with `operation: "create"`, `name`, `fields`, `templates` (`name`, `question_format`, `answer_format`) and `css`, then `anki_note_types_create` with the same values and the preview's `confirmation_token`, plus `kind: "cloze"` for a Cloze type. The server refuses a Cloze type unless it has exactly one template whose front names one of its fields as literally `{{cloze:<Field>}}`: no filter chain such as `{{text:cloze:<Field>}}`, though Anki itself accepts one; a theme's `models-remote.json` holds these values.
+  - **remote:** `anki_note_types_change_preview` with `operation: "create"`, `name`, `fields`, `templates` (`name`, `question_format`, `answer_format`) and `css`, then `anki_note_types_create` with the same values and the preview's `confirmation_token`, plus `kind: "cloze"` for a Cloze type. Preview and create one type at a time, never previews in parallel: each create invalidates every other outstanding token. The server refuses a Cloze type unless it has exactly one template whose front names one of its fields as literally `{{cloze:<Field>}}`: no filter chain such as `{{text:cloze:<Field>}}`, though Anki itself accepts one; a theme's `models-remote.json` holds these values.
 - Before adding many notes of a new type, have the user preview a few cards in Anki and review one on each device they study on, phone included.
 
 ## Change
